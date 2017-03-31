@@ -52,6 +52,11 @@ BASE_FIXTURE_PATH = os.path.join(ROOT_PROJECT_DIR, 'fixtures', 'TrieTests')
 FIXTURES_PATHS = tuple(recursive_find_files(BASE_FIXTURE_PATH, "trietest.json"))
 
 
+def test_fixtures_exist():
+    assert os.path.exists(BASE_FIXTURE_PATH)
+    assert FIXTURES_PATHS
+
+
 RAW_FIXTURES = tuple(
     (
         os.path.basename(fixture_path),

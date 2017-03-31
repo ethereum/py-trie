@@ -35,7 +35,7 @@ def validate_is_node(node):
                 continue
             elif isinstance(sub_node, list):
                 if len(sub_node) != 2:
-                    raise ValidationError("Invalid branch subnode: {0}".format(subnode))
+                    raise ValidationError("Invalid branch subnode: {0}".format(sub_node))
                 sub_node_key, sub_node_value = sub_node
                 validate_is_bytes(sub_node_key)
                 if isinstance(sub_node_value, list):
