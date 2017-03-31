@@ -12,9 +12,6 @@ from trie.constants import (
     NODE_TYPE_EXTENSION,
     NODE_TYPE_BRANCH,
 )
-from trie.exceptions import (
-    InvalidNode,
-)
 from trie.validation import (
     validate_is_node,
     validate_is_bytes,

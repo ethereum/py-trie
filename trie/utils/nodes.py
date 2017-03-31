@@ -1,5 +1,3 @@
-import rlp
-
 from trie.constants import (
     NODE_TYPE_BLANK,
     NODE_TYPE_LEAF,
@@ -7,6 +5,10 @@ from trie.constants import (
     NODE_TYPE_BRANCH,
     BLANK_NODE,
 )
+from trie.exceptions import (
+    InvalidNode,
+)
+
 from .nibbles import (
     decode_nibbles,
     encode_nibbles,
