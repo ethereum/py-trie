@@ -2,7 +2,7 @@
 
 
 ```shell
-$ pip install ethereum-trie
+$ pip install trie
 ```
 
 > Warning: This is an early release and is likely to contain bugs as well as
