@@ -12,7 +12,7 @@ readme = open(os.path.join(DIR, 'README.md')).read()
 
 
 setup(
-    name='ethereum-trie',
+    name='trie',
     version="0.1.0",
     description="""Python implementation of the Ethereum Trie structure""",
     long_description=readme,
