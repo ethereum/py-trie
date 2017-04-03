@@ -359,6 +359,15 @@ class Trie(object):
             raise Exception("Invariant: unreachable code path")
 
     #
+    # Snapshot
+    #
+    def snapshot(self):
+        return self.db.snapshot()
+
+    def restore(self, snapshot):
+        return self.db.restore()
+
+    #
     # Dictionary API
     #
     def __getitem__(self, key):
