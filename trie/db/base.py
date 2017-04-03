@@ -1,22 +1,35 @@
 class BaseDB(object):
     def get(self, key):
         raise NotImplementedError(
-            "The `_get` method must be implemented by subclasses of BaseDB"
+            "The `get` method must be implemented by subclasses of BaseDB"
         )
 
     def set(self, key, value):
         raise NotImplementedError(
-            "The `_set` method must be implemented by subclasses of BaseDB"
+            "The `set` method must be implemented by subclasses of BaseDB"
         )
 
     def exists(self, key):
         raise NotImplementedError(
-            "The `_exists` method must be implemented by subclasses of BaseDB"
+            "The `exists` method must be implemented by subclasses of BaseDB"
         )
 
     def delete(self, key):
         raise NotImplementedError(
-            "The `_delete` method must be implemented by subclasses of BaseDB"
+            "The `delete` method must be implemented by subclasses of BaseDB"
+        )
+
+    #
+    # Snapshot API
+    #
+    def snapshot(self):
+        raise NotImplementedError(
+            "The `snapshot` method must be implemented by subclasses of BaseDB"
+        )
+
+    def restore(self, snapshot):
+        raise NotImplementedError(
+            "The `restore` method must be implemented by subclasses of BaseDB"
         )
 
     #
