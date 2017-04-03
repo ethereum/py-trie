@@ -102,8 +102,12 @@ def test_trie_using_fixtures(fixture_name, fixture):
             del trie[key]
 
         for key, expected_value in remaining.items():
+            assert key in trie
             actual_value = trie[key]
             assert actual_value == expected_value
+
+        for key in deletes:
+            assert key not in trie
 
         expected_root = fixture['root']
         actual_root = trie.root_hash

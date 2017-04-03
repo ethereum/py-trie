@@ -95,7 +95,7 @@ class Trie(object):
     def exists(self, key):
         validate_is_bytes(key)
 
-        return self.get(key) == BLANK_NODE
+        return self.get(key) != BLANK_NODE
 
     def delete(self, key):
         validate_is_bytes(key)
