@@ -42,6 +42,10 @@ class Trie(object):
     db = None
     root_hash = None
 
+    # Shortcuts
+    BLANK_NODE_HASH = BLANK_NODE_HASH
+    BLANK_NODE = BLANK_NODE
+
     def __init__(self, db, root_hash=BLANK_NODE_HASH):
         self.db = db
         validate_is_bytes(root_hash)
