@@ -364,8 +364,8 @@ class Trie(object):
     def snapshot(self):
         return self.db.snapshot()
 
-    def restore(self, snapshot):
-        return self.db.restore()
+    def revert(self, snapshot):
+        return self.db.revert(snapshot)
 
     #
     # Dictionary API

@@ -27,9 +27,9 @@ class BaseDB(object):
             "The `snapshot` method must be implemented by subclasses of BaseDB"
         )
 
-    def restore(self, snapshot):
+    def revert(self, snapshot):
         raise NotImplementedError(
-            "The `restore` method must be implemented by subclasses of BaseDB"
+            "The `revert` method must be implemented by subclasses of BaseDB"
         )
 
     #

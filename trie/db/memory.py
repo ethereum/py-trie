@@ -28,5 +28,5 @@ class MemoryDB(BaseDB):
     def snapshot(self):
         return copy.copy(self.kv_store)
 
-    def restore(self, snapshot):
+    def revert(self, snapshot):
         self.kv_store = snapshot
