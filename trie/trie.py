@@ -38,6 +38,10 @@ from trie.utils.nodes import (
 )
 
 
+# sanity check
+assert BLANK_NODE_HASH == keccak(rlp.encode(b''))
+
+
 class Trie(object):
     db = None
     root_hash = None
@@ -366,10 +370,12 @@ class Trie(object):
     # Snapshot
     #
     def snapshot(self):
-        return self.db.snapshot()
+        return self.root_hash, self.db.snapshot()
 
     def revert(self, snapshot):
-        return self.db.revert(snapshot)
+        root_hash, db_snapshop = snapshot
+        self.root_hash = root_hash
+        self.db.revert(db_snapshop)
 
     #
     # Dictionary API
