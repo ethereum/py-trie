@@ -7,4 +7,4 @@ from .trie import (  # noqa: F401
 )
 
 
-__version__ = pkg_resources.get_distribution("populus").version
+__version__ = pkg_resources.get_distribution("trie").version
