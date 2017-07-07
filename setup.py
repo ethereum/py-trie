@@ -18,7 +18,7 @@ setup(
     long_description=readme,
     author='Piper Merriam',
     author_email='pipermerriam@gmail.com',
-    url='https://github.com/pipermerriam/trie',
+    url='https://github.com/pipermerriam/py-trie',
     include_package_data=True,
     py_modules=['trie'],
     install_requires=[
