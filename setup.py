@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 import os
 
-DIR = os.path.dirname(os.path.abspath(__file__))
-
-
 from setuptools import setup, find_packages
+
+
+DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 readme = open(os.path.join(DIR, 'README.md')).read()
@@ -13,7 +13,7 @@ readme = open(os.path.join(DIR, 'README.md')).read()
 
 setup(
     name='trie',
-    version="0.2.2",
+    version="0.2.4",
     description="""Python implementation of the Ethereum Trie structure""",
     long_description=readme,
     author='Piper Merriam',

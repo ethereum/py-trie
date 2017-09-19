@@ -1,8 +1,7 @@
+import codecs
 import itertools
 
 from eth_utils import (
-    encode_hex,
-    remove_0x_prefix,
     to_tuple,
 )
 
@@ -17,13 +16,11 @@ from trie.exceptions import (
 )
 
 
-@to_tuple
 def bytes_to_nibbles(value):
     """
     Convert a byte string to nibbles
     """
-    for nibble in remove_0x_prefix(encode_hex(value)):
-        yield NIBBLES_LOOKUP[nibble]
+    return tuple(NIBBLES_LOOKUP[nibble] for nibble in codecs.encode(value, 'hex'))
 
 
 @to_tuple

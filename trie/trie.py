@@ -38,9 +38,17 @@ from trie.utils.nodes import (
 )
 
 
+# sanity check
+assert BLANK_NODE_HASH == keccak(rlp.encode(b''))
+
+
 class Trie(object):
     db = None
     root_hash = None
+
+    # Shortcuts
+    BLANK_NODE_HASH = BLANK_NODE_HASH
+    BLANK_NODE = BLANK_NODE
 
     def __init__(self, db, root_hash=BLANK_NODE_HASH):
         self.db = db
@@ -147,7 +155,7 @@ class Trie(object):
         if len(node_hash) < 32:
             encoded_node = node_hash
         else:
-            encoded_node = self.db.get(node_hash)
+            encoded_node = self.db[node_hash]
         node = self._decode_node(encoded_node)
 
         return node
@@ -357,15 +365,6 @@ class Trie(object):
                 return BLANK_NODE
         else:
             raise Exception("Invariant: unreachable code path")
-
-    #
-    # Snapshot
-    #
-    def snapshot(self):
-        return self.db.snapshot()
-
-    def restore(self, snapshot):
-        return self.db.restore()
 
     #
     # Dictionary API
