@@ -14,9 +14,6 @@ from eth_utils import (
 from trie import (
     Trie,
 )
-from trie.db.memory import (
-    MemoryDB,
-)
 
 
 def normalize_fixture(fixture):
@@ -91,7 +88,7 @@ def test_trie_using_fixtures(fixture_name, fixture):
 
     for kv_permutation in itertools.islice(itertools.permutations(keys_and_values), 100):
         print("in it")
-        trie = Trie(db=MemoryDB())
+        trie = Trie(db={})
 
         for key, value in kv_permutation:
             if value is None:

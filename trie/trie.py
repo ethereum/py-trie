@@ -155,7 +155,7 @@ class Trie(object):
         if len(node_hash) < 32:
             encoded_node = node_hash
         else:
-            encoded_node = self.db.get(node_hash)
+            encoded_node = self.db[node_hash]
         node = self._decode_node(encoded_node)
 
         return node
@@ -365,17 +365,6 @@ class Trie(object):
                 return BLANK_NODE
         else:
             raise Exception("Invariant: unreachable code path")
-
-    #
-    # Snapshot
-    #
-    def snapshot(self):
-        return self.root_hash, self.db.snapshot()
-
-    def revert(self, snapshot):
-        root_hash, db_snapshop = snapshot
-        self.root_hash = root_hash
-        self.db.revert(db_snapshop)
 
     #
     # Dictionary API
