@@ -1,3 +1,4 @@
 tox==2.6.0
 pytest==3.0.7
 hypothesis==3.7.0
+bumpversion==0.5.3
