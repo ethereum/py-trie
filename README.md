@@ -9,6 +9,8 @@ $ pip install trie
 > breaking API changes.
 
 
+> This library and repository was previously located at https://github.com/pipermerriam/py-trie.  It was transferred to the Ethereum foundation github in November 2017 and renamed to `py-trie`.
+
 ## Installation
 
 ```sh
