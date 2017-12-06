@@ -14,3 +14,16 @@ NODE_TYPE_BLANK = 0
 NODE_TYPE_LEAF = 1
 NODE_TYPE_EXTENSION = 2
 NODE_TYPE_BRANCH = 3
+
+# Constants for Binary Trie
+TWO_BITS = [bytes([0, 0]), bytes([0, 1]),
+            bytes([1, 0]), bytes([1, 1])]
+PREFIX_00 = TWO_BITS[0]
+PREFIX_100000 = bytes([1, 0, 0, 0, 0, 0])
+
+KV_TYPE = 0
+BRANCH_TYPE = 1
+LEAF_TYPE = 2
+
+BYTE_1 = bytes([1])
+BYTE_0 = bytes([0])
