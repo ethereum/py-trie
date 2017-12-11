@@ -28,6 +28,9 @@ PREFIX_100000 = bytes([1, 0, 0, 0, 0, 0])
 KV_TYPE = 0
 BRANCH_TYPE = 1
 LEAF_TYPE = 2
+KV_TYPE_PREFIX = bytes([0])
+BRANCH_TYPE_PREFIX = bytes([1])
+LEAF_TYPE_PREFIX = bytes([2])
 
 BYTE_1 = bytes([1])
 BYTE_0 = bytes([0])
