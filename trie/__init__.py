@@ -4,6 +4,7 @@ import warnings
 
 from .trie import (  # noqa: F401
     Trie,
+    BinaryTrie,
 )
 
 
