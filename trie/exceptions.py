@@ -8,3 +8,7 @@ class InvalidNode(Exception):
 
 class ValidationError(Exception):
     pass
+
+
+class LeafNodeOverrideError(Exception):
+    pass
