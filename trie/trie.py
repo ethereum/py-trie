@@ -579,7 +579,7 @@ class BinaryTrie(object):
                         encode_kv_node(first_bit + sub_left_child, sub_right_child)
                     )
                 # kv node pointing to a branch node
-                elif subnodetype == BRANCH_TYPE:
+                elif subnodetype in (BRANCH_TYPE, LEAF_TYPE):
                     return self._hash_and_save(
                         encode_kv_node(
                             first_bit,
