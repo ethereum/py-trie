@@ -481,116 +481,122 @@ class BinaryTrie(object):
             # Keypath too short
             if not keypath:
                 return node_hash
-            # Keypath prefixes match
-            if keypath[:len(left_child)] == left_child:
-                # Recurse into child
-                subnode_hash = self._set(right_child, keypath[len(left_child):], value)
-                # If child is empty
-                if subnode_hash == BLANK_HASH:
-                    return BLANK_HASH
-                subnodetype, sub_left_child, sub_right_child = parse_node(self.db[subnode_hash])
-                # If the child is a key-value node, compress together the keypaths
-                # into one node
-                if subnodetype == KV_TYPE:
-                    return self._hash_and_save(
-                        encode_kv_node(left_child + sub_left_child, sub_right_child)
-                    )
-                else:
-                    return self._hash_and_save(encode_kv_node(left_child, subnode_hash))
-            # Keypath prefixes don't match. Here we will be converting a key-value node
-            # of the form (k, CHILD) into a structure of one of the following forms:
-            # i.   (k[:-1], (NEWCHILD, CHILD))
-            # ii.  (k[:-1], ((k2, NEWCHILD), CHILD))
-            # iii. (k1, ((k2, CHILD), NEWCHILD))
-            # iv.  (k1, ((k2, CHILD), (k2', NEWCHILD))
-            # v.   (CHILD, NEWCHILD)
-            # vi.  ((k[1:], CHILD), (k', NEWCHILD))
-            # vii. ((k[1:], CHILD), NEWCHILD)
-            # viii (CHILD, (k[1:], NEWCHILD))
-            else:
-                common_prefix_len = get_common_prefix_length(left_child, keypath[:len(left_child)])
-                # New key-value pair can not contain empty value
-                if not value:
-                    return node_hash
-                # valnode: the child node that has the new value we are adding
-                # Case 1: keypath prefixes almost match, so we are in case (i), (ii), (v), (vi)
-                if len(keypath) == common_prefix_len + 1:
-                    valnode = self._hash_and_save(encode_leaf_node(value))
-                # Case 2: keypath prefixes mismatch in the middle, so we need to break
-                # the keypath in half. We are in case (iii), (iv), (vii), (viii)
-                else:
-                    valnode = self._hash_and_save(
-                        encode_kv_node(
-                            keypath[common_prefix_len+1:],
-                            self._hash_and_save(encode_leaf_node(value)),
-                        )
-                    )
-                # oldnode: the child node the has the old child value
-                # Case 1: (i), (iii), (v), (vi)
-                if len(left_child) == common_prefix_len + 1:
-                    oldnode = right_child
-                # (ii), (iv), (vi), (viii)
-                else:
-                    oldnode = self._hash_and_save(
-                        encode_kv_node(left_child[common_prefix_len+1:], right_child)
-                    )
-                # Create the new branch node (because the key paths diverge, there has to
-                # be some "first bit" at which they diverge, so there must be a branch
-                # node somewhere)
-                if keypath[common_prefix_len:common_prefix_len+1] == BYTE_1:
-                    newsub = self._hash_and_save(encode_branch_node(oldnode, valnode))
-                else:
-                    newsub = self._hash_and_save(encode_branch_node(valnode, oldnode))
-                # Case 1: keypath prefixes match in the first bit, so we still need
-                # a kv node at the top
-                # (i) (ii) (iii) (iv)
-                if common_prefix_len:
-                    return self._hash_and_save(
-                        encode_kv_node(left_child[:common_prefix_len], newsub)
-                    )
-                # Case 2: keypath prefixes diverge in the first bit, so we replace the
-                # kv node with a branch node
-                # (v) (vi) (vii) (viii)
-                else:
-                    return newsub
+            return self._set_kv_node(keypath, node_hash, nodetype, left_child, right_child, value)
         # node is a branch node
         elif nodetype == BRANCH_TYPE:
             # Keypath too short
             if not keypath:
                 return node_hash
-            new_left_child, new_right_child = left_child, right_child
-            # Which child node to update? Depends on first bit in keypath
-            if keypath[:1] == BYTE_0:
-                new_left_child = self._set(left_child, keypath[1:], value)
+            return self._set_branch_node(keypath, nodetype, left_child, right_child, value)
+        raise Exception("Invariant: This shouldn't ever happen")
+
+    def _set_kv_node(self, keypath, node_hash, node_type, left_child, right_child, value):
+        # Keypath prefixes match
+        if keypath[:len(left_child)] == left_child:
+            # Recurse into child
+            subnode_hash = self._set(right_child, keypath[len(left_child):], value)
+            # If child is empty
+            if subnode_hash == BLANK_HASH:
+                return BLANK_HASH
+            subnodetype, sub_left_child, sub_right_child = parse_node(self.db[subnode_hash])
+            # If the child is a key-value node, compress together the keypaths
+            # into one node
+            if subnodetype == KV_TYPE:
+                return self._hash_and_save(
+                    encode_kv_node(left_child + sub_left_child, sub_right_child)
+                )
             else:
-                new_right_child = self._set(right_child, keypath[1:], value)
-            # Compress branch node into kv node
-            if new_left_child == BLANK_HASH or new_right_child == BLANK_HASH:
-                subnodetype, sub_left_child, sub_right_child = parse_node(
-                    self.db[
+                return self._hash_and_save(encode_kv_node(left_child, subnode_hash))
+        # Keypath prefixes don't match. Here we will be converting a key-value node
+        # of the form (k, CHILD) into a structure of one of the following forms:
+        # i.   (k[:-1], (NEWCHILD, CHILD))
+        # ii.  (k[:-1], ((k2, NEWCHILD), CHILD))
+        # iii. (k1, ((k2, CHILD), NEWCHILD))
+        # iv.  (k1, ((k2, CHILD), (k2', NEWCHILD))
+        # v.   (CHILD, NEWCHILD)
+        # vi.  ((k[1:], CHILD), (k', NEWCHILD))
+        # vii. ((k[1:], CHILD), NEWCHILD)
+        # viii (CHILD, (k[1:], NEWCHILD))
+        else:
+            common_prefix_len = get_common_prefix_length(left_child, keypath[:len(left_child)])
+            # New key-value pair can not contain empty value
+            if not value:
+                return node_hash
+            # valnode: the child node that has the new value we are adding
+            # Case 1: keypath prefixes almost match, so we are in case (i), (ii), (v), (vi)
+            if len(keypath) == common_prefix_len + 1:
+                valnode = self._hash_and_save(encode_leaf_node(value))
+            # Case 2: keypath prefixes mismatch in the middle, so we need to break
+            # the keypath in half. We are in case (iii), (iv), (vii), (viii)
+            else:
+                valnode = self._hash_and_save(
+                    encode_kv_node(
+                        keypath[common_prefix_len+1:],
+                        self._hash_and_save(encode_leaf_node(value)),
+                    )
+                )
+            # oldnode: the child node the has the old child value
+            # Case 1: (i), (iii), (v), (vi)
+            if len(left_child) == common_prefix_len + 1:
+                oldnode = right_child
+            # (ii), (iv), (vi), (viii)
+            else:
+                oldnode = self._hash_and_save(
+                    encode_kv_node(left_child[common_prefix_len+1:], right_child)
+                )
+            # Create the new branch node (because the key paths diverge, there has to
+            # be some "first bit" at which they diverge, so there must be a branch
+            # node somewhere)
+            if keypath[common_prefix_len:common_prefix_len+1] == BYTE_1:
+                newsub = self._hash_and_save(encode_branch_node(oldnode, valnode))
+            else:
+                newsub = self._hash_and_save(encode_branch_node(valnode, oldnode))
+            # Case 1: keypath prefixes match in the first bit, so we still need
+            # a kv node at the top
+            # (i) (ii) (iii) (iv)
+            if common_prefix_len:
+                return self._hash_and_save(
+                    encode_kv_node(left_child[:common_prefix_len], newsub)
+                )
+            # Case 2: keypath prefixes diverge in the first bit, so we replace the
+            # kv node with a branch node
+            # (v) (vi) (vii) (viii)
+            else:
+                return newsub
+
+    def _set_branch_node(self, keypath, node_type, left_child, right_child, value):
+        new_left_child, new_right_child = left_child, right_child
+        # Which child node to update? Depends on first bit in keypath
+        if keypath[:1] == BYTE_0:
+            new_left_child = self._set(left_child, keypath[1:], value)
+        else:
+            new_right_child = self._set(right_child, keypath[1:], value)
+        # Compress branch node into kv node
+        if new_left_child == BLANK_HASH or new_right_child == BLANK_HASH:
+            subnodetype, sub_left_child, sub_right_child = parse_node(
+                self.db[
+                    new_left_child
+                    if new_left_child != BLANK_HASH
+                    else new_right_child]
+            )
+            first_bit = BYTE_1 if new_right_child != BLANK_HASH else BYTE_0
+            # Compress (k1, (k2, NODE)) -> (k1 + k2, NODE)
+            if subnodetype == KV_TYPE:
+                return self._hash_and_save(
+                    encode_kv_node(first_bit + sub_left_child, sub_right_child)
+                )
+            # kv node pointing to a branch node
+            elif subnodetype in (BRANCH_TYPE, LEAF_TYPE):
+                return self._hash_and_save(
+                    encode_kv_node(
+                        first_bit,
                         new_left_child
                         if new_left_child != BLANK_HASH
-                        else new_right_child]
+                        else new_right_child
+                    )
                 )
-                first_bit = BYTE_1 if new_right_child != BLANK_HASH else BYTE_0
-                # Compress (k1, (k2, NODE)) -> (k1 + k2, NODE)
-                if subnodetype == KV_TYPE:
-                    return self._hash_and_save(
-                        encode_kv_node(first_bit + sub_left_child, sub_right_child)
-                    )
-                # kv node pointing to a branch node
-                elif subnodetype in (BRANCH_TYPE, LEAF_TYPE):
-                    return self._hash_and_save(
-                        encode_kv_node(
-                            first_bit,
-                            new_left_child
-                            if new_left_child != BLANK_HASH
-                            else new_right_child
-                        )
-                    )
-            else:
-                return self._hash_and_save(encode_branch_node(new_left_child, new_right_child))
-        raise Exception("Invariant: This shouldn't ever happen")
+        else:
+            return self._hash_and_save(encode_branch_node(new_left_child, new_right_child))
 
     def exists(self, key):
         validate_is_bytes(key)
