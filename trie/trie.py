@@ -399,7 +399,7 @@ class Trie(object):
         return self.exists(key)
 
 
-class BinaryTrie():
+class BinaryTrie(object):
     def __init__(self, db, root_hash=BLANK_HASH):
         self.db = db
         validate_is_bytes(root_hash)
@@ -515,7 +515,7 @@ class BinaryTrie():
                 # valnode: the child node that has the new value we are adding
                 # Case 1: keypath prefixes almost match, so we are in case (i), (ii), (v), (vi)
                 if len(keypath) == common_prefix_len + 1:
-                    valnode = encode_leaf_node(value)
+                    valnode = self._hash_and_save(encode_leaf_node(value))
                 # Case 2: keypath prefixes mismatch in the middle, so we need to break
                 # the keypath in half. We are in case (iii), (iv), (vii), (viii)
                 else:
