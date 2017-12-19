@@ -45,7 +45,7 @@ def validate_is_node(node):
 
 
 def validate_is_bin_node(node):
-    if node == BLANK_HASH or node[0] == BRANCH_TYPE or node[0] == KV_TYPE or node[0] == LEAF_TYPE:
+    if node == BLANK_HASH or node[0] in (BRANCH_TYPE, KV_TYPE, LEAF_TYPE):
         return
     else:
         raise ValidationError("Invalid Node: {0}".format(node))
