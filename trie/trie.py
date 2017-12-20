@@ -525,25 +525,25 @@ class BinaryTrie(object):
                 return self._hash_and_save(encode_kv_node(left_child, subnode_hash))
         # Keypath prefixes don't match. Here we will be converting a key-value node
         # of the form (k, CHILD) into a structure of one of the following forms:
-        # i.   (k[:-1], (NEWCHILD, CHILD))
-        # ii.  (k[:-1], ((k2, NEWCHILD), CHILD))
-        # iii. (k1, ((k2, CHILD), NEWCHILD))
-        # iv.  (k1, ((k2, CHILD), (k2', NEWCHILD))
-        # v.   (CHILD, NEWCHILD)
-        # vi.  ((k[1:], CHILD), (k', NEWCHILD))
-        # vii. ((k[1:], CHILD), NEWCHILD)
-        # viii (CHILD, (k[1:], NEWCHILD))
+        # 1.    (k[:-1], (NEWCHILD, CHILD))
+        # 2.    (k[:-1], ((k2, NEWCHILD), CHILD))
+        # 3.    (k1, ((k2, CHILD), NEWCHILD))
+        # 4.    (k1, ((k2, CHILD), (k2', NEWCHILD))
+        # 5.    (CHILD, NEWCHILD)
+        # 6.    ((k[1:], CHILD), (k', NEWCHILD))
+        # 7.    ((k[1:], CHILD), NEWCHILD)
+        # 8.    (CHILD, (k[1:], NEWCHILD))
         else:
             common_prefix_len = get_common_prefix_length(left_child, keypath[:len(left_child)])
             # New key-value pair can not contain empty value
             if not value:
                 return node_hash
             # valnode: the child node that has the new value we are adding
-            # Case 1: keypath prefixes almost match, so we are in case (i), (ii), (v), (vi)
+            # Case 1: keypath prefixes almost match, so we are in case (1), (2), (5), (6)
             if len(keypath) == common_prefix_len + 1:
                 valnode = self._hash_and_save(encode_leaf_node(value))
             # Case 2: keypath prefixes mismatch in the middle, so we need to break
-            # the keypath in half. We are in case (iii), (iv), (vii), (viii)
+            # the keypath in half. We are in case (3), (4), (7), (8)
             else:
                 valnode = self._hash_and_save(
                     encode_kv_node(
@@ -552,10 +552,10 @@ class BinaryTrie(object):
                     )
                 )
             # oldnode: the child node the has the old child value
-            # Case 1: (i), (iii), (v), (vi)
+            # Case 1: (1), (3), (5), (6)
             if len(left_child) == common_prefix_len + 1:
                 oldnode = right_child
-            # (ii), (iv), (vi), (viii)
+            # (2), (4), (6), (8)
             else:
                 oldnode = self._hash_and_save(
                     encode_kv_node(left_child[common_prefix_len+1:], right_child)
@@ -569,24 +569,25 @@ class BinaryTrie(object):
                 newsub = self._hash_and_save(encode_branch_node(valnode, oldnode))
             # Case 1: keypath prefixes match in the first bit, so we still need
             # a kv node at the top
-            # (i) (ii) (iii) (iv)
+            # (1) (2) (3) (4)
             if common_prefix_len:
                 return self._hash_and_save(
                     encode_kv_node(left_child[:common_prefix_len], newsub)
                 )
             # Case 2: keypath prefixes diverge in the first bit, so we replace the
             # kv node with a branch node
-            # (v) (vi) (vii) (viii)
+            # (5) (6) (7) (8)
             else:
                 return newsub
 
     def _set_branch_node(self, keypath, node_type, left_child, right_child, value):
-        new_left_child, new_right_child = left_child, right_child
         # Which child node to update? Depends on first bit in keypath
         if keypath[:1] == BYTE_0:
             new_left_child = self._set(left_child, keypath[1:], value)
+            new_right_child = right_child
         else:
             new_right_child = self._set(right_child, keypath[1:], value)
+            new_left_child = left_child
         # Compress branch node into kv node
         if new_left_child == BLANK_HASH or new_right_child == BLANK_HASH:
             subnodetype, sub_left_child, sub_right_child = parse_node(
@@ -615,16 +616,12 @@ class BinaryTrie(object):
             return self._hash_and_save(encode_branch_node(new_left_child, new_right_child))
 
     def exists(self, key):
-        validate_is_bytes(key)
-
         return self.get(key) != BLANK_NODE
 
     def delete(self, key):
         """
         Equals to setting the value to None
         """
-        validate_is_bytes(key)
-
         self.root_hash = self._set(self.root_hash, encode_to_bin(key), b'')
 
     #
