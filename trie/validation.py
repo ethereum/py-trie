@@ -1,9 +1,7 @@
 from trie.constants import (
     BLANK_NODE,
     BLANK_HASH,
-    LEAF_TYPE,
-    KV_TYPE,
-    BRANCH_TYPE,
+    BINARY_TRIE_NODE_TYPES
 )
 from trie.exceptions import (
     ValidationError,
@@ -45,7 +43,7 @@ def validate_is_node(node):
 
 
 def validate_is_bin_node(node):
-    if node == BLANK_HASH or node[0] in (BRANCH_TYPE, KV_TYPE, LEAF_TYPE):
+    if node == BLANK_HASH or node[0] in BINARY_TRIE_NODE_TYPES:
         return
     else:
         raise ValidationError("Invalid Node: {0}".format(node))
