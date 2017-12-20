@@ -12,6 +12,7 @@ from trie.constants import (
     NODE_TYPE_EXTENSION,
     NODE_TYPE_BRANCH,
 )
+from trie.exceptions import BadTrieProof
 from trie.validation import (
     validate_is_node,
     validate_is_bytes,
@@ -125,6 +126,21 @@ class Trie(object):
             return self._delete_branch_node(node, trie_key)
         else:
             raise Exception("Invariant: This shouldn't ever happen")
+
+    #
+    # Trie Proofs
+    #
+    @classmethod
+    def get_from_proof(cls, root_hash, key, proof):
+        trie = cls({})
+
+        for node in proof:
+            trie._persist_node(node)
+        trie.root_hash = root_hash
+        try:
+            return trie.get(key)
+        except KeyError as e:
+            raise BadTrieProof("Missing proof node with hash {}".format(e.args))
 
     #
     # Convenience
