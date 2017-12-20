@@ -1,3 +1,8 @@
+0.3.2
+--------
+
+* Add `Trie.get_from_proof` for verification of trie proofs.
+
 0.3.0
 --------
 
