@@ -600,12 +600,16 @@ class BinaryTrie(object):
             return self._hash_and_save(encode_branch_node(new_left_child, new_right_child))
 
     def exists(self, key):
+        validate_is_bytes(key)
+
         return self.get(key) != BLANK_NODE
 
     def delete(self, key):
         """
         Equals to setting the value to None
         """
+        validate_is_bytes(key)
+
         self.root_hash = self._set(self.root_hash, encode_to_bin(key), b'')
 
     #
@@ -618,6 +622,7 @@ class BinaryTrie(object):
     @root_node.setter
     def root_node(self, node):
         validate_is_bin_node(node)
+        
         self.root_hash = self._hash_and_save(node)
 
     #
