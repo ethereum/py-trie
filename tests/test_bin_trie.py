@@ -1,3 +1,5 @@
+import pytest
+
 from hypothesis import (
     given,
     strategies as st,
@@ -9,6 +11,9 @@ from trie.trie import (
 )
 from trie.constants import (
     BLANK_HASH,
+)
+from trie.exceptions import (
+    LeafNodeOverrideError,
 )
 
 
@@ -36,3 +41,44 @@ def test_bin_trie_different_order_insert(k, v, random):
         for k, v in kv_pairs:
             trie.delete(k)
         assert trie.root_hash == BLANK_HASH
+
+
+def test_bin_trie_delete_subtrie():
+    trie = BinaryTrie(db={})
+    # First test case, delete subtrie of a kv node
+    trie.set(b'\x12\x34\x56\x78', b'78')
+    trie.set(b'\x12\x34\x56\x79', b'79')
+    assert trie.get(b'\x12\x34\x56\x78') == b'78'
+    assert trie.get(b'\x12\x34\x56\x79') == b'79'
+
+    trie.delete_subtrie(b'\x12\x34\x56')
+    assert trie.get(b'\x12\x34\x56\x78') == None
+    assert trie.get(b'\x12\x34\x56\x79') == None
+    assert trie.root_hash == BLANK_HASH
+
+    # Second test case, delete subtrie of a branch node
+    trie.set(b'\x12\x34\x56\x78', b'78')
+    trie.set(b'\x12\x34\x56\xff', b'ff')
+    assert trie.get(b'\x12\x34\x56\x78') == b'78'
+    assert trie.get(b'\x12\x34\x56\xff') == b'ff'
+
+    trie.delete_subtrie(b'\x12\x34\x56')
+    assert trie.get(b'\x12\x34\x56\x78') == None
+    assert trie.get(b'\x12\x34\x56\xff') == None
+    assert trie.root_hash == BLANK_HASH
+
+    # Third test case, delete subtrie with non-exist key
+    trie.set(b'\x12\x34\x56\x78', b'78')
+    trie.set(b'\x12\x34\x56\x79', b'79')
+    assert trie.get(b'\x12\x34\x56\x78') == b'78'
+    assert trie.get(b'\x12\x34\x56\x79') == b'79'
+    root_hash_before_delete = trie.root_hash
+
+    trie.delete_subtrie(b'\x12\x34\x57')
+    assert trie.get(b'\x12\x34\x56\x78') == b'78'
+    assert trie.get(b'\x12\x34\x56\x79') == b'79'
+    assert trie.root_hash == root_hash_before_delete
+
+    # Fourth test case, delete subtrie with key too long
+    with pytest.raises(LeafNodeOverrideError):
+        trie.delete_subtrie(b'\x12\x34\x56\x78\x9a')

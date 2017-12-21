@@ -455,7 +455,7 @@ class BinaryTrie(object):
 
         self.root_hash = self._set(self.root_hash, encode_to_bin(key), value)
 
-    def _set(self, node_hash, keypath, value):
+    def _set(self, node_hash, keypath, value, if_delete_subtrie=False):
         """
         Note: keypath should be in binary array format, i.e., encoded by encode_to_bin()
         """
@@ -475,26 +475,63 @@ class BinaryTrie(object):
                 raise LeafNodeOverrideError(
                     "Existing kv pair is being effaced because"
                     " it's key is the prefix of the new key")
+            if if_delete_subtrie:
+                return BLANK_HASH
             return self._hash_and_save(encode_leaf_node(value)) if value else BLANK_HASH
         # node is a key-value node
         elif nodetype == KV_TYPE:
             # Keypath too short
             if not keypath:
+                if if_delete_subtrie:
+                    return BLANK_HASH
                 return node_hash
-            return self._set_kv_node(keypath, node_hash, nodetype, left_child, right_child, value)
+            return self._set_kv_node(
+                keypath,
+                node_hash,
+                nodetype,
+                left_child,
+                right_child,
+                value,
+                if_delete_subtrie
+            )
         # node is a branch node
         elif nodetype == BRANCH_TYPE:
             # Keypath too short
             if not keypath:
+                if if_delete_subtrie:
+                    return BLANK_HASH
                 return node_hash
-            return self._set_branch_node(keypath, nodetype, left_child, right_child, value)
+            return self._set_branch_node(
+                keypath,
+                nodetype,
+                left_child,
+                right_child,
+                value,
+                if_delete_subtrie
+            )
         raise Exception("Invariant: This shouldn't ever happen")
 
-    def _set_kv_node(self, keypath, node_hash, node_type, left_child, right_child, value):
+    def _set_kv_node(
+            self,
+            keypath,
+            node_hash,
+            node_type,
+            left_child,
+            right_child,
+            value,
+            if_delete_subtrie=False):
         # Keypath prefixes match
+        if if_delete_subtrie:
+            if len(keypath) < len(left_child) and keypath == left_child[:len(keypath)]:
+                return BLANK_HASH
         if keypath[:len(left_child)] == left_child:
             # Recurse into child
-            subnode_hash = self._set(right_child, keypath[len(left_child):], value)
+            subnode_hash = self._set(
+                right_child,
+                keypath[len(left_child):],
+                value,
+                if_delete_subtrie,
+            )
             # If child is empty
             if subnode_hash == BLANK_HASH:
                 return BLANK_HASH
@@ -520,7 +557,8 @@ class BinaryTrie(object):
         else:
             common_prefix_len = get_common_prefix_length(left_child, keypath[:len(left_child)])
             # New key-value pair can not contain empty value
-            if not value:
+            # Or one can not delete non-exist subtrie
+            if not value or if_delete_subtrie:
                 return node_hash
             # valnode: the child node that has the new value we are adding
             # Case 1: keypath prefixes almost match, so we are in case (1), (2), (5), (6)
@@ -564,13 +602,20 @@ class BinaryTrie(object):
             else:
                 return newsub
 
-    def _set_branch_node(self, keypath, node_type, left_child, right_child, value):
+    def _set_branch_node(
+            self,
+            keypath,
+            node_type,
+            left_child,
+            right_child,
+            value,
+            if_delete_subtrie=False):
         # Which child node to update? Depends on first bit in keypath
         if keypath[:1] == BYTE_0:
-            new_left_child = self._set(left_child, keypath[1:], value)
+            new_left_child = self._set(left_child, keypath[1:], value, if_delete_subtrie)
             new_right_child = right_child
         else:
-            new_right_child = self._set(right_child, keypath[1:], value)
+            new_right_child = self._set(right_child, keypath[1:], value, if_delete_subtrie)
             new_left_child = left_child
         # Compress branch node into kv node
         if new_left_child == BLANK_HASH or new_right_child == BLANK_HASH:
@@ -612,6 +657,21 @@ class BinaryTrie(object):
 
         self.root_hash = self._set(self.root_hash, encode_to_bin(key), b'')
 
+    def delete_subtrie(self, key):
+        """
+        Given a key prefix, delete the whole subtrie that starts with the key prefix.
+
+        Keyp will be encoded into binary array format first
+        """
+        validate_is_bytes(key)
+
+        self.root_hash = self._set(
+            self.root_hash,
+            encode_to_bin(key),
+            value=b'',
+            if_delete_subtrie=True,
+        )
+
     #
     # Convenience
     #
@@ -622,7 +682,7 @@ class BinaryTrie(object):
     @root_node.setter
     def root_node(self, node):
         validate_is_bin_node(node)
-        
+
         self.root_hash = self._hash_and_save(node)
 
     #
