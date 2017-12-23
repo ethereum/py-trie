@@ -7,8 +7,8 @@ from trie.utils.branches import (
     if_branch_exist,
 )
 
-
-def set_up_test_trie():
+@pytest.fixture
+def test_trie():
     trie = BinaryTrie(db={})
     trie.set(b'\x12\x34\x56\x78\x9a', b'9a')
     trie.set(b'\x12\x34\x56\x78\x9b', b'9b')
@@ -28,6 +28,5 @@ def set_up_test_trie():
         (b'\x12\x34\x56\x78', True),
     ),
 )
-def test_branch_exist(key_prefix, if_exist):
-    test_trie = set_up_test_trie()
+def test_branch_exist(test_trie, key_prefix, if_exist):
     assert if_branch_exist(test_trie.db, test_trie.root_hash, key_prefix) == if_exist
