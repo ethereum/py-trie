@@ -16,3 +16,6 @@ class BadTrieProof(Exception):
 
 class LeafNodeOverrideError(Exception):
     pass
+
+class InvalidKeyError(Exception):
+    pass
