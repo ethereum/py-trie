@@ -43,22 +43,19 @@ def test_branch_exist(test_trie, key_prefix, if_exist):
 @pytest.mark.parametrize(
     'key,key_valid',
     (
-        (b'\x12\x34', False),
+        (b'\x12\x34', True),
         (b'\x12\x34\x56\xff', True),
         (b'\x12\x34\x56\x78\x9b', True),
-        (b'\x12\x56', False),
+        (b'\x12\x56', True),
         (b'\x12\x34\x56\xff\xff', False),
+        (b'', False),
     ),
 )
 def test_branch(test_trie, key, key_valid):
     if key_valid:
-        lf_branch = get_branch(test_trie.db, test_trie.root_hash, key)
-        assert if_branch_valid(lf_branch, test_trie.root_hash, key, test_trie.get(key))
         branch = get_branch(test_trie.db, test_trie.root_hash, key)
         assert if_branch_valid(branch, test_trie.root_hash, key, test_trie.get(key))
     else:
-        with pytest.raises(InvalidKeyError):
-            get_branch(test_trie.db, test_trie.root_hash, key)
         with pytest.raises(InvalidKeyError):
             get_branch(test_trie.db, test_trie.root_hash, key)
 
@@ -154,7 +151,12 @@ def test_get_trie_nodes(test_trie, root, nodes):
                 b'\x029b',
             ]
         ),
-        (32 * b'\x00', []),
+        (
+            32 * b'\x00',
+            [
+                b'\x00\x80\x124V\xde\xb5\x8f\xdb\x98\xc0\xe8\xed\x10\xde\x84\x89\xe1\xc3\x90\xbeoi7y$sJ\x07\xa1h\xf5t\x1c\xac\r+',  # noqa: E501 
+            ]
+        ),
     ),
 )
 def test_get_witness(test_trie, key, nodes):
