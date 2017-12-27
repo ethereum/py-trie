@@ -98,7 +98,7 @@ def _get_branch(db, node_hash, keypath):
                 keypath[len(left_child):]
             )
         else:
-            raise InvalidKeyError("Key does not exist")
+            yield node
     elif nodetype == BRANCH_TYPE:
         if not keypath:
             raise InvalidKeyError("Key too short")
@@ -178,7 +178,7 @@ def _get_witness(db, node_hash, keypath):
             yield node
             yield from _get_witness(db, right_child, keypath[len(left_child):])
         else:
-            raise InvalidKeyError("Key does not exist")
+            yield node
     elif nodetype == BRANCH_TYPE:
         if keypath[:1] == BYTE_0:
             yield node
