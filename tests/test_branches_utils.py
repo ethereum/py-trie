@@ -10,7 +10,7 @@ from trie.exceptions import (
 from trie.branches import (
     if_branch_exist,
     get_branch,
-    verify_branch,
+    if_branch_valid,
     get_trie_nodes,
     get_witness,
 )
@@ -53,9 +53,9 @@ def test_branch_exist(test_trie, key_prefix, if_exist):
 def test_branch(test_trie, key, key_valid):
     if key_valid:
         lf_branch = get_branch(test_trie.db, test_trie.root_hash, key)
-        assert verify_branch(lf_branch, test_trie.root_hash, key, test_trie.get(key))
+        assert if_branch_valid(lf_branch, test_trie.root_hash, key, test_trie.get(key))
         branch = get_branch(test_trie.db, test_trie.root_hash, key)
-        assert verify_branch(branch, test_trie.root_hash, key, test_trie.get(key))
+        assert if_branch_valid(branch, test_trie.root_hash, key, test_trie.get(key))
     else:
         with pytest.raises(InvalidKeyError):
             get_branch(test_trie.db, test_trie.root_hash, key)
