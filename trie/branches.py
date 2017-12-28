@@ -74,7 +74,7 @@ def get_branch(db, root_hash, key):
     """
     validate_is_bytes(key)
 
-    return list(_get_branch(db, root_hash, encode_to_bin(key)))
+    return tuple(_get_branch(db, root_hash, encode_to_bin(key)))
 
 
 def _get_branch(db, node_hash, keypath):
@@ -130,6 +130,10 @@ def get_trie_nodes(db, node_hash):
     """
     Get full trie of a given root node
     """
+    return tuple(_get_trie_nodes(db, node_hash))
+
+
+def _get_trie_nodes(db, node_hash):
     if node_hash in db:
         node = db[node_hash]
     else:
