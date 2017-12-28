@@ -27,17 +27,17 @@ from trie.utils.nodes import (
 )
 
 
-def if_branch_exist(db, root_hash, key_prefix):
+def check_if_branch_exist(db, root_hash, key_prefix):
     """
     Given a key prefix, return whether this prefix is
     the prefix of an existing key in the trie.
     """
     validate_is_bytes(key_prefix)
 
-    return _if_branch_exist(db, root_hash, encode_to_bin(key_prefix))
+    return _check_if_branch_exist(db, root_hash, encode_to_bin(key_prefix))
 
 
-def _if_branch_exist(db, node_hash, key_prefix):
+def _check_if_branch_exist(db, node_hash, key_prefix):
     # Empty trie
     if node_hash == BLANK_HASH:
         return False
@@ -55,15 +55,15 @@ def _if_branch_exist(db, node_hash, key_prefix):
             return False
         else:
             if key_prefix[:len(left_child)] == left_child:
-                return _if_branch_exist(db, right_child, key_prefix[len(left_child):])
+                return _check_if_branch_exist(db, right_child, key_prefix[len(left_child):])
             return False
     elif nodetype == BRANCH_TYPE:
         if not key_prefix:
             return True
         if key_prefix[:1] == BYTE_0:
-            return _if_branch_exist(db, left_child, key_prefix[1:])
+            return _check_if_branch_exist(db, left_child, key_prefix[1:])
         else:
-            return _if_branch_exist(db, right_child, key_prefix[1:])
+            return _check_if_branch_exist(db, right_child, key_prefix[1:])
     else:
         raise Exception("Invariant: unreachable code path")
 
@@ -113,9 +113,11 @@ def _get_branch(db, node_hash, keypath):
 
 
 def if_branch_valid(branch, root_hash, key, value):
-    # value being None means it's not in the trie
+    # value being None means the key is not in the trie
     if value is not None:
         validate_is_bytes(key)
+    # branch must not be empty
+    assert branch
     for node in branch:
         validate_is_bin_node(node)
 
