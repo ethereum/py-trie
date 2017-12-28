@@ -8,7 +8,7 @@ from trie.exceptions import (
 )
 
 from trie.branches import (
-    if_branch_exist,
+    check_if_branch_exist,
     get_branch,
     if_branch_valid,
     get_trie_nodes,
@@ -37,7 +37,7 @@ def test_trie():
     ),
 )
 def test_branch_exist(test_trie, key_prefix, if_exist):
-    assert if_branch_exist(test_trie.db, test_trie.root_hash, key_prefix) == if_exist
+    assert check_if_branch_exist(test_trie.db, test_trie.root_hash, key_prefix) == if_exist
 
 
 @pytest.mark.parametrize(
