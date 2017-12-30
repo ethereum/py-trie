@@ -425,7 +425,7 @@ class BinaryTrie(object):
         """
         Fetches the value with a given keypath from the given node.
 
-        Keyp will be encoded into binary array format first
+        Key will be encoded into binary array format first.
         """
         validate_is_bytes(key)
 
@@ -464,7 +464,7 @@ class BinaryTrie(object):
         """
         Sets the value at the given keypath from the given node
 
-        Keyp will be encoded into binary array format first
+        Key will be encoded into binary array format first.
         """
         validate_is_bytes(key)
         validate_is_bytes(value)
@@ -473,6 +473,9 @@ class BinaryTrie(object):
 
     def _set(self, node_hash, keypath, value, if_delete_subtrie=False):
         """
+        If if_delete_subtrie is set to True, what it will do is that it take in a keypath
+        and traverse til the end of keypath, then delete the whole subtrie of that node.
+
         Note: keypath should be in binary array format, i.e., encoded by encode_to_bin()
         """
         # Empty trie
@@ -677,7 +680,9 @@ class BinaryTrie(object):
         """
         Given a key prefix, delete the whole subtrie that starts with the key prefix.
 
-        Keyp will be encoded into binary array format first
+        Key will be encoded into binary array format first.
+
+        It will call `_set` with `if_delete_subtrie` set to True.
         """
         validate_is_bytes(key)
 
