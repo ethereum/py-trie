@@ -1,19 +1,23 @@
 import pkg_resources
-import sys
 import warnings
 
-from .trie import (  # noqa: F401
-    Trie,
+from .binary import (  # noqa: F401
     BinaryTrie,
+)
+from .hexary import (  # noqa: F401
+    HexaryTrie,
 )
 
 
-if sys.version_info.major < 3:
-    warnings.simplefilter('always', DeprecationWarning)
-    warnings.warn(DeprecationWarning(
-        "The `trie` library is dropping support for Python 2.  Upgrade to Python 3."
-    ))
-    warnings.resetwarnings()
+class Trie(HexaryTrie):
+    def __init__(self, *args, **kwargs):
+        warnings.simplefilter('always', DeprecationWarning)
+        warnings.warn(DeprecationWarning(
+            "The `trie.Trie` class has been renamed to `trie.HexaryTrie`. "
+            "Please update your code as the `trie.Trie` class will be removed in "
+            "a subsequent release"
+        ))
+        warnings.resetwarnings()
 
 
 __version__ = pkg_resources.get_distribution("trie").version
