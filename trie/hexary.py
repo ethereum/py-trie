@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import itertools
 
 import rlp
@@ -11,13 +9,13 @@ from trie.constants import (
     NODE_TYPE_LEAF,
     NODE_TYPE_EXTENSION,
     NODE_TYPE_BRANCH,
+    BLANK_HASH,
 )
 from trie.exceptions import BadTrieProof
 from trie.validation import (
     validate_is_node,
     validate_is_bytes,
 )
-
 from trie.utils.sha3 import (
     keccak,
 )
@@ -41,9 +39,10 @@ from trie.utils.nodes import (
 
 # sanity check
 assert BLANK_NODE_HASH == keccak(rlp.encode(b''))
+assert BLANK_HASH == keccak(b'')
 
 
-class Trie(object):
+class HexaryTrie(object):
     db = None
     root_hash = None
 

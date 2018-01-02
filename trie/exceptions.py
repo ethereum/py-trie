@@ -12,3 +12,11 @@ class ValidationError(Exception):
 
 class BadTrieProof(Exception):
     pass
+
+
+class LeafNodeOverrideError(Exception):
+    pass
+
+
+class InvalidKeyError(Exception):
+    pass
