@@ -1,4 +1,4 @@
-from trie.trie import (
+from trie.binary import (
     BinaryTrie,
 )
 from trie.exceptions import (

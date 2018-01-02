@@ -11,8 +11,8 @@ from eth_utils import (
     force_bytes,
 )
 
-from trie import (
-    Trie,
+from trie.hexary import (
+    HexaryTrie,
 )
 
 
@@ -88,7 +88,7 @@ def test_trie_using_fixtures(fixture_name, fixture):
 
     for kv_permutation in itertools.islice(itertools.permutations(keys_and_values), 100):
         print("in it")
-        trie = Trie(db={})
+        trie = HexaryTrie(db={})
 
         for key, value in kv_permutation:
             if value is None:

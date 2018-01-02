@@ -6,7 +6,7 @@ from hypothesis import (
     settings,
 )
 
-from trie.trie import (
+from trie.binary import (
     BinaryTrie,
 )
 from trie.constants import (

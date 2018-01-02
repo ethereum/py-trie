@@ -79,7 +79,7 @@ new version explicitly, like `bumpversion --new-version 4.0.0-alpha.1 devnum`
 
 ```python
 >>> from trie import Trie
->>> t = Trie(db={})
+>>> t = HexaryTrie(db={})
 >>> t.root_hash
 b'V\xe8\x1f\x17\x1b\xccU\xa6\xff\x83E\xe6\x92\xc0\xf8n[H\xe0\x1b\x99l\xad\xc0\x01b/\xb5\xe3c\xb4!'
 >>> t.set(b'my-key', b'some-value')
@@ -98,8 +98,8 @@ False
 You can also use it like a dictionary.
 
 ```python
->>> from trie import Trie
->>> t = Trie(db={})
+>>> from trie import HexaryTrie
+>>> t = HexaryTrie(db={})
 >>> t.root_hash
 b'V\xe8\x1f\x17\x1b\xccU\xa6\xff\x83E\xe6\x92\xc0\xf8n[H\xe0\x1b\x99l\xad\xc0\x01b/\xb5\xe3c\xb4!'
 >>> t[b'my-key'] = b'some-value'
