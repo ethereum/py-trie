@@ -1,3 +1,14 @@
+1.0.1
+--------
+
+* Fix broken deprecated `Trie` class.
+
+1.0.0
+--------
+
+* Rename `Trie` to `HexaryTrie`
+* Add new `BinaryTrie` class
+
 0.3.2
 --------
 
