@@ -18,6 +18,7 @@ class Trie(HexaryTrie):
             "a subsequent release"
         ))
         warnings.resetwarnings()
+        super().__init__(*args, **kwargs)
 
 
 __version__ = pkg_resources.get_distribution("trie").version
