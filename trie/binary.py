@@ -64,6 +64,8 @@ class BinaryTrie(object):
         nodetype, left_child, right_child = parse_node(self.db[node_hash])
         # Key-value node descend
         if nodetype == LEAF_TYPE:
+            if keypath:
+                return None
             return right_child
         elif nodetype == KV_TYPE:
             # Keypath too short
