@@ -123,7 +123,7 @@ False
 >>>     check_if_branch_exist,
 >>>     get_branch,
 >>>     if_branch_valid,
->>>     get_witness,
+>>>     get_witness_for_key_prefix,
 >>> )
 >>> t = BinaryTrie(db={})
 >>> t.root_hash
@@ -186,10 +186,10 @@ True
 >>> b = get_branch(t.db, t.root_hash, b'key2')
 >>> if_branch_valid(b, t.root_hash, b'key1', v) # KeyError
 >>> if_branch_valid([], t.root_hash, b'key1', v) # AssertionError
->>> # get_witness function
->>> get_witness(t.db, t.root_hash, b'key1') # equivalent to `get_branch(t.db, t.root_hash, b'key1')`
+>>> # get_witness_for_key_prefix function
+>>> get_witness_for_key_prefix(t.db, t.root_hash, b'key1') # equivalent to `get_branch(t.db, t.root_hash, b'key1')`
 (b'\x00\x82\x1a\xd9^L|38J\xed\xf31S\xb2\x97A\x8dy\x91RJ\x92\xf5ZC\xb4\x99T&;!\x9f\xa9!\xa2\xfe;', b"\x01*\xaccxH\x89\x08}\x93|\xda\xb9\r\x9b\x82\x8b\xb2Y\xbc\x10\xb9\x88\xf40\xef\xed\x8b'\x13\xbc\xa5\xccYGb\xc2\x8db\x88lPs@)\x86v\xd7B\xf7\xd3X\x93\xc9\xf0\xfd\xae\xe0`j#\x0b\xca;\xf8", b'\x00\x11\x8aEL3\x839E\xbd\xc4G\xd1xj\x0fxWu\xcb\xf6\xf3\xf2\x8e7!M\xca\x1c/\xd7\x7f\xed\xc6', b'\x02value1')
->>> get_witness(t.db, t.root_hash, b'key') # this will include additional nodes of b'key2'
+>>> get_witness_for_key_prefix(t.db, t.root_hash, b'key') # this will include additional nodes of b'key2'
 (b'\x00\x82\x1a\xd9^L|38J\xed\xf31S\xb2\x97A\x8dy\x91RJ\x92\xf5ZC\xb4\x99T&;!\x9f\xa9!\xa2\xfe;', b"\x01*\xaccxH\x89\x08}\x93|\xda\xb9\r\x9b\x82\x8b\xb2Y\xbc\x10\xb9\x88\xf40\xef\xed\x8b'\x13\xbc\xa5\xccYGb\xc2\x8db\x88lPs@)\x86v\xd7B\xf7\xd3X\x93\xc9\xf0\xfd\xae\xe0`j#\x0b\xca;\xf8", b'\x00\x11\x8aEL3\x839E\xbd\xc4G\xd1xj\x0fxWu\xcb\xf6\xf3\xf2\x8e7!M\xca\x1c/\xd7\x7f\xed\xc6', b'\x02value1', b'\x00\x10O\xa9\x0b\x1c!_`<\xb5^\x98D\x89\x17\x148\xac\xda&\xb3P\xf6\x06[\x1b9\xc09\xbas\x85\xf5', b'\x02value2')
->>> get_witness(t.db, t.root_hash, b'') # this will return the whole trie
+>>> get_witness_for_key_prefix(t.db, t.root_hash, b'') # this will return the whole trie
 ```

@@ -152,7 +152,7 @@ def _get_trie_nodes(db, node_hash):
         raise Exception("Invariant: unreachable code path")
 
 
-def get_witness(db, node_hash, key):
+def get_witness_for_key_prefix(db, node_hash, key):
     """
     Get all witness given a keypath prefix.
     Include
@@ -162,10 +162,10 @@ def get_witness(db, node_hash, key):
     """
     validate_is_bytes(key)
 
-    return tuple(_get_witness(db, node_hash, encode_to_bin(key)))
+    return tuple(_get_witness_for_key_prefix(db, node_hash, encode_to_bin(key)))
 
 
-def _get_witness(db, node_hash, keypath):
+def _get_witness_for_key_prefix(db, node_hash, keypath):
     if not keypath:
         yield from get_trie_nodes(db, node_hash)
     if node_hash in db:
@@ -182,15 +182,15 @@ def _get_witness(db, node_hash, keypath):
             yield from get_trie_nodes(db, right_child)
         elif keypath[:len(left_child)] == left_child:
             yield node
-            yield from _get_witness(db, right_child, keypath[len(left_child):])
+            yield from _get_witness_for_key_prefix(db, right_child, keypath[len(left_child):])
         else:
             yield node
     elif nodetype == BRANCH_TYPE:
         if keypath[:1] == BYTE_0:
             yield node
-            yield from _get_witness(db, left_child, keypath[1:])
+            yield from _get_witness_for_key_prefix(db, left_child, keypath[1:])
         else:
             yield node
-            yield from _get_witness(db, right_child, keypath[1:])
+            yield from _get_witness_for_key_prefix(db, right_child, keypath[1:])
     else:
         raise Exception("Invariant: unreachable code path")
