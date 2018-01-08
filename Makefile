@@ -25,6 +25,7 @@ clean-pyc:
 
 lint:
 	flake8 trie
+	flake8 tests --exclude=""
 
 test:
 	py.test --tb native tests

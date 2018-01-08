@@ -107,7 +107,8 @@ def test_encode_binary_trie_kv_node(keypath, node, expected_output):
         (b'\x01' * 33, b'\x01' * 32, None),
     ),
 )
-def test_encode_binary_trie_branch_node(left_child_node_hash, right_child_node_hash, expected_output):
+def test_encode_binary_trie_branch_node(
+        left_child_node_hash, right_child_node_hash, expected_output):
     if expected_output:
         assert expected_output == encode_branch_node(left_child_node_hash, right_child_node_hash)
     else:
