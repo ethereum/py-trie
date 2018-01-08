@@ -17,7 +17,7 @@ def test_round_trip_bin_encoding(value):
     assert result == value
 
 
-@given(value=st.lists(elements=st.integers(0,1), min_size=0, max_size=1024))
+@given(value=st.lists(elements=st.integers(0, 1), min_size=0, max_size=1024))
 def test_round_trip_bin_keypath_encoding(value):
     value_as_bin_keypath = encode_from_bin_keypath(bytes(value))
     result = decode_to_bin_keypath(value_as_bin_keypath)

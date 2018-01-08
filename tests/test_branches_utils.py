@@ -15,6 +15,7 @@ from trie.branches import (
     get_witness,
 )
 
+
 @pytest.fixture
 def test_trie():
     trie = BinaryTrie(db={})
@@ -94,7 +95,7 @@ def test_branch(test_trie, key, key_valid):
                 b'\x029b',
             ]
         ),
-        (b"\xc5\xd2F\x01\x86\xf7#<\x92~}\xb2\xdc\xc7\x03\xc0\xe5\x00\xb6S\xca\x82';{\xfa\xd8\x04]\x85\xa4p", []),
+        (b"\xc5\xd2F\x01\x86\xf7#<\x92~}\xb2\xdc\xc7\x03\xc0\xe5\x00\xb6S\xca\x82';{\xfa\xd8\x04]\x85\xa4p", []),  # noqa: E501
         (32 * b'\x00', []),
     ),
 )

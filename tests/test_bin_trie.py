@@ -18,8 +18,8 @@ from trie.exceptions import (
 
 
 @given(k=st.lists(st.binary(min_size=32, max_size=32), min_size=100, max_size=100, unique=True),
-    v=st.lists(st.binary(min_size=1), min_size=100, max_size=100),
-    random=st.randoms())
+       v=st.lists(st.binary(min_size=1), min_size=100, max_size=100),
+       random=st.randoms())
 @settings(max_examples=10)
 def test_bin_trie_different_order_insert(k, v, random):
     kv_pairs = list(zip(k, v))
@@ -49,7 +49,7 @@ def test_bin_trie_different_order_insert(k, v, random):
         ((b'\x12\x34\x56\x78', b'78'), (b'\x12\x34\x56\x79', b'79'), b'\x12\x34\x56', True, False),
         ((b'\x12\x34\x56\x78', b'78'), (b'\x12\x34\x56\xff', b'ff'), b'\x12\x34\x56', True, False),
         ((b'\x12\x34\x56\x78', b'78'), (b'\x12\x34\x56\x79', b'79'), b'\x12\x34\x57', False, False),
-        ((b'\x12\x34\x56\x78', b'78'), (b'\x12\x34\x56\x79', b'79'), b'\x12\x34\x56\x78\x9a', False, True),
+        ((b'\x12\x34\x56\x78', b'78'), (b'\x12\x34\x56\x79', b'79'), b'\x12\x34\x56\x78\x9a', False, True),  # noqa: E501
     ),
 )
 def test_bin_trie_delete_subtrie(kv1, kv2, key_to_be_deleted, will_delete, will_rasie_error):
@@ -62,8 +62,8 @@ def test_bin_trie_delete_subtrie(kv1, kv2, key_to_be_deleted, will_delete, will_
 
     if will_delete:
         trie.delete_subtrie(key_to_be_deleted)
-        assert trie.get(kv1[0]) == None
-        assert trie.get(kv2[0]) == None
+        assert trie.get(kv1[0]) is None
+        assert trie.get(kv2[0]) is None
         assert trie.root_hash == BLANK_HASH
     else:
         if will_rasie_error:
