@@ -25,13 +25,14 @@ from trie.utils.nibbles import (
     encode_nibbles,
 )
 from trie.utils.nodes import (
+    decode_node,
     get_node_type,
     extract_key,
     compute_leaf_key,
     compute_extension_key,
+    is_blank_node,
     is_extension_node,
     is_leaf_node,
-    is_blank_node,
     consume_common_prefix,
     key_starts_with,
 )
@@ -171,7 +172,7 @@ class HexaryTrie(object):
             encoded_node = node_hash
         else:
             encoded_node = self.db[node_hash]
-        node = self._decode_node(encoded_node)
+        node = decode_node(encoded_node)
 
         return node
 
@@ -186,14 +187,6 @@ class HexaryTrie(object):
         encoded_node_hash = keccak(encoded_node)
         self.db[encoded_node_hash] = encoded_node
         return encoded_node_hash
-
-    def _decode_node(self, encoded_node_or_hash):
-        if encoded_node_or_hash == BLANK_NODE:
-            return BLANK_NODE
-        elif isinstance(encoded_node_or_hash, list):
-            return encoded_node_or_hash
-        else:
-            return rlp.decode(encoded_node_or_hash)
 
     #
     # Node Operation Helpers

@@ -20,3 +20,11 @@ class LeafNodeOverrideError(Exception):
 
 class InvalidKeyError(Exception):
     pass
+
+
+class SyncRequestAlreadyProcessed(Exception):
+    pass
+
+
+class UnexpectedNodeType(Exception):
+    pass

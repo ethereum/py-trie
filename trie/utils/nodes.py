@@ -1,3 +1,5 @@
+import rlp
+
 from trie.constants import (
     NODE_TYPE_BLANK,
     NODE_TYPE_LEAF,
@@ -23,7 +25,6 @@ from trie.validation import (
     validate_length,
     validate_is_bytes,
 )
-
 from .nibbles import (
     decode_nibbles,
     encode_nibbles,
@@ -71,6 +72,15 @@ def is_extension_node(node):
 
 def is_branch_node(node):
     return len(node) == 17
+
+
+def decode_node(encoded_node_or_hash):
+    if encoded_node_or_hash == BLANK_NODE:
+        return BLANK_NODE
+    elif isinstance(encoded_node_or_hash, list):
+        return encoded_node_or_hash
+    else:
+        return rlp.decode(encoded_node_or_hash)
 
 
 def extract_key(node):
