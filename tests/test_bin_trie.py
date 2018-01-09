@@ -91,8 +91,8 @@ def test_bin_trie_invalid_key(invalide_key, if_error):
     trie = BinaryTrie(db={})
     trie.set(b'\x12\x34\x56\x78', b'78')
     trie.set(b'\x12\x34\x56\x79', b'79')
-    
-    assert trie.get(invalide_key) == None
+
+    assert trie.get(invalide_key) is None
     if if_error:
         with pytest.raises(LeafNodeOverrideError):
             trie.delete(invalide_key)
