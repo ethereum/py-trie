@@ -75,3 +75,28 @@ def test_bin_trie_delete_subtrie(kv1, kv2, key_to_be_deleted, will_delete, will_
             assert trie.get(kv1[0]) == kv1[1]
             assert trie.get(kv2[0]) == kv2[1]
             assert trie.root_hash == root_hash_before_delete
+
+
+@pytest.mark.parametrize(
+    'invalide_key,if_error',
+    (
+        (b'\x12\x34\x56', False),
+        (b'\x12\x34\x56\x77', False),
+        (b'\x12\x34\x56\x78\x9a', True),
+        (b'\x12\x34\x56\x79\xab', True),
+        (b'\xab\xcd\xef', False),
+    ),
+)
+def test_bin_trie_invalid_key(invalide_key, if_error):
+    trie = BinaryTrie(db={})
+    trie.set(b'\x12\x34\x56\x78', b'78')
+    trie.set(b'\x12\x34\x56\x79', b'79')
+    
+    assert trie.get(invalide_key) == None
+    if if_error:
+        with pytest.raises(LeafNodeOverrideError):
+            trie.delete(invalide_key)
+    else:
+        previous_root_hash = trie.root_hash
+        trie.delete(invalide_key)
+        assert previous_root_hash == trie.root_hash

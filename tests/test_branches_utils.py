@@ -12,7 +12,7 @@ from trie.branches import (
     get_branch,
     if_branch_valid,
     get_trie_nodes,
-    get_witness,
+    get_witness_for_key_prefix,
 )
 
 
@@ -160,9 +160,9 @@ def test_get_trie_nodes(test_trie, root, nodes):
         ),
     ),
 )
-def test_get_witness(test_trie, key, nodes):
+def test_get_witness_for_key_prefix(test_trie, key, nodes):
     if nodes:
-        assert set(nodes) == set(get_witness(test_trie.db, test_trie.root_hash, key))
+        assert set(nodes) == set(get_witness_for_key_prefix(test_trie.db, test_trie.root_hash, key))
     else:
         with pytest.raises(InvalidKeyError):
-            get_witness(test_trie.db, test_trie.root_hash, key)
+            get_witness_for_key_prefix(test_trie.db, test_trie.root_hash, key)
