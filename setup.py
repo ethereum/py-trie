@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 setup(
     name='trie',
     # *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
-    version='1.0.1',
+    version='1.1.0',
     description="""Python implementation of the Ethereum Trie structure""",
     long_description_markdown_filename='README.md',
     author='Piper Merriam',
