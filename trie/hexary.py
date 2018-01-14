@@ -11,7 +11,9 @@ from trie.constants import (
     NODE_TYPE_BRANCH,
     BLANK_HASH,
 )
-from trie.exceptions import BadTrieProof
+from trie.exceptions import (
+    BadTrieProof,
+)
 from trie.validation import (
     validate_is_node,
     validate_is_bytes,
@@ -60,7 +62,7 @@ class HexaryTrie(object):
         validate_is_bytes(key)
 
         trie_key = bytes_to_nibbles(key)
-        root_node = self._get_node(self.root_hash)
+        root_node = self.get_node(self.root_hash)
 
         return self._get(root_node, trie_key)
 
@@ -81,7 +83,7 @@ class HexaryTrie(object):
         validate_is_bytes(value)
 
         trie_key = bytes_to_nibbles(key)
-        root_node = self._get_node(self.root_hash)
+        root_node = self.get_node(self.root_hash)
 
         new_node = self._set(root_node, trie_key, value)
         self._set_root_node(new_node)
@@ -110,7 +112,7 @@ class HexaryTrie(object):
         validate_is_bytes(key)
 
         trie_key = bytes_to_nibbles(key)
-        root_node = self._get_node(self.root_hash)
+        root_node = self.get_node(self.root_hash)
 
         new_node = self._delete(root_node, trie_key)
         self._set_root_node(new_node)
@@ -147,7 +149,7 @@ class HexaryTrie(object):
     #
     @property
     def root_node(self):
-        return self._get_node(self.root_hash)
+        return self.get_node(self.root_hash)
 
     @root_node.setter
     def root_node(self, value):
@@ -162,7 +164,7 @@ class HexaryTrie(object):
         self.root_hash = keccak(encoded_root_node)
         self.db[self.root_hash] = encoded_root_node
 
-    def _get_node(self, node_hash):
+    def get_node(self, node_hash):
         if node_hash == BLANK_NODE:
             return BLANK_NODE
         elif node_hash == BLANK_NODE_HASH:
@@ -208,7 +210,7 @@ class HexaryTrie(object):
             in enumerate(node[:16])
             if v
         )
-        sub_node = self._get_node(sub_node_hash)
+        sub_node = self.get_node(sub_node_hash)
         sub_node_type = get_node_type(sub_node)
 
         if sub_node_type in {NODE_TYPE_LEAF, NODE_TYPE_EXTENSION}:
@@ -231,7 +233,7 @@ class HexaryTrie(object):
             node[-1] = BLANK_NODE
             return self._normalize_branch_node(node)
 
-        node_to_delete = self._get_node(node[trie_key[0]])
+        node_to_delete = self.get_node(node[trie_key[0]])
 
         sub_node = self._delete(node_to_delete, trie_key[1:])
         encoded_sub_node = self._persist_node(sub_node)
@@ -261,7 +263,7 @@ class HexaryTrie(object):
                 return node
 
         sub_node_key = trie_key[len(current_key):]
-        sub_node = self._get_node(node[1])
+        sub_node = self.get_node(node[1])
 
         new_sub_node = self._delete(sub_node, sub_node_key)
         encoded_new_sub_node = self._persist_node(new_sub_node)
@@ -284,7 +286,7 @@ class HexaryTrie(object):
 
     def _set_branch_node(self, node, trie_key, value):
         if trie_key:
-            sub_node = self._get_node(node[trie_key[0]])
+            sub_node = self.get_node(node[trie_key[0]])
 
             new_node = self._set(sub_node, trie_key[1:], value)
             node[trie_key[0]] = self._persist_node(new_node)
@@ -304,12 +306,12 @@ class HexaryTrie(object):
             if is_leaf_node(node):
                 return [node[0], value]
             else:
-                sub_node = self._get_node(node[1])
+                sub_node = self.get_node(node[1])
                 # TODO: this needs to cleanup old storage.
                 new_node = self._set(sub_node, trie_key_remainder, value)
         elif not current_key_remainder:
             if is_extension:
-                sub_node = self._get_node(node[1])
+                sub_node = self.get_node(node[1])
                 # TODO: this needs to cleanup old storage.
                 new_node = self._set(sub_node, trie_key_remainder, value)
             else:
@@ -353,7 +355,7 @@ class HexaryTrie(object):
         if not trie_key:
             return node[16]
         else:
-            sub_node = self._get_node(node[trie_key[0]])
+            sub_node = self.get_node(node[trie_key[0]])
             return self._get(sub_node, trie_key[1:])
 
     def _get_kv_node(self, node, trie_key):
@@ -367,7 +369,7 @@ class HexaryTrie(object):
                 return BLANK_NODE
         elif node_type == NODE_TYPE_EXTENSION:
             if key_starts_with(trie_key, current_key):
-                sub_node = self._get_node(node[1])
+                sub_node = self.get_node(node[1])
                 return self._get(sub_node, trie_key[len(current_key):])
             else:
                 return BLANK_NODE

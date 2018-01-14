@@ -11,9 +11,7 @@ from eth_utils import (
     force_bytes,
 )
 
-from trie.hexary import (
-    HexaryTrie,
-)
+from trie import HexaryTrie
 
 
 def normalize_fixture(fixture):
