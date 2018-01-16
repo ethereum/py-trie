@@ -66,6 +66,10 @@ class HexaryTrieSync:
         """
         pass
 
+    @property
+    def has_pending_requests(self):
+        return len(self.requests) > 0
+
     def next_batch(self, n=1):
         """Return the next requests that should be dispatched."""
         if len(self.queue) == 0:
