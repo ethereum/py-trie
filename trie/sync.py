@@ -80,24 +80,25 @@ class HexaryTrieSync:
 
     def schedule(self, node_key, parent, depth, leaf_callback, is_raw=False):
         """Schedule a request for the node with the given key."""
-        request = SyncRequest(node_key, parent, depth, leaf_callback, is_raw)
-        if request.node_key in self.db:
-            self.logger.debug("Node %s already exists in db" % encode_hex(request.node_key))
+        if node_key in self.db:
+            self.logger.debug("Node %s already exists in db" % encode_hex(node_key))
             return
 
-        for ancestor in request.parents:
-            ancestor.dependencies += 1
+        if parent is not None:
+            parent.dependencies += 1
 
-        existing = self.requests.get(request.node_key)
+        existing = self.requests.get(node_key)
         if existing is not None:
             self.logger.debug(
-                "Already requesting %s, will just update parents list" % request)
-            existing.parents.extend(request.parents)
+                "Already requesting %s, will just update parents list" % node_key)
+            existing.parents.append(parent)
             return
 
+        request = SyncRequest(node_key, parent, depth, leaf_callback, is_raw)
         # Requests get added to both self.queue and self.requests; the former is used to keep
         # track which requests should be sent next, and the latter is used to avoid scheduling a
         # request for a given node multiple times.
+        self.logger.debug("Scheduling retrieval of %s" % encode_hex(request.node_key))
         self.requests[request.node_key] = request
         bisect.insort(self.queue, request)
 
