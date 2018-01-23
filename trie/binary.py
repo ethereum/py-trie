@@ -117,8 +117,8 @@ class BinaryTrie(object):
             # Keypath must match, there should be no remaining keypath
             if keypath:
                 raise NodeOverrideError(
-                    "Existing kv pair is being effaced because"
-                    " it's key is the prefix of the new key")
+                    "Fail to set the value because the prefix of it's key"
+                    " is the same as existing key")
             if if_delete_subtrie:
                 return BLANK_HASH
             return self._hash_and_save(encode_leaf_node(value)) if value else BLANK_HASH
@@ -211,6 +211,10 @@ class BinaryTrie(object):
             # Case 2: keypath prefixes mismatch in the middle, so we need to break
             # the keypath in half. We are in case (3), (4), (7), (8)
             else:
+                if len(keypath[common_prefix_len + 1:]) == 0:
+                    raise NodeOverrideError(
+                        "Fail to set the value because it's key"
+                        " is the prefix of other existing key")
                 valnode = self._hash_and_save(
                     encode_kv_node(
                         keypath[common_prefix_len + 1:],
@@ -256,6 +260,10 @@ class BinaryTrie(object):
             if_delete_subtrie=False):
         # Which child node to update? Depends on first bit in keypath
         if keypath[:1] == BYTE_0:
+            if len(keypath[1:]) == 0:
+                raise NodeOverrideError(
+                    "Fail to set the value because it's key"
+                    " is the prefix of other existing key")
             new_left_child = self._set(left_child, keypath[1:], value, if_delete_subtrie)
             new_right_child = right_child
         else:
