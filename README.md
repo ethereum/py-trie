@@ -115,6 +115,11 @@ True
 False
 ```
 
+## BinaryTrie
+- Note: One drawback of Binary Trie is that **one key can not be the prefix of another key**. For example,
+if you already set the value `value1` with key `key1`, you can not set another value with key `key` or `key11`
+and the like.
+
 ### BinaryTrie branch and witness helper functions
 
 ```python
