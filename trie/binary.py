@@ -15,7 +15,7 @@ from trie.validation import (
     validate_is_bin_node,
 )
 from trie.exceptions import (
-    LeafNodeOverrideError,
+    NodeOverrideError,
 )
 
 from trie.utils.sha3 import (
@@ -116,7 +116,7 @@ class BinaryTrie(object):
         if nodetype == LEAF_TYPE:
             # Keypath must match, there should be no remaining keypath
             if keypath:
-                raise LeafNodeOverrideError(
+                raise NodeOverrideError(
                     "Existing kv pair is being effaced because"
                     " it's key is the prefix of the new key")
             if if_delete_subtrie:
