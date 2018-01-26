@@ -13,7 +13,7 @@ from trie.constants import (
     BLANK_HASH,
 )
 from trie.exceptions import (
-    LeafNodeOverrideError,
+    NodeOverrideError,
 )
 
 
@@ -67,7 +67,7 @@ def test_bin_trie_delete_subtrie(kv1, kv2, key_to_be_deleted, will_delete, will_
         assert trie.root_hash == BLANK_HASH
     else:
         if will_rasie_error:
-            with pytest.raises(LeafNodeOverrideError):
+            with pytest.raises(NodeOverrideError):
                 trie.delete_subtrie(key_to_be_deleted)
         else:
             root_hash_before_delete = trie.root_hash
@@ -94,7 +94,7 @@ def test_bin_trie_invalid_key(invalide_key, if_error):
 
     assert trie.get(invalide_key) is None
     if if_error:
-        with pytest.raises(LeafNodeOverrideError):
+        with pytest.raises(NodeOverrideError):
             trie.delete(invalide_key)
     else:
         previous_root_hash = trie.root_hash

@@ -14,7 +14,7 @@ class BadTrieProof(Exception):
     pass
 
 
-class LeafNodeOverrideError(Exception):
+class NodeOverrideError(Exception):
     pass
 
 
