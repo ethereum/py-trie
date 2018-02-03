@@ -1,8 +1,6 @@
 import rlp
 
 from trie.constants import (
-    BLANK_NODE,
-    BLANK_NODE_HASH,
     BLANK_HASH,
     KV_TYPE,
     BRANCH_TYPE,
@@ -34,7 +32,6 @@ from trie.utils.nodes import (
 
 
 # sanity check
-assert BLANK_NODE_HASH == keccak(rlp.encode(b''))
 assert BLANK_HASH == keccak(b'')
 
 
@@ -299,7 +296,7 @@ class BinaryTrie(object):
     def exists(self, key):
         validate_is_bytes(key)
 
-        return self.get(key) != BLANK_NODE
+        return self.get(key) is not None
 
     def delete(self, key):
         """
