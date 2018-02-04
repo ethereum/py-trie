@@ -1,5 +1,3 @@
-import rlp
-
 from trie.constants import (
     BLANK_HASH,
     KV_TYPE,
