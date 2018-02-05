@@ -123,7 +123,10 @@ class BinaryTrie(object):
             if not keypath:
                 if if_delete_subtrie:
                     return BLANK_HASH
-                return node_hash
+                else:
+                    raise NodeOverrideError(
+                        "Fail to set the value because it's key"
+                        " is the prefix of other existing key")
             return self._set_kv_node(
                 keypath,
                 node_hash,
@@ -139,7 +142,10 @@ class BinaryTrie(object):
             if not keypath:
                 if if_delete_subtrie:
                     return BLANK_HASH
-                return node_hash
+                else:
+                    raise NodeOverrideError(
+                        "Fail to set the value because it's key"
+                        " is the prefix of other existing key")
             return self._set_branch_node(
                 keypath,
                 nodetype,
@@ -206,7 +212,7 @@ class BinaryTrie(object):
             # Case 2: keypath prefixes mismatch in the middle, so we need to break
             # the keypath in half. We are in case (3), (4), (7), (8)
             else:
-                if len(keypath[common_prefix_len + 1:]) == 0:
+                if len(keypath) <= common_prefix_len:
                     raise NodeOverrideError(
                         "Fail to set the value because it's key"
                         " is the prefix of other existing key")
@@ -255,10 +261,6 @@ class BinaryTrie(object):
             if_delete_subtrie=False):
         # Which child node to update? Depends on first bit in keypath
         if keypath[:1] == BYTE_0:
-            if len(keypath[1:]) == 0:
-                raise NodeOverrideError(
-                    "Fail to set the value because it's key"
-                    " is the prefix of other existing key")
             new_left_child = self._set(left_child, keypath[1:], value, if_delete_subtrie)
             new_right_child = right_child
         else:
