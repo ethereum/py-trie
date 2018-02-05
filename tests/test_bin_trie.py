@@ -103,12 +103,26 @@ def test_bin_trie_invalid_key(invalide_key, if_error):
 
 
 @given(keys=st.lists(st.binary(min_size=32, max_size=32), min_size=100, max_size=100, unique=True),
-       chosen_numbers=st.lists(st.integers(min_value=0, max_value=99), min_size=50, max_size=50))
+       chosen_numbers=st.lists(
+           st.integers(min_value=0, max_value=99),
+           min_size=50,
+           max_size=50,
+           unique=True)
+       )
 @settings(max_examples=10)
 def test_bin_trie_update_value(keys, chosen_numbers):
+    """
+    This is a basic test to see if updating value works as expected.
+    """
     trie = BinaryTrie(db={})
     for key in keys:
         trie.set(key, b'old')
-    
+
+    current_root = trie.root_hash
     for i in chosen_numbers:
+        trie.set(keys[i], b'old')
+        assert current_root == trie.root_hash
         trie.set(keys[i], b'new')
+        assert current_root != trie.root_hash
+        assert trie.get(keys[i]) == b'new'
+        current_root = trie.root_hash
