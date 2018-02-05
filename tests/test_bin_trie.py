@@ -100,3 +100,15 @@ def test_bin_trie_invalid_key(invalide_key, if_error):
         previous_root_hash = trie.root_hash
         trie.delete(invalide_key)
         assert previous_root_hash == trie.root_hash
+
+
+@given(keys=st.lists(st.binary(min_size=32, max_size=32), min_size=100, max_size=100, unique=True),
+       chosen_numbers=st.lists(st.integers(min_value=0, max_value=99), min_size=50, max_size=50))
+@settings(max_examples=10)
+def test_bin_trie_update_value(keys, chosen_numbers):
+    trie = BinaryTrie(db={})
+    for key in keys:
+        trie.set(key, b'old')
+    
+    for i in chosen_numbers:
+        trie.set(keys[i], b'new')
