@@ -1,8 +1,11 @@
 import pytest
 
+from eth_utils import (
+    keccak,
+)
+
 from trie.hexary import HexaryTrie
 from trie.exceptions import BadTrieProof
-from trie.utils.sha3 import keccak
 
 
 def test_get_from_proof_key_exists():

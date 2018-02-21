@@ -2,6 +2,10 @@ import itertools
 
 import rlp
 
+from eth_utils import (
+    keccak,
+)
+
 from trie.constants import (
     BLANK_NODE,
     BLANK_NODE_HASH,
@@ -13,13 +17,6 @@ from trie.constants import (
 )
 from trie.exceptions import (
     BadTrieProof,
-)
-from trie.validation import (
-    validate_is_node,
-    validate_is_bytes,
-)
-from trie.utils.sha3 import (
-    keccak,
 )
 from trie.utils.nibbles import (
     bytes_to_nibbles,
@@ -37,6 +34,10 @@ from trie.utils.nodes import (
     is_leaf_node,
     consume_common_prefix,
     key_starts_with,
+)
+from trie.validation import (
+    validate_is_node,
+    validate_is_bytes,
 )
 
 

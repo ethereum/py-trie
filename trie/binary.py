@@ -1,3 +1,7 @@
+from eth_utils import (
+    keccak,
+)
+
 from trie.constants import (
     BLANK_HASH,
     KV_TYPE,
@@ -6,16 +10,8 @@ from trie.constants import (
     BYTE_0,
     BYTE_1,
 )
-from trie.validation import (
-    validate_is_bytes,
-    validate_is_bin_node,
-)
 from trie.exceptions import (
     NodeOverrideError,
-)
-
-from trie.utils.sha3 import (
-    keccak,
 )
 from trie.utils.binaries import (
     encode_to_bin,
@@ -26,6 +22,10 @@ from trie.utils.nodes import (
     encode_branch_node,
     encode_leaf_node,
     get_common_prefix_length,
+)
+from trie.validation import (
+    validate_is_bytes,
+    validate_is_bin_node,
 )
 
 
