@@ -1,6 +1,9 @@
 import bisect
 
-from eth_utils import encode_hex
+from eth_utils import (
+    encode_hex,
+    keccak,
+)
 
 from trie.constants import (
     NODE_TYPE_BRANCH,
@@ -16,7 +19,6 @@ from trie.utils.nodes import (
     get_node_type,
     is_blank_node,
 )
-from trie.utils.sha3 import keccak
 
 
 class SyncRequest:
