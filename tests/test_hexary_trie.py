@@ -8,7 +8,8 @@ import os
 from eth_utils import (
     is_0x_prefixed,
     decode_hex,
-    force_bytes,
+    text_if_str,
+    to_bytes,
 )
 
 from trie import HexaryTrie
@@ -18,9 +19,9 @@ def normalize_fixture(fixture):
     normalized_fixture = {
         'in': tuple(
             (
-                decode_hex(key) if is_0x_prefixed(key) else force_bytes(key),
+                decode_hex(key) if is_0x_prefixed(key) else text_if_str(to_bytes, key),
                 (
-                    decode_hex(value) if is_0x_prefixed(value) else force_bytes(value)
+                    decode_hex(value) if is_0x_prefixed(value) else text_if_str(to_bytes, value)
                 ) if value is not None else None,
             )
             for key, value
