@@ -16,7 +16,7 @@ setup(
     py_modules=['trie'],
     setup_requires=['setuptools-markdown'],
     install_requires=[
-        "eth-utils>=1.0.0b2,<2.0.0",
+        "eth-utils>=1.0.0,<2.0.0",
         "rlp>=0.4.7,<1.0.0",
     ],
     license="MIT",
