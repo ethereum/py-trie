@@ -2,7 +2,6 @@ import bisect
 
 from eth_utils import (
     encode_hex,
-    keccak,
 )
 
 from trie.constants import (
@@ -60,6 +59,7 @@ class HexaryTrieSync:
         self.root_hash = root_hash
         self.logger = logger
         self.schedule(root_hash, parent=None, depth=0, leaf_callback=self.leaf_callback)
+        self.committed_nodes = 0
 
     def leaf_callback(self, data, parent):
         """Called when we reach a leaf node.
@@ -161,7 +161,7 @@ class HexaryTrieSync:
                 return
 
             if request.data is not None:
-                SyncRequestAlreadyProcessed("%s has been processed already" % request)
+                raise SyncRequestAlreadyProcessed("%s has been processed already" % request)
 
             request.data = data
             if request.is_raw:
@@ -181,7 +181,8 @@ class HexaryTrieSync:
                 self.commit(request)
 
     def commit(self, request):
-        self.db[keccak(request.data)] = request.data
+        self.committed_nodes += 1
+        self.db[request.node_key] = request.data
         self.requests.pop(request.node_key)
         for ancestor in request.parents:
             ancestor.dependencies -= 1

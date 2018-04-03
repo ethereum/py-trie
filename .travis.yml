@@ -7,8 +7,6 @@ matrix:
     - python: "3.5"
       env: TOX_POSARGS="-e flake8"
     # core
-    - python: "3.4"
-      env: TOX_POSARGS="-e py34"
     - python: "3.5"
       env: TOX_POSARGS="-e py35"
     - python: "3.6"
