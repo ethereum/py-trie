@@ -1,12 +1,13 @@
-import codecs
 import itertools
 
 from eth_utils import (
     to_tuple,
 )
+from cytoolz import (
+    partition,
+)
 
 from trie.constants import (
-    NIBBLES_LOOKUP,
     NIBBLE_TERMINATOR,
     HP_FLAG_2,
     HP_FLAG_0,
@@ -16,24 +17,24 @@ from trie.exceptions import (
 )
 
 
-def bytes_to_nibbles(value):
+def _bytes_to_nibbles(value):
     """
     Convert a byte string to nibbles
     """
-    return tuple(NIBBLES_LOOKUP[nibble] for nibble in codecs.encode(value, 'hex'))
+    for byte in value:
+        yield byte >> 4
+        yield byte & 15
 
 
-@to_tuple
-def pairwise(iterable):
-    if len(iterable) % 2:
-        raise ValueError("Odd length value.  Cannot apply pairwise operation")
+def bytes_to_nibbles(value):
+    return tuple(_bytes_to_nibbles(value))
 
-    for left, right in zip(*[iter(iterable)] * 2):
-        yield left, right
+
+VALID_NIBBLES = set(range(16))
 
 
 def nibbles_to_bytes(nibbles):
-    if any(nibble > 15 or nibble < 0 for nibble in nibbles):
+    if any(nibble not in VALID_NIBBLES for nibble in nibbles):
         raise InvalidNibbles(
             "Nibbles contained invalid value.  Must be constrained between [0, 15]"
         )
@@ -41,10 +42,10 @@ def nibbles_to_bytes(nibbles):
     if len(nibbles) % 2:
         raise InvalidNibbles("Nibbles must be even in length")
 
-    value = bytes(bytearray(tuple(
+    value = bytes(
         16 * left + right
-        for left, right in pairwise(nibbles)
-    )))
+        for left, right in partition(2, nibbles)
+    )
     return value
 
 
