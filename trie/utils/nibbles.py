@@ -17,13 +17,19 @@ from trie.exceptions import (
 )
 
 
+NIBBLES_LOOKUPS = {
+    byte: (byte >> 4, byte & 15)
+    for byte
+    in range(256)
+}
+
+
 def _bytes_to_nibbles(value):
     """
     Convert a byte string to nibbles
     """
     for byte in value:
-        yield byte >> 4
-        yield byte & 15
+        yield from NIBBLES_LOOKUPS[byte]
 
 
 def bytes_to_nibbles(value):
@@ -31,6 +37,11 @@ def bytes_to_nibbles(value):
 
 
 VALID_NIBBLES = set(range(16))
+REVERSE_NIBBLES_LOOKUP = {
+    value: key
+    for key, value
+    in NIBBLES_LOOKUPS.items()
+}
 
 
 def nibbles_to_bytes(nibbles):
@@ -42,10 +53,7 @@ def nibbles_to_bytes(nibbles):
     if len(nibbles) % 2:
         raise InvalidNibbles("Nibbles must be even in length")
 
-    value = bytes(
-        16 * left + right
-        for left, right in partition(2, nibbles)
-    )
+    value = bytes(REVERSE_NIBBLES_LOOKUP[pair] for pair in partition(2, nibbles))
     return value
 
 
