@@ -1,6 +1,6 @@
 import itertools
 
-import rlp
+from rlp.codec import encode_raw
 
 from eth_utils import (
     keccak,
@@ -42,7 +42,7 @@ from trie.validation import (
 
 
 # sanity check
-assert BLANK_NODE_HASH == keccak(rlp.encode(b''))
+assert BLANK_NODE_HASH == keccak(encode_raw(b''))
 assert BLANK_HASH == keccak(b'')
 
 
@@ -161,7 +161,7 @@ class HexaryTrie(object):
     #
     def _set_root_node(self, root_node):
         validate_is_node(root_node)
-        encoded_root_node = rlp.encode(root_node)
+        encoded_root_node = encode_raw(root_node)
         self.root_hash = keccak(encoded_root_node)
         self.db[self.root_hash] = encoded_root_node
 
@@ -183,7 +183,7 @@ class HexaryTrie(object):
         validate_is_node(node)
         if is_blank_node(node):
             return BLANK_NODE
-        encoded_node = rlp.encode(node)
+        encoded_node = encode_raw(node)
         if len(encoded_node) < 32:
             return node
 
