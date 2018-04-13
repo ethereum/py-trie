@@ -58,8 +58,12 @@ class HexaryTrieSync:
         self.db = db
         self.root_hash = root_hash
         self.logger = logger
-        self.schedule(root_hash, parent=None, depth=0, leaf_callback=self.leaf_callback)
+        # A cache of node hashes we know to exist in our DB, used to avoid querying the DB
+        # unnecessarily as that's the main bottleneck when dealing with a large DB like for
+        # ethereum's mainnet/ropsten.
+        self._existing_nodes = set()
         self.committed_nodes = 0
+        self.schedule(root_hash, parent=None, depth=0, leaf_callback=self.leaf_callback)
 
     def leaf_callback(self, data, parent):
         """Called when we reach a leaf node.
@@ -82,7 +86,12 @@ class HexaryTrieSync:
 
     def schedule(self, node_key, parent, depth, leaf_callback, is_raw=False):
         """Schedule a request for the node with the given key."""
+        if node_key in self._existing_nodes:
+            self.logger.debug("Node %s already exists in db" % encode_hex(node_key))
+            return
+
         if node_key in self.db:
+            self._existing_nodes.add(node_key)
             self.logger.debug("Node %s already exists in db" % encode_hex(node_key))
             return
 
@@ -183,6 +192,7 @@ class HexaryTrieSync:
     def commit(self, request):
         self.committed_nodes += 1
         self.db[request.node_key] = request.data
+        self._existing_nodes.add(request.node_key)
         self.requests.pop(request.node_key)
         for ancestor in request.parents:
             ancestor.dependencies -= 1
