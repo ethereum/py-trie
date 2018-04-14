@@ -12,7 +12,10 @@ from eth_utils import (
     to_bytes,
 )
 
-from trie import HexaryTrie
+from trie import (
+    FrozenHexaryTrie,
+    HexaryTrie,
+)
 
 
 def normalize_fixture(fixture):
@@ -86,7 +89,6 @@ def test_trie_using_fixtures(fixture_name, fixture):
     }
 
     for kv_permutation in itertools.islice(itertools.permutations(keys_and_values), 100):
-        print("in it")
         trie = HexaryTrie(db={})
 
         for key, value in kv_permutation:
@@ -109,3 +111,52 @@ def test_trie_using_fixtures(fixture_name, fixture):
         actual_root = trie.root_hash
 
         assert actual_root == expected_root
+
+
+@pytest.mark.parametrize(
+    'fixture_name,fixture', FIXTURES,
+)
+def test_frozen_trie_using_fixtures(fixture_name, fixture):
+
+    keys_and_values = fixture['in']
+    deletes = tuple(k for k, v in keys_and_values if v is None)
+    remaining = {
+        k: v
+        for k, v
+        in keys_and_values
+        if k not in deletes
+    }
+
+    for kv_permutation in itertools.islice(itertools.permutations(keys_and_values), 100):
+        trie = FrozenHexaryTrie(db={})
+
+        for key, value in kv_permutation:
+            if value is None:
+                trie = trie.delete(key)
+            else:
+                trie = trie.set(key, value)
+        for key in deletes:
+            trie = trie.delete(key)
+
+        for key, expected_value in remaining.items():
+            assert key in trie
+            actual_value = trie[key]
+            assert actual_value == expected_value
+
+        for key in deletes:
+            assert key not in trie
+
+        expected_root = fixture['root']
+        actual_root = trie.root_hash
+
+        assert actual_root == expected_root
+
+
+def test_frozen_immutable():
+    frozen_check = FrozenHexaryTrie(db={})
+
+    with pytest.raises(TypeError):
+        frozen_check[b'123'] = b'abc'
+
+    with pytest.raises(TypeError):
+        del frozen_check[b'123']

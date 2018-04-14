@@ -46,9 +46,8 @@ assert BLANK_NODE_HASH == keccak(encode_raw(b''))
 assert BLANK_HASH == keccak(b'')
 
 
-class HexaryTrie(object):
-    db = None
-    root_hash = None
+class FrozenHexaryTrie(object):
+    __slots__ = 'db', '_root_hash'
 
     # Shortcuts
     BLANK_NODE_HASH = BLANK_NODE_HASH
@@ -57,7 +56,11 @@ class HexaryTrie(object):
     def __init__(self, db, root_hash=BLANK_NODE_HASH):
         self.db = db
         validate_is_bytes(root_hash)
-        self.root_hash = root_hash
+        self._root_hash = root_hash
+
+    @property
+    def root_hash(self):
+        return self._root_hash
 
     def get(self, key):
         validate_is_bytes(key)
@@ -79,7 +82,14 @@ class HexaryTrie(object):
         else:
             raise Exception("Invariant: This shouldn't ever happen")
 
+    def at(self, new_root_hash):
+        return (type(self))(db=self.db, root_hash=new_root_hash)
+
     def set(self, key, value):
+        new_root_hash = self._store_key(key, value)
+        return self.at(new_root_hash)
+
+    def _store_key(self, key, value):
         validate_is_bytes(key)
         validate_is_bytes(value)
 
@@ -87,7 +97,7 @@ class HexaryTrie(object):
         root_node = self.get_node(self.root_hash)
 
         new_node = self._set(root_node, trie_key, value)
-        self._set_root_node(new_node)
+        return self._set_root_node(new_node)
 
     def _set(self, node, trie_key, value):
         node_type = get_node_type(node)
@@ -110,13 +120,17 @@ class HexaryTrie(object):
         return self.get(key) != BLANK_NODE
 
     def delete(self, key):
+        new_root_hash = self._remove_key(key)
+        return self.at(new_root_hash)
+
+    def _remove_key(self, key):
         validate_is_bytes(key)
 
         trie_key = bytes_to_nibbles(key)
         root_node = self.get_node(self.root_hash)
 
         new_node = self._delete(root_node, trie_key)
-        self._set_root_node(new_node)
+        return self._set_root_node(new_node)
 
     def _delete(self, node, trie_key):
         node_type = get_node_type(node)
@@ -135,11 +149,10 @@ class HexaryTrie(object):
     #
     @classmethod
     def get_from_proof(cls, root_hash, key, proof):
-        trie = cls({})
+        trie = cls({}, root_hash=root_hash)
 
         for node in proof:
             trie._persist_node(node)
-        trie.root_hash = root_hash
         try:
             return trie.get(key)
         except KeyError as e:
@@ -152,18 +165,15 @@ class HexaryTrie(object):
     def root_node(self):
         return self.get_node(self.root_hash)
 
-    @root_node.setter
-    def root_node(self, value):
-        self._set_root_node(value)
-
     #
     # Utils
     #
     def _set_root_node(self, root_node):
         validate_is_node(root_node)
         encoded_root_node = encode_raw(root_node)
-        self.root_hash = keccak(encoded_root_node)
-        self.db[self.root_hash] = encoded_root_node
+        new_root_hash = keccak(encoded_root_node)
+        self.db[new_root_hash] = encoded_root_node
+        return new_root_hash
 
     def get_node(self, node_hash):
         if node_hash == BLANK_NODE:
@@ -383,11 +393,25 @@ class HexaryTrie(object):
     def __getitem__(self, key):
         return self.get(key)
 
+    def __contains__(self, key):
+        return self.exists(key)
+
+
+class HexaryTrie(FrozenHexaryTrie):
+    @FrozenHexaryTrie.root_hash.setter
+    def root_hash(self, value):
+        self._root_hash = value
+
+    @FrozenHexaryTrie.root_node.setter
+    def root_node(self, value):
+        self._root_hash = self._set_root_node(value)
+
+    def at(self, new_root_hash):
+        self.root_hash = new_root_hash
+        return self
+
     def __setitem__(self, key, value):
         return self.set(key, value)
 
     def __delitem__(self, key):
         return self.delete(key)
-
-    def __contains__(self, key):
-        return self.exists(key)
