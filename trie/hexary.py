@@ -119,14 +119,21 @@ class TrieDelta:
         return iter(self.updates)
 
     @classmethod
-    def join(cls, deltas):
+    def join(cls, deltas, starting_root=None):
         if deltas is None:
             raise TypeError('must provide an iterable of deltas to join')
-        elif len(deltas) == 0:
-            raise ValueError('must have at least one delta to join')
         else:
-            all_updates = merge(delta._updates for delta in deltas)
-            return cls(deltas[-1].new_root_hash, all_updates)
+            joint_changes = {}
+            root_hash = starting_root
+            for delta in deltas:
+                joint_changes.update(delta._updates)
+                root_hash = delta.root_hash
+            if root_hash is None:
+                raise ValueError(
+                    'You must either supply a non-empty list of changes, '
+                    'or provide a starting root hash.'
+                )
+            return cls(root_hash, joint_changes)
 
     def apply(self, db):
         for key, value in self._updates.items():
@@ -142,6 +149,7 @@ class FrozenHexaryTrie:
     # Shortcuts
     BLANK_NODE_HASH = BLANK_NODE_HASH
     BLANK_NODE = BLANK_NODE
+    DeltaType = TrieDelta
 
     def __init__(self, db, root_hash=BLANK_NODE_HASH):
         self._read_db = db
