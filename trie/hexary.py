@@ -1,7 +1,9 @@
+from collections.abc import Mapping
 import itertools
 
 from rlp.codec import encode_raw
 
+from cytoolz import merge
 from eth_utils import (
     keccak,
 )
@@ -40,23 +42,113 @@ from trie.validation import (
     validate_is_bytes,
 )
 
-
 # sanity check
 assert BLANK_NODE_HASH == keccak(encode_raw(b''))
 assert BLANK_HASH == keccak(b'')
 
+DELETED = object()
 
-class FrozenHexaryTrie(object):
-    __slots__ = 'db', '_root_hash'
+
+class ScratchDB(Mapping):
+    __slots__ = '_read_db', '_write_db'
+
+    def __init__(self, read_db):
+        self._read_db = read_db
+        self._write_db = {}
+
+    def __setitem__(self, key, value):
+        self._write_db[key] = value
+
+    def __delitem__(self, key):
+        if key in self._write_db:
+            self._write_db[key] = DELETED
+        elif key in self._read_db:
+            raise NotImplementedError("scratch db can't keep track of deletes in read-only db yet")
+        else:
+            raise KeyError("key not found")
+
+    def __getitem__(self, key):
+        if key in self._write_db:
+            return self._write_db[key]
+        else:
+            return self._read_db[key]
+
+    def __contains__(self, key):
+        if key in self._write_db and self._write_db[key] is not DELETED:
+            return True
+        else:
+            return key in self._read_db
+
+    def __iter__(self):
+        return itertools.chain(self._write_db, self._read_db)
+
+    def __len__(self):
+        return len(self._read_db) + len(self._write_db)
+
+    @property
+    def changes(self):
+        return dict(self._write_db)
+
+
+class TrieDelta:
+    __slots__ = '_new_root_hash', '_updates'
+
+    def __init__(self, new_root_hash, updates=None):
+        '''
+        :param dict updates: new key->value mappings, deletions with key->DELETED
+        '''
+        if updates is None:
+            self._updates = {}
+        else:
+            self._updates = dict(updates)
+        self._new_root_hash = new_root_hash
+
+    @property
+    def root_hash(self):
+        return self._new_root_hash
+
+    @property
+    def changes(self):
+        '''
+        :return: new key->value mappings, deletions with key->DELETED
+        :rtype: dict
+        '''
+        return dict(self._updates)
+
+    def __iter__(self):
+        return iter(self.updates)
+
+    @classmethod
+    def join(cls, deltas):
+        if deltas is None:
+            raise TypeError('must provide an iterable of deltas to join')
+        elif len(deltas) == 0:
+            raise ValueError('must have at least one delta to join')
+        else:
+            all_updates = merge(delta._updates for delta in deltas)
+            return cls(deltas[-1].new_root_hash, all_updates)
+
+    def apply(self, db):
+        for key, value in self._updates.items():
+            if value is DELETED:
+                del db[key]
+            else:
+                db[key] = value
+
+
+class FrozenHexaryTrie:
+    __slots__ = '_read_db', '_root_hash', '_scratch_db'
 
     # Shortcuts
     BLANK_NODE_HASH = BLANK_NODE_HASH
     BLANK_NODE = BLANK_NODE
 
     def __init__(self, db, root_hash=BLANK_NODE_HASH):
-        self.db = db
+        self._read_db = db
         validate_is_bytes(root_hash)
         self._root_hash = root_hash
+        # initialize this before every write op, and reset it after
+        self._scratch_db = None
 
     @property
     def root_hash(self):
@@ -68,36 +160,41 @@ class FrozenHexaryTrie(object):
         trie_key = bytes_to_nibbles(key)
         root_node = self.get_node(self.root_hash)
 
-        return self._get(root_node, trie_key)
+        return self._get(root_node, trie_key, self._read_db)
 
-    def _get(self, node, trie_key):
+    def _get(self, node, trie_key, db):
         node_type = get_node_type(node)
 
         if node_type == NODE_TYPE_BLANK:
             return BLANK_NODE
         elif node_type in {NODE_TYPE_LEAF, NODE_TYPE_EXTENSION}:
-            return self._get_kv_node(node, trie_key)
+            return self._get_kv_node(node, trie_key, db)
         elif node_type == NODE_TYPE_BRANCH:
-            return self._get_branch_node(node, trie_key)
+            return self._get_branch_node(node, trie_key, db)
         else:
             raise Exception("Invariant: This shouldn't ever happen")
 
-    def at(self, new_root_hash):
-        return (type(self))(db=self.db, root_hash=new_root_hash)
+    def after(self, trie_delta):
+        '''
+        Note that this method does *not* commit any trie_delta changes
+        to the database.
+        '''
+        return (type(self))(db=self._read_db, root_hash=trie_delta.root_hash)
 
     def set(self, key, value):
-        new_root_hash = self._store_key(key, value)
-        return self.at(new_root_hash)
+        return self._store_key(key, value)
 
     def _store_key(self, key, value):
         validate_is_bytes(key)
         validate_is_bytes(value)
+        self._scratch_db = ScratchDB(self._read_db)
 
         trie_key = bytes_to_nibbles(key)
-        root_node = self.get_node(self.root_hash)
+        root_node = self._get_node(self.root_hash, self._scratch_db)
 
         new_node = self._set(root_node, trie_key, value)
-        return self._set_root_node(new_node)
+        root_delta = self._set_root_node(new_node)
+        return self._scratch_delta(root_delta)
 
     def _set(self, node, trie_key, value):
         node_type = get_node_type(node)
@@ -120,17 +217,23 @@ class FrozenHexaryTrie(object):
         return self.get(key) != BLANK_NODE
 
     def delete(self, key):
-        new_root_hash = self._remove_key(key)
-        return self.at(new_root_hash)
+        return self._remove_key(key)
 
     def _remove_key(self, key):
         validate_is_bytes(key)
+        self._scratch_db = ScratchDB(self._read_db)
 
         trie_key = bytes_to_nibbles(key)
-        root_node = self.get_node(self.root_hash)
+        root_node = self._get_node(self.root_hash, self._scratch_db)
 
         new_node = self._delete(root_node, trie_key)
-        return self._set_root_node(new_node)
+        root_delta = self._set_root_node(new_node)
+        return self._scratch_delta(root_delta)
+
+    def _scratch_delta(self, root_delta):
+        db_changes = merge(self._scratch_db.changes, root_delta.changes)
+        self._scratch_db = None
+        return TrieDelta(root_delta.root_hash, db_changes)
 
     def _delete(self, node, trie_key):
         node_type = get_node_type(node)
@@ -172,10 +275,12 @@ class FrozenHexaryTrie(object):
         validate_is_node(root_node)
         encoded_root_node = encode_raw(root_node)
         new_root_hash = keccak(encoded_root_node)
-        self.db[new_root_hash] = encoded_root_node
-        return new_root_hash
+        return TrieDelta(new_root_hash, {new_root_hash: encoded_root_node})
 
     def get_node(self, node_hash):
+        return self._get_node(node_hash, self._read_db)
+
+    def _get_node(self, node_hash, db):
         if node_hash == BLANK_NODE:
             return BLANK_NODE
         elif node_hash == BLANK_NODE_HASH:
@@ -184,7 +289,7 @@ class FrozenHexaryTrie(object):
         if len(node_hash) < 32:
             encoded_node = node_hash
         else:
-            encoded_node = self.db[node_hash]
+            encoded_node = db[node_hash]
         node = decode_node(encoded_node)
 
         return node
@@ -198,7 +303,7 @@ class FrozenHexaryTrie(object):
             return node
 
         encoded_node_hash = keccak(encoded_node)
-        self.db[encoded_node_hash] = encoded_node
+        self._scratch_db[encoded_node_hash] = encoded_node
         return encoded_node_hash
 
     #
@@ -221,7 +326,7 @@ class FrozenHexaryTrie(object):
             in enumerate(node[:16])
             if v
         )
-        sub_node = self.get_node(sub_node_hash)
+        sub_node = self._get_node(sub_node_hash, self._scratch_db)
         sub_node_type = get_node_type(sub_node)
 
         if sub_node_type in {NODE_TYPE_LEAF, NODE_TYPE_EXTENSION}:
@@ -244,7 +349,7 @@ class FrozenHexaryTrie(object):
             node[-1] = BLANK_NODE
             return self._normalize_branch_node(node)
 
-        node_to_delete = self.get_node(node[trie_key[0]])
+        node_to_delete = self._get_node(node[trie_key[0]], self._scratch_db)
 
         sub_node = self._delete(node_to_delete, trie_key[1:])
         encoded_sub_node = self._persist_node(sub_node)
@@ -274,7 +379,7 @@ class FrozenHexaryTrie(object):
                 return node
 
         sub_node_key = trie_key[len(current_key):]
-        sub_node = self.get_node(node[1])
+        sub_node = self._get_node(node[1], self._scratch_db)
 
         new_sub_node = self._delete(sub_node, sub_node_key)
         encoded_new_sub_node = self._persist_node(new_sub_node)
@@ -297,7 +402,7 @@ class FrozenHexaryTrie(object):
 
     def _set_branch_node(self, node, trie_key, value):
         if trie_key:
-            sub_node = self.get_node(node[trie_key[0]])
+            sub_node = self._get_node(node[trie_key[0]], self._scratch_db)
 
             new_node = self._set(sub_node, trie_key[1:], value)
             node[trie_key[0]] = self._persist_node(new_node)
@@ -317,12 +422,12 @@ class FrozenHexaryTrie(object):
             if is_leaf_node(node):
                 return [node[0], value]
             else:
-                sub_node = self.get_node(node[1])
+                sub_node = self._get_node(node[1], self._scratch_db)
                 # TODO: this needs to cleanup old storage.
                 new_node = self._set(sub_node, trie_key_remainder, value)
         elif not current_key_remainder:
             if is_extension:
-                sub_node = self.get_node(node[1])
+                sub_node = self._get_node(node[1], self._scratch_db)
                 # TODO: this needs to cleanup old storage.
                 new_node = self._set(sub_node, trie_key_remainder, value)
             else:
@@ -362,14 +467,14 @@ class FrozenHexaryTrie(object):
         else:
             return new_node
 
-    def _get_branch_node(self, node, trie_key):
+    def _get_branch_node(self, node, trie_key, db):
         if not trie_key:
             return node[16]
         else:
-            sub_node = self.get_node(node[trie_key[0]])
-            return self._get(sub_node, trie_key[1:])
+            sub_node = self._get_node(node[trie_key[0]], db)
+            return self._get(sub_node, trie_key[1:], db)
 
-    def _get_kv_node(self, node, trie_key):
+    def _get_kv_node(self, node, trie_key, db):
         current_key = extract_key(node)
         node_type = get_node_type(node)
 
@@ -380,8 +485,8 @@ class FrozenHexaryTrie(object):
                 return BLANK_NODE
         elif node_type == NODE_TYPE_EXTENSION:
             if key_starts_with(trie_key, current_key):
-                sub_node = self.get_node(node[1])
-                return self._get(sub_node, trie_key[len(current_key):])
+                sub_node = self._get_node(node[1], db)
+                return self._get(sub_node, trie_key[len(current_key):], db)
             else:
                 return BLANK_NODE
         else:
@@ -404,11 +509,21 @@ class HexaryTrie(FrozenHexaryTrie):
 
     @FrozenHexaryTrie.root_node.setter
     def root_node(self, value):
-        self._root_hash = self._set_root_node(value)
+        delta = self._set_root_node(value)
+        delta.apply(self._read_db)
+        self._root_hash = delta.root_hash
 
-    def at(self, new_root_hash):
-        self.root_hash = new_root_hash
-        return self
+    def set(self, key, value):
+        delta = super().set(key, value)
+        delta.apply(self._read_db)
+        self.root_hash = delta.root_hash
+        return delta
+
+    def delete(self, key):
+        delta = super().delete(key)
+        delta.apply(self._read_db)
+        self.root_hash = delta.root_hash
+        return delta
 
     def __setitem__(self, key, value):
         return self.set(key, value)

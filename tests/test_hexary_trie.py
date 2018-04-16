@@ -128,15 +128,21 @@ def test_frozen_trie_using_fixtures(fixture_name, fixture):
     }
 
     for kv_permutation in itertools.islice(itertools.permutations(keys_and_values), 100):
-        trie = FrozenHexaryTrie(db={})
+        db = {}
+        trie = FrozenHexaryTrie(db=db)
 
         for key, value in kv_permutation:
             if value is None:
-                trie = trie.delete(key)
+                delta = trie.delete(key)
             else:
-                trie = trie.set(key, value)
+                delta = trie.set(key, value)
+            delta.apply(db)
+            trie = trie.after(delta)
+
         for key in deletes:
-            trie = trie.delete(key)
+            delta = trie.delete(key)
+            delta.apply(db)
+            trie = trie.after(delta)
 
         for key, expected_value in remaining.items():
             assert key in trie
