@@ -147,9 +147,9 @@ class FrozenHexaryTrie:
     __slots__ = '_read_db', '_root_hash', '_scratch_db'
 
     # Shortcuts
-    BLANK_NODE_HASH = BLANK_NODE_HASH
+    BLANK_ROOT_HASH = BLANK_NODE_HASH
     BLANK_NODE = BLANK_NODE
-    DeltaType = TrieDelta
+    Delta = TrieDelta
 
     def __init__(self, db, root_hash=BLANK_NODE_HASH):
         self._read_db = db
@@ -538,3 +538,7 @@ class HexaryTrie(FrozenHexaryTrie):
 
     def __delitem__(self, key):
         return self.delete(key)
+
+
+assert FrozenHexaryTrie.BLANK_ROOT_HASH == BLANK_NODE_HASH
+assert HexaryTrie.BLANK_ROOT_HASH == BLANK_NODE_HASH

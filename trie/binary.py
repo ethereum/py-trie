@@ -33,7 +33,9 @@ from trie.validation import (
 assert BLANK_HASH == keccak(b'')
 
 
-class BinaryTrie(object):
+class BinaryTrie:
+    BLANK_ROOT_HASH = BLANK_HASH
+
     def __init__(self, db, root_hash=BLANK_HASH):
         self.db = db
         validate_is_bytes(root_hash)
@@ -363,3 +365,6 @@ class BinaryTrie(object):
 
     def __contains__(self, key):
         return self.exists(key)
+
+
+assert BinaryTrie.BLANK_ROOT_HASH == BLANK_HASH
