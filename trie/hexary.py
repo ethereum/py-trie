@@ -116,7 +116,7 @@ class TrieDelta:
         return dict(self._updates)
 
     def __iter__(self):
-        return iter(self.updates)
+        return iter(self._updates)
 
     @classmethod
     def join(cls, deltas, starting_root=None):
@@ -260,7 +260,12 @@ class FrozenHexaryTrie:
     #
     @classmethod
     def get_from_proof(cls, root_hash, key, proof):
-        trie = cls({}, root_hash=root_hash)
+        db = {}
+        trie = cls(db, root_hash=root_hash)
+
+        # We know the database is empty at the beginning, and we aren't returning the trie,
+        # so we can read and write to same db.
+        trie._scratch_db = db
 
         for node in proof:
             trie._persist_node(node)
