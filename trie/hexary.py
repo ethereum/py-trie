@@ -1,3 +1,4 @@
+import contextlib
 import itertools
 
 from rlp.codec import encode_raw
@@ -17,6 +18,9 @@ from trie.constants import (
 )
 from trie.exceptions import (
     BadTrieProof,
+)
+from trie.utils.db import (
+    ScratchDB,
 )
 from trie.utils.nibbles import (
     bytes_to_nibbles,
@@ -46,18 +50,18 @@ assert BLANK_NODE_HASH == keccak(encode_raw(b''))
 assert BLANK_HASH == keccak(b'')
 
 
-class HexaryTrie(object):
-    db = None
-    root_hash = None
+class HexaryTrie:
+    __slots__ = ('db', 'root_hash', 'is_pruning')
 
     # Shortcuts
     BLANK_NODE_HASH = BLANK_NODE_HASH
     BLANK_NODE = BLANK_NODE
 
-    def __init__(self, db, root_hash=BLANK_NODE_HASH):
+    def __init__(self, db, root_hash=BLANK_NODE_HASH, prune=False):
         self.db = db
         validate_is_bytes(root_hash)
         self.root_hash = root_hash
+        self.is_pruning = prune
 
     def get(self, key):
         validate_is_bytes(key)
@@ -90,6 +94,8 @@ class HexaryTrie(object):
         self._set_root_node(new_node)
 
     def _set(self, node, trie_key, value):
+        self._prune_node(node)
+
         node_type = get_node_type(node)
 
         if node_type == NODE_TYPE_BLANK:
@@ -121,7 +127,10 @@ class HexaryTrie(object):
     def _delete(self, node, trie_key):
         node_type = get_node_type(node)
 
+        self._prune_node(node)
+
         if node_type == NODE_TYPE_BLANK:
+            # ignore attempt to delete key from empty node
             return BLANK_NODE
         elif node_type in {NODE_TYPE_LEAF, NODE_TYPE_EXTENSION}:
             return self._delete_kv_node(node, trie_key)
@@ -161,9 +170,18 @@ class HexaryTrie(object):
     #
     def _set_root_node(self, root_node):
         validate_is_node(root_node)
-        encoded_root_node = encode_raw(root_node)
-        self.root_hash = keccak(encoded_root_node)
-        self.db[self.root_hash] = encoded_root_node
+        if self.is_pruning:
+            old_root_hash = self.root_hash
+            if old_root_hash != BLANK_NODE_HASH and old_root_hash in self.db:
+                del self.db[old_root_hash]
+
+        if is_blank_node(root_node):
+            self.root_hash = BLANK_NODE_HASH
+        else:
+            encoded_root_node = encode_raw(root_node)
+            new_root_hash = keccak(encoded_root_node)
+            self.db[new_root_hash] = encoded_root_node
+            self.root_hash = new_root_hash
 
     def get_node(self, node_hash):
         if node_hash == BLANK_NODE:
@@ -179,17 +197,29 @@ class HexaryTrie(object):
 
         return node
 
-    def _persist_node(self, node):
+    @staticmethod
+    def _node_to_db_mapping(node):
         validate_is_node(node)
         if is_blank_node(node):
-            return BLANK_NODE
+            return BLANK_NODE, None
         encoded_node = encode_raw(node)
         if len(encoded_node) < 32:
-            return node
+            return node, None
 
         encoded_node_hash = keccak(encoded_node)
-        self.db[encoded_node_hash] = encoded_node
-        return encoded_node_hash
+        return encoded_node_hash, encoded_node
+
+    def _persist_node(self, node):
+        key, value = self._node_to_db_mapping(node)
+        if value is not None:
+            self.db[key] = value
+        return key
+
+    def _prune_node(self, node):
+        if self.is_pruning:
+            key, value = self._node_to_db_mapping(node)
+            if value is not None:
+                del self.db[key]
 
     #
     # Node Operation Helpers
@@ -213,6 +243,8 @@ class HexaryTrie(object):
         )
         sub_node = self.get_node(sub_node_hash)
         sub_node_type = get_node_type(sub_node)
+
+        self._prune_node(sub_node)
 
         if sub_node_type in {NODE_TYPE_LEAF, NODE_TYPE_EXTENSION}:
             new_subnode_key = encode_nibbles(tuple(itertools.chain(
@@ -277,6 +309,7 @@ class HexaryTrie(object):
 
         new_sub_node_type = get_node_type(new_sub_node)
         if new_sub_node_type in {NODE_TYPE_LEAF, NODE_TYPE_EXTENSION}:
+            self._prune_node(new_sub_node)
             new_key = current_key + decode_nibbles(new_sub_node[0])
             return [encode_nibbles(new_key), new_sub_node[1]]
 
@@ -308,12 +341,10 @@ class HexaryTrie(object):
                 return [node[0], value]
             else:
                 sub_node = self.get_node(node[1])
-                # TODO: this needs to cleanup old storage.
                 new_node = self._set(sub_node, trie_key_remainder, value)
         elif not current_key_remainder:
             if is_extension:
                 sub_node = self.get_node(node[1])
-                # TODO: this needs to cleanup old storage.
                 new_node = self._set(sub_node, trie_key_remainder, value)
             else:
                 subnode_position = trie_key_remainder[0]
@@ -391,3 +422,11 @@ class HexaryTrie(object):
 
     def __contains__(self, key):
         return self.exists(key)
+
+    @contextlib.contextmanager
+    def squash_changes(self):
+        scratch_db = ScratchDB(self.db)
+        with scratch_db.batch_commit(do_deletes=self.is_pruning):
+            memory_trie = type(self)(scratch_db, self.root_hash, prune=True)
+            yield memory_trie
+        self.root_node = memory_trie.root_node
