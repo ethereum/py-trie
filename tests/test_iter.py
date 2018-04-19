@@ -67,7 +67,8 @@ def test_iter_error():
     trie[b'bird'] = b'bird'
     assert is_extension_node(trie.root_node)
     node_to_remove = trie.root_node[1]
-    trie.db.pop(node_to_remove)
+    # muck with the internals to force an error
+    trie._read_db.pop(node_to_remove)
     iterator = NodeIterator(trie)
     key = b''
     with pytest.raises(KeyError):

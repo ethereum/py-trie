@@ -6,6 +6,7 @@ from .binary import (  # noqa: F401
 )
 from .hexary import (  # noqa: F401
     HexaryTrie,
+    FrozenHexaryTrie,
 )
 
 

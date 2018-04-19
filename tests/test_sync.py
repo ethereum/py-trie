@@ -25,7 +25,7 @@ def test_trie_sync(random):
     while len(requests) > 0:
         results = []
         for request in requests:
-            results.append([request.node_key, src_trie.db[request.node_key]])
+            results.append([request.node_key, src_trie._read_db[request.node_key]])
         scheduler.process(results)
         requests = scheduler.next_batch(10)
     dest_trie = HexaryTrie(dest_db, src_trie.root_hash)
