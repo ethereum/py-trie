@@ -8,7 +8,6 @@ import os
 from eth_utils import (
     is_0x_prefixed,
     decode_hex,
-    keccak,
     text_if_str,
     to_bytes,
 )
@@ -73,10 +72,6 @@ FIXTURES_NORMALIZED = tuple(
     for fixture_filename, fixtures in RAW_FIXTURES
     for key in sorted(fixtures.keys())
 )
-
-
-def get_fixture_iterator(fixture):
-    return itertools.islice(itertools.permutations(fixture['in']), 100)
 
 
 def get_expected_results(fixture):
