@@ -16,10 +16,19 @@ from .utils import make_random_trie
 logger = logging.getLogger()
 
 
+# produces a branch node with an extention node who's encoding is less than 32
+# bytes in length so it is inlined.
+EXAMPLE_37968 = 37968
+
+# produces an top level extension node who's encoding is less than 32 bytes in
+# length so it gets inlined.
+EXAMPLE_809368 = 809368
+
+
 @given(random=strategies.randoms())
 @settings(max_examples=50)
-@example(random=RandomWithSeed(37968))
-@example(random=RandomWithSeed(809368))
+@example(random=RandomWithSeed(EXAMPLE_37968))
+@example(random=RandomWithSeed(EXAMPLE_809368))
 def test_trie_sync(random):
     src_trie, contents = make_random_trie(random)
 
@@ -29,11 +38,7 @@ def test_trie_sync(random):
     while len(requests) > 0:
         results = []
         for request in requests:
-            if len(request.node_key) == 32:
-                results.append([request.node_key, src_trie.db[request.node_key]])
-            else:
-                import rlp
-                results.append([request.node_key, rlp.decode(request.node_key)])
+            results.append([request.node_key, src_trie.db[request.node_key]])
         scheduler.process(results)
         requests = scheduler.next_batch(10)
     dest_trie = HexaryTrie(dest_db, src_trie.root_hash)
