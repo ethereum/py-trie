@@ -1,0 +1,96 @@
+version: 2.0
+
+# heavily inspired by https://raw.githubusercontent.com/pinax/pinax-wiki/6bd2a99ab6f702e300d708532a6d1d9aa638b9f8/.circleci/config.yml
+
+common: &common
+  working_directory: ~/repo
+  steps:
+    - checkout
+    - run:
+        name: merge pull request base
+        command: |
+          if [[ -n "${CIRCLE_PR_NUMBER}" ]]; then
+            PR_INFO_URL=https://api.github.com/repos/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/pulls/$CIRCLE_PR_NUMBER
+
+            PR_BASE_BRANCH=$(curl -L "$PR_INFO_URL" | python -c 'import json, sys; obj = json.load(sys.stdin); sys.stdout.write(obj["base"]["ref"])')
+            git fetch origin +"$PR_BASE_BRANCH":circleci/pr-base
+
+            # We need these config values or git complains when creating the
+            # merge commit
+            git config --global user.name "Circle CI"
+            git config --global user.email "circleci@example.com"
+
+            git merge --no-edit circleci/pr-base
+          fi
+    - restore_cache:
+        keys:
+          - cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
+    - run:
+        name: install dependencies
+        command: pip install --user tox
+    - run:
+        name: run tox
+        command: ~/.local/bin/tox
+    - save_cache:
+        paths:
+          - .tox
+          - ~/.cache/pip
+          - ~/.local
+          - ./eggs
+        key: cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
+
+jobs:
+  lint:
+    <<: *common
+    docker:
+      - image: circleci/python:3.5
+        environment:
+          TOXENV: lint
+  py35-rlp0:
+    <<: *common
+    docker:
+      - image: circleci/python:3.5
+        environment:
+          TOXENV: py35-rlp0
+  py35-rlp1:
+    <<: *common
+    docker:
+      - image: circleci/python:3.5
+        environment:
+          TOXENV: py35-rlp1
+  py36-rlp0:
+    <<: *common
+    docker:
+      - image: circleci/python:3.6
+        environment:
+          TOXENV: py36-rlp0
+  py36-rlp1:
+    <<: *common
+    docker:
+      - image: circleci/python:3.6
+        environment:
+          TOXENV: py36-rlp1
+  pypy3-rlp0:
+    <<: *common
+    docker:
+      - image: pypy
+        environment:
+          TOXENV: pypy3-rlp0
+  pypy3-rlp1:
+    <<: *common
+    docker:
+      - image: pypy
+        environment:
+          TOXENV: pypy3-rlp1
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - lint
+      - py35-rlp0
+      - py35-rlp1
+      - py36-rlp0
+      - py36-rlp1
+      - pypy3-rlp0
+      - pypy3-rlp1

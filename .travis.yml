@@ -5,16 +5,20 @@ matrix:
   include:
     # lint
     - python: "3.5"
-      env: TOX_POSARGS="-e flake8"
+      env: TOX_POSARGS="-e lint"
     # core
     - python: "3.5"
       env: TOX_POSARGS="-e py35-rlp0"
-    - python: "3.6"
-      env: TOX_POSARGS="-e py36-rlp1"
     - python: "3.5"
-      env: TOX_POSARGS="-e py35-rlp0"
+      env: TOX_POSARGS="-e py35-rlp1"
+    - python: "3.6"
+      env: TOX_POSARGS="-e py36-rlp0"
     - python: "3.6"
       env: TOX_POSARGS="-e py36-rlp1"
+    - python: "pypy3.5"
+      env: TOX_POSARGS="-e pypy3-rlp0"
+    - python: "pypy3.5"
+      env: TOX_POSARGS="-e pypy3-rlp1"
 cache:
   pip: true
 install:
