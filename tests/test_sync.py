@@ -4,7 +4,9 @@ from hypothesis import (
     given,
     settings,
     strategies,
+    example,
 )
+from hypothesis.types import RandomWithSeed
 
 from trie import HexaryTrie
 from trie.sync import HexaryTrieSync
@@ -15,7 +17,9 @@ logger = logging.getLogger()
 
 
 @given(random=strategies.randoms())
-@settings(max_examples=10)
+@settings(max_examples=50)
+@example(random=RandomWithSeed(37968))
+@example(random=RandomWithSeed(809368))
 def test_trie_sync(random):
     src_trie, contents = make_random_trie(random)
 
@@ -25,7 +29,11 @@ def test_trie_sync(random):
     while len(requests) > 0:
         results = []
         for request in requests:
-            results.append([request.node_key, src_trie.db[request.node_key]])
+            if len(request.node_key) == 32:
+                results.append([request.node_key, src_trie.db[request.node_key]])
+            else:
+                import rlp
+                results.append([request.node_key, rlp.decode(request.node_key)])
         scheduler.process(results)
         requests = scheduler.next_batch(10)
     dest_trie = HexaryTrie(dest_db, src_trie.root_hash)
