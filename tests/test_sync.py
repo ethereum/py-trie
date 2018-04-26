@@ -4,7 +4,9 @@ from hypothesis import (
     given,
     settings,
     strategies,
+    example,
 )
+from hypothesis.types import RandomWithSeed
 
 from trie import HexaryTrie
 from trie.sync import HexaryTrieSync
@@ -14,8 +16,19 @@ from .utils import make_random_trie
 logger = logging.getLogger()
 
 
+# produces a branch node with an extention node who's encoding is less than 32
+# bytes in length so it is inlined.
+EXAMPLE_37968 = 37968
+
+# produces an top level extension node who's encoding is less than 32 bytes in
+# length so it gets inlined.
+EXAMPLE_809368 = 809368
+
+
 @given(random=strategies.randoms())
-@settings(max_examples=10)
+@settings(max_examples=50)
+@example(random=RandomWithSeed(EXAMPLE_37968))
+@example(random=RandomWithSeed(EXAMPLE_809368))
 def test_trie_sync(random):
     src_trie, contents = make_random_trie(random)
 

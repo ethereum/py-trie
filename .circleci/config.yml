@@ -36,6 +36,7 @@ common: &common
         command: ~/.local/bin/tox
     - save_cache:
         paths:
+          - .hypothesis
           - .tox
           - ~/.cache/pip
           - ~/.local

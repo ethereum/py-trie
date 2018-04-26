@@ -5,13 +5,13 @@ from eth_utils import (
 )
 
 from trie.constants import (
+    NODE_TYPE_BLANK,
     NODE_TYPE_BRANCH,
     NODE_TYPE_EXTENSION,
     NODE_TYPE_LEAF,
 )
 from trie.exceptions import (
     SyncRequestAlreadyProcessed,
-    UnexpectedNodeType,
 )
 from trie.utils.nodes import (
     decode_node,
@@ -48,6 +48,43 @@ class SyncRequest:
 
     def __repr__(self):
         return "SyncRequest(%s, depth=%d)" % (encode_hex(self.node_key), self.depth)
+
+
+def _get_children(node, depth):
+    node_type = get_node_type(node)
+    references = []
+    leaves = []
+
+    if node_type == NODE_TYPE_BLANK:
+        pass
+    elif node_type == NODE_TYPE_LEAF:
+        leaves.append(node[1])
+    elif node_type == NODE_TYPE_EXTENSION:
+        if isinstance(node[1], bytes) and len(node[1]) == 32:
+            references.append((depth + 1, node[1]))
+        elif isinstance(node[1], list):
+            # the rlp encoding of the node is < 32 so rather than a 32-byte
+            # reference, the actual rlp encoding of the node is inlined.
+            sub_references, sub_leaves = _get_children(node[1], depth + 1)
+            references.extend(sub_references)
+            leaves.extend(sub_leaves)
+        else:
+            raise Exception("Invariant")
+    elif node_type == NODE_TYPE_BRANCH:
+        for sub_node in node[:16]:
+            if isinstance(sub_node, bytes) and len(sub_node) == 32:
+                # this is a reference to another node.
+                references.append((depth + 1, sub_node))
+            else:
+                sub_references, sub_leaves = _get_children(sub_node, depth)
+                references.extend(sub_references)
+                leaves.extend(sub_leaves)
+
+        # The last item in a branch may contain a value.
+        if not is_blank_node(node[16]):
+            leaves.append(node[16])
+
+    return references, leaves
 
 
 class HexaryTrieSync:
@@ -120,39 +157,7 @@ class HexaryTrieSync:
         another containing the leaf children.
         """
         node = decode_node(request.data)
-        node_type = get_node_type(node)
-        references = []
-        leaves = []
-        if node_type == NODE_TYPE_LEAF:
-            leaves.append(node[1])
-        elif node_type == NODE_TYPE_EXTENSION:
-            depth = request.depth + len(node[0])
-            references.append((depth, node[1]))
-        elif node_type == NODE_TYPE_BRANCH:
-            depth = request.depth + 1
-            for item in node[:16]:
-                if is_blank_node(item):
-                    continue
-
-                # In a branch, the first 16 items are either a node whose RLP-encoded
-                # representation is under 32 bytes or a reference to another node.
-                if len(item) == 2:
-                    if get_node_type(item) != NODE_TYPE_LEAF:
-                        raise UnexpectedNodeType("Expected a node of type leaf, but got %s" % item)
-                    leaves.append(item[1])
-                elif len(item) == 17:
-                    # NOTE: This can happen only if the RLP representation of all branch items fit
-                    # in less than 32 bytes, which means the keys/values are extremely short, so
-                    # it's probably not worth supporting it.
-                    raise RuntimeError("If you get this, see the NOTE above")
-                else:
-                    references.append((depth, item))
-
-            # The last item in a branch may contain a value.
-            if not is_blank_node(node[16]):
-                leaves.append(node[16])
-
-        return references, leaves
+        return _get_children(node, request.depth)
 
     def process(self, results):
         """Process request results.

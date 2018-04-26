@@ -24,7 +24,3 @@ class InvalidKeyError(Exception):
 
 class SyncRequestAlreadyProcessed(Exception):
     pass
-
-
-class UnexpectedNodeType(Exception):
-    pass

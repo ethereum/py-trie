@@ -4,9 +4,6 @@ from trie.constants import (
     NODE_TYPE_EXTENSION,
     NODE_TYPE_BRANCH,
 )
-from trie.exceptions import (
-    InvalidNode,
-)
 from trie.utils.nibbles import (
     bytes_to_nibbles,
     nibbles_to_bytes,
@@ -55,7 +52,7 @@ class NodeIterator:
                     return (i,) + nibbles
             raise Exception("Invariant: this means we have an empty branch node")
         else:
-            raise InvalidNode("Unexpected node type: %s" % node_type)
+            raise Exception("Invariant: unknown node type {0}".format(node))
 
     def _iter(self, node, key):
         node_type = get_node_type(node)
