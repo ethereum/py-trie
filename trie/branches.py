@@ -1,4 +1,4 @@
-from eth_utils import (
+from eth_hash.auto import (
     keccak,
 )
 
