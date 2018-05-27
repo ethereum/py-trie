@@ -3,7 +3,7 @@ import itertools
 
 from rlp.codec import encode_raw
 
-from eth_utils import (
+from eth_hash.auto import (
     keccak,
 )
 
