@@ -101,3 +101,18 @@ class SparseMerkleTree:
         node_hash = keccak(node)
         self.db[node_hash] = node
         return node_hash
+
+    #
+    # Dictionary API
+    #
+    def __getitem__(self, key):
+        return self.get(key)
+
+    def __setitem__(self, key, value):
+        return self.set(key, value)
+
+    def __delitem__(self, key):
+        return self.delete(key)
+
+    def __contains__(self, key):
+        return self.exists(key)
