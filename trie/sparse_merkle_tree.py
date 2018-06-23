@@ -75,6 +75,21 @@ class SparseMerkleTree:
             node_hash = parent_node_hash
         self.root_hash = node_hash
 
+    def exists(self, key):
+        validate_is_bytes(key)
+        validate_length(key, 20)
+
+        return self.get(key) is not None
+
+    def delete(self, key):
+        """
+        Equals to setting the value to None
+        """
+        validate_is_bytes(key)
+        validate_length(key, 20)
+
+        self.set(key, b'')
+
     #
     # Utils
     #
