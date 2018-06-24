@@ -15,6 +15,7 @@ from trie.validation import (
 # sanity check
 assert EMPTY_LEAF_NODE_HASH == keccak(b'')
 
+
 class SparseMerkleTree:
     def __init__(self, db):
         self.db = db
@@ -49,31 +50,20 @@ class SparseMerkleTree:
         validate_length(key, 20)
         validate_is_bytes(value)
 
-        first_target_bit = 1 << 159
         path = int.from_bytes(key, byteorder='big')
-        node_hash = self.root_hash
-        sibling_node_hashes = []
-        # Record the sibling nodes along the way
-        for i in range(160):
-            if path & first_target_bit:
-                sibling_node_hashes.append(self.db[node_hash][:32])
-                node_hash = self.db[node_hash][32:]
-            else:
-                sibling_node_hashes.append(self.db[node_hash][32:])
-                node_hash = self.db[node_hash][:32]
-            first_target_bit >>= 1
+        self.root_hash = self._set(value, path, 0, self.root_hash)
+        return
 
-        second_target_bit = 1
-        node_hash = self._hash_and_save(value)
-        for i in range(160):
-            sibling_node_hash = sibling_node_hashes.pop()
-            if (path & second_target_bit):
-                parent_node_hash = self._hash_and_save(sibling_node_hash + node_hash)
+    def _set(self, value, path, depth, node_hash):
+        if depth == 160:
+            return self._hash_and_save(value)
+        else:
+            node = self.db[node_hash]
+            target_bit = 1 << (159 - depth)
+            if (path & target_bit):
+                return self._hash_and_save(node[:32] + self._set(value, path, depth+1, node[32:]))
             else:
-                parent_node_hash = self._hash_and_save(node_hash + sibling_node_hash)
-            second_target_bit <<= 1
-            node_hash = parent_node_hash
-        self.root_hash = node_hash
+                return self._hash_and_save(self._set(value, path, depth+1, node[:32]) + node[32:])
 
     def exists(self, key):
         validate_is_bytes(key)
