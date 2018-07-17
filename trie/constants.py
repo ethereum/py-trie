@@ -1,3 +1,5 @@
+from eth_hash.auto import keccak
+
 BLANK_NODE = b''
 # keccak(b'')
 BLANK_HASH = b"\xc5\xd2F\x01\x86\xf7#<\x92~}\xb2\xdc\xc7\x03\xc0\xe5\x00\xb6S\xca\x82';{\xfa\xd8\x04]\x85\xa4p"  # noqa: E501
@@ -36,7 +38,6 @@ BYTE_1 = bytes([1])
 BYTE_0 = bytes([0])
 
 # Constants for Sparse Merkle Tree
-from eth_hash.auto import keccak
 EMPTY_LEAF_NODE_HASH = BLANK_HASH
 EMPTY_NODE_HASHES = [EMPTY_LEAF_NODE_HASH]
 for _ in range(159):
