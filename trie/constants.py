@@ -38,7 +38,8 @@ BYTE_1 = bytes([1])
 BYTE_0 = bytes([0])
 
 # Constants for Sparse Merkle Tree
+TREE_HEIGHT = 160
 EMPTY_LEAF_NODE_HASH = BLANK_HASH
 EMPTY_NODE_HASHES = [EMPTY_LEAF_NODE_HASH]
-for _ in range(159):
+for _ in range(TREE_HEIGHT - 1):
     EMPTY_NODE_HASHES.insert(0, keccak(EMPTY_NODE_HASHES[0] + EMPTY_NODE_HASHES[0]))

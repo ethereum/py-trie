@@ -3,6 +3,7 @@ from eth_hash.auto import (
 )
 
 from trie.constants import (
+    TREE_HEIGHT,
     EMPTY_LEAF_NODE_HASH,
     EMPTY_NODE_HASHES,
 )
@@ -22,7 +23,7 @@ class SparseMerkleTree:
         # Initialize an empty tree with one branch
         self.root_hash = keccak(EMPTY_NODE_HASHES[0] + EMPTY_NODE_HASHES[0])
         self.db[self.root_hash] = EMPTY_NODE_HASHES[0] + EMPTY_NODE_HASHES[0]
-        for i in range(159):
+        for i in range(TREE_HEIGHT - 1):
             self.db[EMPTY_NODE_HASHES[i]] = EMPTY_NODE_HASHES[i+1] + EMPTY_NODE_HASHES[i+1]
         self.db[EMPTY_LEAF_NODE_HASH] = b''
 
@@ -30,10 +31,10 @@ class SparseMerkleTree:
         validate_is_bytes(key)
         validate_length(key, 20)
 
-        target_bit = 1 << 159
+        target_bit = 1 << TREE_HEIGHT - 1
         path = int.from_bytes(key, byteorder='big')
         node_hash = self.root_hash
-        for i in range(160):
+        for i in range(TREE_HEIGHT):
             if path & target_bit:
                 node_hash = self.db[node_hash][32:]
             else:
@@ -55,11 +56,11 @@ class SparseMerkleTree:
         return
 
     def _set(self, value, path, depth, node_hash):
-        if depth == 160:
+        if depth == TREE_HEIGHT:
             return self._hash_and_save(value)
         else:
             node = self.db[node_hash]
-            target_bit = 1 << (159 - depth)
+            target_bit = 1 << (TREE_HEIGHT - depth - 1)
             if (path & target_bit):
                 return self._hash_and_save(node[:32] + self._set(value, path, depth+1, node[32:]))
             else:
