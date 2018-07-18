@@ -7,6 +7,9 @@ from trie.constants import (
     EMPTY_LEAF_NODE_HASH,
     EMPTY_NODE_HASHES,
 )
+from trie.exceptions import (
+    InvalidKeyError,
+)
 from trie.validation import (
     validate_is_bytes,
     validate_length,
@@ -41,10 +44,9 @@ class SparseMerkleTree:
                 node_hash = self.db[node_hash][:32]
             target_bit >>= 1
 
-        if self.db[node_hash] is b'':
-            return None
-        else:
-            return self.db[node_hash]
+        if node_hash == EMPTY_LEAF_NODE_HASH:
+            raise KeyError("Key does not exist")
+        return self.db[node_hash]
 
     def set(self, key, value):
         validate_is_bytes(key)
@@ -70,7 +72,11 @@ class SparseMerkleTree:
         validate_is_bytes(key)
         validate_length(key, 20)
 
-        return self.get(key) is not None
+        try:
+            self.get(key)
+            return True
+        except KeyError:
+            return False
 
     def delete(self, key):
         """
