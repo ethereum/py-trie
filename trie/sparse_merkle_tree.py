@@ -7,9 +7,6 @@ from trie.constants import (
     EMPTY_LEAF_NODE_HASH,
     EMPTY_NODE_HASHES,
 )
-from trie.exceptions import (
-    InvalidKeyError,
-)
 from trie.validation import (
     validate_is_bytes,
     validate_length,

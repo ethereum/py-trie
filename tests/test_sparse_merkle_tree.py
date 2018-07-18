@@ -33,6 +33,7 @@ def test_sparse_merkle_tree(k, v, chosen_numbers, random):
     for k, v in kv_pairs:
         assert not trie.exists(k)
         trie.set(k, v)
+    prev_root = trie.root_hash
     for k, v in kv_pairs:
         assert trie.get(k) == v
         trie.delete(k)
@@ -44,8 +45,13 @@ def test_sparse_merkle_tree(k, v, chosen_numbers, random):
     random.shuffle(kv_pairs)
     for k, v in kv_pairs:
         trie.set(k, v)
+    # Check trie root remains the same even in different insert order
+    assert trie.root_hash == prev_root
     prior_to_update_root = trie.root_hash
     for i in chosen_numbers:
+        # If new value is the same as current value, skip the update
+        if i.to_bytes(i, byteorder='big') == trie.get(kv_pairs[i][0]):
+            continue
         # Update
         trie.set(kv_pairs[i][0], i.to_bytes(i, byteorder='big'))
         assert trie.get(kv_pairs[i][0]) == i.to_bytes(i, byteorder='big')
@@ -60,6 +66,7 @@ def test_sparse_merkle_tree(k, v, chosen_numbers, random):
         trie.set(kv_pairs[i][0], i.to_bytes(i, byteorder='big'))
     batch_updated_root = trie.root_hash
     # Un-update
+    random.shuffle(chosen_numbers)
     for i in chosen_numbers:
         trie.set(kv_pairs[i][0], kv_pairs[i][1])
     assert trie.root_hash == prior_to_update_root
