@@ -1,4 +1,5 @@
 import contextlib
+import functools
 import itertools
 
 from rlp.codec import encode_raw
@@ -6,6 +7,8 @@ from rlp.codec import encode_raw
 from eth_hash.auto import (
     keccak,
 )
+
+from eth_utils import to_list, to_tuple
 
 from trie.constants import (
     BLANK_NODE,
@@ -197,8 +200,23 @@ class HexaryTrie:
 
         return node
 
-    @staticmethod
-    def _node_to_db_mapping(node):
+    def _node_to_db_mapping(self, node):
+        if self.is_pruning and isinstance(node, list):
+            # When self.is_pruning is True, we'll often prune nodes that have been inserted
+            # recently, so this hack allows us to use an LRU-cached implementation of
+            # _node_to_db_mapping(), which improves the performance of _prune_node()
+            # significantly.
+            return self._cached_create_node_to_db_mapping(tuplify(node))
+        else:
+            return self._create_node_to_db_mapping(node)
+
+    @functools.lru_cache(4096)
+    def _cached_create_node_to_db_mapping(self, node):
+        if isinstance(node, tuple):
+            node = listify(node)
+        return self._create_node_to_db_mapping(node)
+
+    def _create_node_to_db_mapping(self, node):
         validate_is_node(node)
         if is_blank_node(node):
             return BLANK_NODE, None
@@ -430,3 +448,21 @@ class HexaryTrie:
             memory_trie = type(self)(scratch_db, self.root_hash, prune=True)
             yield memory_trie
         self.root_node = memory_trie.root_node
+
+
+@to_tuple
+def tuplify(node):
+    for sub in node:
+        if isinstance(sub, list):
+            yield tuplify(sub)
+        else:
+            yield sub
+
+
+@to_list
+def listify(node):
+    for sub in node:
+        if isinstance(sub, tuple):
+            yield listify(sub)
+        else:
+            yield sub
