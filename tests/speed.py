@@ -1,5 +1,7 @@
-import time
+import cProfile
+import pstats
 import random
+import time
 
 import itertools
 
@@ -17,21 +19,49 @@ TEST_DATA = {
 }
 
 
-def main():
-    print('testing %s values' % len(TEST_DATA))
+def _insert_test():
     trie = HexaryTrie(db={})
-
-    st = time.time()
     for k, v in sorted(TEST_DATA.items()):
         trie[k] = v
-    elapsed = time.time() - st
-    print('time to insert %d - %.2f' % (len(TEST_DATA), elapsed))
+    return trie
 
-    st = time.time()
-    for k in sorted(TEST_DATA.keys()):
-        v = trie[k]
-    elapsed = time.time() - st
-    print('time to read %d - %.2f' % (len(TEST_DATA), elapsed))
+
+def _insert_squash_test():
+    trie = HexaryTrie(db={})
+    with trie.squash_changes() as memory_trie:
+        for k, v in sorted(TEST_DATA.items()):
+            memory_trie[k] = v
+    return trie
+
+
+def main(profile=True):
+    print('testing %s values' % len(TEST_DATA))
+    tests = [
+        ('insert', _insert_test),
+        ('insert squash', _insert_squash_test),
+    ]
+    for name, func in tests:
+        profiler = cProfile.Profile()
+        if profile:
+            profiler.enable()
+
+        st = time.time()
+        trie = func()
+        elapsed = time.time() - st
+        print('time to %s %d - %.2f' % (name, len(TEST_DATA), elapsed))
+
+        if profile:
+            print("==== Profiling stats for %s test =========" % name)
+            profiler.disable()
+            stats = pstats.Stats(profiler)
+            stats.strip_dirs().sort_stats('cumulative').print_stats(30)
+            print("==========================================")
+
+        st = time.time()
+        for k in sorted(TEST_DATA.keys()):
+            trie[k]
+        elapsed = time.time() - st
+        print('time to read %d - %.2f' % (len(TEST_DATA), elapsed))
 
 
 if __name__ == '__main__':
