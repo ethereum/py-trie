@@ -1,4 +1,5 @@
 import bisect
+import warnings
 
 from eth_utils import (
     encode_hex,
@@ -90,6 +91,9 @@ def _get_children(node, depth):
 class HexaryTrieSync:
 
     def __init__(self, root_hash, db, logger):
+        warnings.warn(DeprecationWarning(
+            "The `trie.sync.HexaryTrieSync` class has been deprecated and will be "
+            "removed in a subsequent release"))
         self.queue = []
         self.requests = {}
         self.db = db
