@@ -100,9 +100,12 @@ class HexaryTrieSync:
         # ethereum's mainnet/ropsten.
         self._existing_nodes = set()
         self.committed_nodes = 0
-        self.schedule(root_hash, parent=None, depth=0, leaf_callback=self.leaf_callback)
+        if root_hash in self.db:
+            self.logger.info("Root node (%s) already exists in DB, nothing to do", root_hash)
+        else:
+            self._schedule(root_hash, parent=None, depth=0, leaf_callback=self.leaf_callback)
 
-    def leaf_callback(self, data, parent):
+    async def leaf_callback(self, data, parent):
         """Called when we reach a leaf node.
 
         Should be implemented by subclasses that need to perform special handling of leaves.
@@ -121,17 +124,18 @@ class HexaryTrieSync:
         self.queue = self.queue[:-n]
         return batch
 
-    def schedule(self, node_key, parent, depth, leaf_callback, is_raw=False):
+    async def schedule(self, node_key, parent, depth, leaf_callback, is_raw=False):
         """Schedule a request for the node with the given key."""
         if node_key in self._existing_nodes:
             self.logger.debug("Node %s already exists in db" % encode_hex(node_key))
             return
-
-        if node_key in self.db:
+        if await self.db.coro_exists(node_key):
             self._existing_nodes.add(node_key)
             self.logger.debug("Node %s already exists in db" % encode_hex(node_key))
             return
+        self._schedule(node_key, parent, depth, leaf_callback, is_raw)
 
+    def _schedule(self, node_key, parent, depth, leaf_callback, is_raw=False):
         if parent is not None:
             parent.dependencies += 1
 
@@ -159,7 +163,7 @@ class HexaryTrieSync:
         node = decode_node(request.data)
         return _get_children(node, request.depth)
 
-    def process(self, results):
+    async def process(self, results):
         """Process request results.
 
         :param results: A list of two-tuples containing the node's key and data.
@@ -169,7 +173,7 @@ class HexaryTrieSync:
             if request is None:
                 # This may happen if we resend a request for a node after waiting too long,
                 # and then eventually get two responses with it.
-                self.logger.info(
+                self.logger.debug(
                     "No SyncRequest found for %s, maybe we got more than one response for it"
                     % encode_hex(node_key))
                 return
@@ -179,27 +183,27 @@ class HexaryTrieSync:
 
             request.data = data
             if request.is_raw:
-                self.commit(request)
+                await self.commit(request)
                 continue
 
             references, leaves = self.get_children(request)
 
             for depth, ref in references:
-                self.schedule(ref, request, depth, request.leaf_callback)
+                await self.schedule(ref, request, depth, request.leaf_callback)
 
             if request.leaf_callback is not None:
                 for leaf in leaves:
-                    request.leaf_callback(leaf, request)
+                    await request.leaf_callback(leaf, request)
 
             if request.dependencies == 0:
-                self.commit(request)
+                await self.commit(request)
 
-    def commit(self, request):
+    async def commit(self, request):
         self.committed_nodes += 1
-        self.db[request.node_key] = request.data
+        await self.db.coro_set(request.node_key, request.data)
         self._existing_nodes.add(request.node_key)
         self.requests.pop(request.node_key)
         for ancestor in request.parents:
             ancestor.dependencies -= 1
             if ancestor.dependencies == 0:
-                self.commit(ancestor)
+                await self.commit(ancestor)
