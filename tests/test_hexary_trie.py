@@ -8,11 +8,13 @@ import os
 from eth_utils import (
     is_0x_prefixed,
     decode_hex,
+    encode_hex,
     text_if_str,
     to_bytes,
 )
 
 from trie import HexaryTrie
+from trie.exceptions import MissingTrieNode
 from trie.utils.nodes import (
     decode_node,
 )
@@ -246,5 +248,71 @@ def test_hexary_trie_batch_save_drops_last_root_data_when_pruning():
     assert trie[b'what floats on water?'] == b'a duck'
 
     old_trie = HexaryTrie(db, root_hash=old_root_hash)
-    with pytest.raises(KeyError):
+    with pytest.raises(MissingTrieNode) as excinfo:
         old_trie.root_node
+
+    assert encode_hex(old_root_hash) in str(excinfo.value)
+
+
+def test_hexary_trie_missing_node():
+    db = {}
+    trie = HexaryTrie(db, prune=True)
+
+    key1 = to_bytes(0x0123)
+    trie.set(key1, b'use a value long enough that it must be hashed according to trie spec')
+
+    key2 = to_bytes(0x1234)
+    trie.set(key2, b'val2')
+
+    trie_root_hash = trie.root_hash
+
+    # delete first child of the root
+    root_node = trie.root_node
+
+    first_child_hash = root_node[0]
+
+    del db[first_child_hash]
+
+    # Get exception with relevant info about key
+    with pytest.raises(MissingTrieNode) as exc_info:
+        trie.get(key1)
+    message = str(exc_info.value)
+
+    assert encode_hex(key1) in message
+    assert encode_hex(trie_root_hash) in message
+    assert encode_hex(first_child_hash) in message
+
+    # Get exception when trying to write into key with shared prefix
+    key1_shared_prefix = to_bytes(0x0234)
+    with pytest.raises(MissingTrieNode) as set_exc_info:
+        trie.set(key1_shared_prefix, b'val2')
+
+    set_exc_message = str(set_exc_info.value)
+
+    assert encode_hex(key1_shared_prefix) in set_exc_message
+    assert encode_hex(trie_root_hash) in set_exc_message
+    assert encode_hex(first_child_hash) in set_exc_message
+
+    # Get exception when trying to delete key with missing data
+    with pytest.raises(MissingTrieNode) as delete_exc_info:
+        trie.delete(key1)
+
+    delete_exc_message = str(delete_exc_info.value)
+
+    assert encode_hex(key1) in delete_exc_message
+    assert encode_hex(trie_root_hash) in delete_exc_message
+    assert encode_hex(first_child_hash) in delete_exc_message
+
+    # Get exception when checking if key exists with missing data
+    key1_shared_prefix2 = to_bytes(0x0345)
+    with pytest.raises(MissingTrieNode) as existance_exc_info:
+        key1_shared_prefix2 in trie
+
+    existance_exc_message = str(existance_exc_info.value)
+
+    assert encode_hex(key1_shared_prefix2) in existance_exc_message
+    assert encode_hex(trie_root_hash) in existance_exc_message
+    assert encode_hex(first_child_hash) in existance_exc_message
+
+    # Other keys are still accessible
+    assert trie.get(key2) == b'val2'
