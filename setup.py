@@ -17,7 +17,7 @@ setup(
     setup_requires=['setuptools-markdown'],
     install_requires=[
         "eth-hash>=0.1.0,<1.0.0",
-        "eth-utils>=1.3.0,<2.0.0",
+        "eth-utils>=1.2.2,<2.0.0",
         "eth-typing>=2.0.0,<3",
         "rlp>=0.4.7,<2.0.0",
     ],
