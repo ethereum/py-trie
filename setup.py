@@ -17,9 +17,8 @@ setup(
     setup_requires=['setuptools-markdown'],
     install_requires=[
         "eth-hash>=0.1.0,<1.0.0",
-        "eth-utils>=1.0.1,<2.0.0",
+        "eth-utils>=1.3.0,<2.0.0",
         "rlp>=0.4.7,<2.0.0",
-        "cytoolz>=0.8.0,<1",
     ],
     license="MIT",
     zip_safe=False,
