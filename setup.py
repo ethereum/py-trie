@@ -18,12 +18,14 @@ setup(
     install_requires=[
         "eth-hash>=0.1.0,<1.0.0",
         "eth-utils>=1.3.0,<2.0.0",
+        "eth-typing>=2.0.0,<3",
         "rlp>=0.4.7,<2.0.0",
     ],
     license="MIT",
     zip_safe=False,
     keywords='ethereum blockchain evm trie merkle',
     packages=find_packages(exclude=["tests", "tests.*"]),
+    package_data={'trie': ['py.typed']},
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
