@@ -17,14 +17,15 @@ setup(
     setup_requires=['setuptools-markdown'],
     install_requires=[
         "eth-hash>=0.1.0,<1.0.0",
-        "eth-utils>=1.0.1,<2.0.0",
+        "eth-utils>=1.2.2,<2.0.0",
+        "eth-typing>=2.0.0,<3",
         "rlp>=0.4.7,<2.0.0",
-        "cytoolz>=0.8.0,<1",
     ],
     license="MIT",
     zip_safe=False,
     keywords='ethereum blockchain evm trie merkle',
     packages=find_packages(exclude=["tests", "tests.*"]),
+    package_data={'trie': ['py.typed']},
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
@@ -33,5 +34,7 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: Implementation :: PyPy',
     ],
 )
