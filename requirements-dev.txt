@@ -4,3 +4,4 @@ hypothesis==3.7.0
 bumpversion==0.5.3
 eth-hash[pycryptodome]>=0.1.0,<1.0.0
 twine==1.11.0
+mypy==0.641
