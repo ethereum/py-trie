@@ -1,15 +1,12 @@
 # Python Implementation of the Ethereum Trie structure
 
-
-```shell
-$ pip install trie
-```
+[![PyPI](https://img.shields.io/pypi/v/trie.svg)](https://pypi.org/project/trie/)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/trie.svg)
 
 > Warning: This is an early release and is likely to contain bugs as well as
 > breaking API changes.
-
-
-> This library and repository was previously located at https://github.com/pipermerriam/py-trie.  It was transferred to the Ethereum foundation github in November 2017 and renamed to `py-trie`.
+> This library and repository was previously located at [pipermerriam/py-trie](https://github.com/pipermerriam/py-trie). It was transferred to the Ethereum foundation GitHub in 
+> November 2017 and renamed to `py-trie`.
 
 ## Installation
 
@@ -20,9 +17,8 @@ pip install trie
 ## Development
 
 ```sh
-pip install -e . -r requirements-dev.txt
+pip install -e .[dev]
 ```
-
 
 ### Running the tests
 
@@ -34,7 +30,6 @@ py.test tests
 
 Or you can install `tox` to run the full test suite.
 
-
 ### Releasing
 
 Pandoc is required for transforming the markdown README to the proper format to
@@ -42,7 +37,7 @@ render correctly on pypi.
 
 For Debian-like systems:
 
-```
+```sh
 apt install pandoc
 ```
 
@@ -60,7 +55,6 @@ git push && git push --tags
 make release
 ```
 
-
 #### How to bumpversion
 
 The version format for this repo is `{major}.{minor}.{patch}` for stable, and
@@ -73,7 +67,6 @@ If you are in a beta version, `bumpversion stage` will switch to a stable.
 
 To issue an unstable version when the current version is stable, specify the
 new version explicitly, like `bumpversion --new-version 4.0.0-alpha.1 devnum`
-
 
 ## Usage
 
@@ -116,7 +109,8 @@ False
 ```
 
 ## BinaryTrie
-- Note: One drawback of Binary Trie is that **one key can not be the prefix of another key**. For example,
+
+**Note:** One drawback of Binary Trie is that **one key can not be the prefix of another key**. For example,
 if you already set the value `value1` with key `key1`, you can not set another value with key `key` or `key11`
 and the like.
 
@@ -153,7 +147,6 @@ Now Trie looks like this:
             |                           |
   (leafnode, b'value1')       (leafnode, b'value2')
 ```
-
 
 ```python
 >>> # check_if_branch_exist function
