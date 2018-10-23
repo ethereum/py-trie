@@ -40,7 +40,7 @@ setup(
     include_package_data=True,
     py_modules=['trie'],
     setup_requires=['setuptools-markdown'],
-    python_requires='>=3.5, !=3.5.2, <4',
+    python_requires='>=3.5.3,<4',
 
     install_requires=[
         "eth-hash>=0.1.0,<1.0.0",
