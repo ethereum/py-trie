@@ -27,13 +27,13 @@ common: &common
           fi
     - restore_cache:
         keys:
-          - cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
+          - cache-v1-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
     - run:
         name: install dependencies
         command: pip install --user tox
     - run:
         name: run tox
-        command: ~/.local/bin/tox
+        command: ~/.local/bin/tox -r
     - save_cache:
         paths:
           - .hypothesis
@@ -41,60 +41,46 @@ common: &common
           - ~/.cache/pip
           - ~/.local
           - ./eggs
-        key: cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
+        key: cache-v1-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
 
 jobs:
-  lint:
+  py35-lint:
     <<: *common
     docker:
       - image: circleci/python:3.5
         environment:
           TOXENV: lint
-  py35-rlp0:
-    <<: *common
-    docker:
-      - image: circleci/python:3.5
-        environment:
-          TOXENV: py35-rlp0
-  py35-rlp1:
-    <<: *common
-    docker:
-      - image: circleci/python:3.5
-        environment:
-          TOXENV: py35-rlp1
-  py36-rlp0:
+  py36-lint:
     <<: *common
     docker:
       - image: circleci/python:3.6
         environment:
-          TOXENV: py36-rlp0
-  py36-rlp1:
+          TOXENV: lint
+  py35:
+    <<: *common
+    docker:
+      - image: circleci/python:3.5
+        environment:
+          TOXENV: py35
+  py36:
     <<: *common
     docker:
       - image: circleci/python:3.6
         environment:
-          TOXENV: py36-rlp1
-  pypy3-rlp0:
+          TOXENV: py36
+  pypy3:
     <<: *common
     docker:
       - image: pypy
         environment:
-          TOXENV: pypy3-rlp0
-  pypy3-rlp1:
-    <<: *common
-    docker:
-      - image: pypy
-        environment:
-          TOXENV: pypy3-rlp1
+          TOXENV: pypy3
 
 workflows:
   version: 2
   test:
     jobs:
-      - lint
-      - py35-rlp0
-      - py35-rlp1
-      - py36-rlp0
-      - py36-rlp1
-      - pypy3-rlp0
-      - pypy3-rlp1
+      - py35-lint
+      - py36-lint
+      - py35
+      - py36
+      - pypy3

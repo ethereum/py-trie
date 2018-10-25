@@ -25,7 +25,7 @@ extras_require = {
 extras_require['dev'] = (
     extras_require['dev'] +
     extras_require['test'] +
-    extras_require['lint'] 
+    extras_require['lint']
 )
 
 setup(
@@ -45,7 +45,7 @@ setup(
     install_requires=[
         "eth-hash>=0.1.0,<1.0.0",
         "eth-utils>=1.0.1,<2.0.0",
-        "rlp>=0.4.7,<2.0.0",
+        "rlp>=1,<2",
         "cytoolz>=0.8.0,<1",
     ],
     extras_require=extras_require,
