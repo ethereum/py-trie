@@ -79,7 +79,7 @@ def get_branch(db, root_hash, key):
 
 def _get_branch(db, node_hash, keypath):
     if node_hash == BLANK_HASH:
-        raise StopIteration
+        return
     node = db[node_hash]
     nodetype, left_child, right_child = parse_node(node)
     if nodetype == LEAF_TYPE:
@@ -137,7 +137,7 @@ def _get_trie_nodes(db, node_hash):
     if node_hash in db:
         node = db[node_hash]
     else:
-        raise StopIteration
+        return
     nodetype, left_child, right_child = parse_node(node)
     if nodetype == KV_TYPE:
         yield node
@@ -171,7 +171,7 @@ def _get_witness_for_key_prefix(db, node_hash, keypath):
     if node_hash in db:
         node = db[node_hash]
     else:
-        raise StopIteration
+        return
     nodetype, left_child, right_child = parse_node(node)
     if nodetype == LEAF_TYPE:
         if keypath:
