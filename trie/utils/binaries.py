@@ -1,7 +1,7 @@
 from eth_utils import (
     apply_to_return_value,
 )
-from cytoolz import (
+from eth_utils.toolz import (
     partition_all,
 )
 
