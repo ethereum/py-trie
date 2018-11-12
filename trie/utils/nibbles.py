@@ -3,7 +3,7 @@ import itertools
 from eth_utils import (
     to_tuple,
 )
-from cytoolz import (
+from eth_utils.toolz import (
     partition,
 )
 
