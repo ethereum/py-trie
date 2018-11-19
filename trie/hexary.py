@@ -48,11 +48,6 @@ from trie.validation import (
 )
 
 
-# sanity check
-assert BLANK_NODE_HASH == keccak(encode_raw(b''))
-assert BLANK_HASH == keccak(b'')
-
-
 class HexaryTrie:
     __slots__ = ('db', 'root_hash', 'is_pruning')
 
