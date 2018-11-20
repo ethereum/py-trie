@@ -1,3 +1,5 @@
+import collections
+
 from eth_utils import (
         keccak,
     )
@@ -19,16 +21,16 @@ def test_hash_constants():
 
 
 def test_smt256_empty_hashes():
-    DEPTH=256  # Default depth is 32 bytes
+    DEPTH = 256  # Default depth is 32 bytes
 
     # Start at the bottom
     EMPTY_LEAF_NODE_HASH = BLANK_HASH
-    EMPTY_NODE_HASHES = [EMPTY_LEAF_NODE_HASH]
+    EMPTY_NODE_HASHES = collections.deque([EMPTY_LEAF_NODE_HASH])
 
     # More hashes the lower you go down the tree (to the root)
     # NOTE: Did this with different code as a sanity check
     for _ in range(DEPTH - 1):
-        EMPTY_NODE_HASHES.insert(0, keccak(EMPTY_NODE_HASHES[0] + EMPTY_NODE_HASHES[0]))
+        EMPTY_NODE_HASHES.appendleft(keccak(EMPTY_NODE_HASHES[0] + EMPTY_NODE_HASHES[0]))
     EMPTY_ROOT_HASH = keccak(EMPTY_NODE_HASHES[0] + EMPTY_NODE_HASHES[0])
 
     smt = SMT()
@@ -36,4 +38,4 @@ def test_smt256_empty_hashes():
 
     key = b"\x00" * 32
     # _get(key) returns value, branch tuple
-    assert smt._get(key)[1] == EMPTY_NODE_HASHES
+    assert smt._get(key)[1] == tuple(EMPTY_NODE_HASHES)

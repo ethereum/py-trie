@@ -17,7 +17,6 @@ from trie.constants import (
     NODE_TYPE_LEAF,
     NODE_TYPE_EXTENSION,
     NODE_TYPE_BRANCH,
-    BLANK_HASH,
 )
 from trie.exceptions import (
     BadTrieProof,
