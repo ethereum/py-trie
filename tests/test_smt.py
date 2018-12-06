@@ -17,6 +17,7 @@ from trie.smt import (
 )
 def test_simple_kv(k, v):
     smt = SparseMerkleTree(key_size=len(k))
+    empty_root = smt.root_hash
 
     # Nothing has been added yet
     assert not smt.exists(k)
@@ -24,12 +25,13 @@ def test_simple_kv(k, v):
     # Now that something is added, it should be consistent
     smt.set(k, v)
     assert smt.get(k) == v
+    assert smt.root_hash != empty_root
     assert smt.root_hash == calc_root(k, v, smt.branch(k))
 
     # If you delete it, it goes away
     smt.delete(k)
     assert not smt.exists(k)
-
+    assert smt.root_hash == empty_root
 
 @given(
     data=st.data(),
@@ -71,7 +73,7 @@ def test_branch_updates(data, key_size):
 
         # Merge all of the updates into the tracked proof entries
         for u in proof_updates:
-            p.merge(*u)
+            p.update(*u)
 
-        # All merges should be consistent with the latest smt root
+        # All updates should be consistent with the latest smt root
         assert p.root_hash == smt.root_hash
