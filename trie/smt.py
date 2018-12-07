@@ -198,6 +198,12 @@ class SparseMerkleTree:
         on-chain datastores.
 
         :param key_size: The size (in # of bytes) of the key. All keys must be this size.
+                         Note that the size should be between 1 and 32 bytes. For performance,
+                         it is not advisible to have a key larger than 32 bytes (and you should
+                         optimize to much less than that) but if the data structure you seek
+                         to use as a key is larger, the suggestion would be to hash that
+                         structure in a serialized format to obtain the key, or add a unique
+                         identifier to the structure.
         :param default: The default value used for the database. Initializes the root.
         """
         # Ensure we can support the given depth
