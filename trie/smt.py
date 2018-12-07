@@ -189,7 +189,9 @@ class SparseMerkleProof:
 
 class SparseMerkleTree:
 
-    def __init__(self, key_size: int=32, default: bytes=BLANK_NODE):
+    def __init__(self,
+                 key_size: int = 32,
+                 default: bytes = BLANK_NODE):
         """
         Maintain a a binary trie with a particular depth (defined by key size)
         All values are stored at that depth, and the tree has a default value that it is
@@ -232,8 +234,8 @@ class SparseMerkleTree:
             cls,
             db: Dict[bytes, bytes],
             root_hash: Hash32,
-            key_size: int=32,
-            default: bytes=BLANK_NODE):
+            key_size: int = 32,
+            default: bytes = BLANK_NODE):
         smt = cls(key_size=key_size, default=default)
 
         # If db is provided, and is not consistent,
