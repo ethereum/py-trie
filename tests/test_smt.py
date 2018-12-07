@@ -33,32 +33,29 @@ def test_simple_kv(k, v):
     assert not smt.exists(k)
     assert smt.root_hash == empty_root
 
+
 @given(
-    data=st.data(),
-    key_size=st.integers(min_value=1, max_value=32),
+    key_size = st.shared(st.integers(min_value=1, max_value=32), key="key_size"),
+    # Do this so that the size of the keys (in bytes) matches the key_size for the test
+    keys = st.shared(st.integers(), key="key_size").flatmap(lambda key_size: st.lists(
+        elements=st.binary(min_size=key_size, max_size=key_size),
+        min_size=3,
+        max_size=3,
+        unique=True,
+    )),
+    vals = st.lists(
+        elements=st.binary(min_size=1, max_size=32),
+        min_size=3,
+        max_size=3,
+    ),
 )
-def test_branch_updates(data, key_size):
-    num_elements = data.draw(st.integers(min_value=1, max_value=key_size*8//10+1))
-    keys = data.draw(
-        st.lists(
-            elements=st.binary(min_size=key_size, max_size=key_size),
-            min_size=1,
-            max_size=num_elements,
-            unique=True,
-        )
-    )
-    vals = data.draw(
-        st.lists(
-            elements=st.binary(min_size=1, max_size=32),
-            min_size=len(keys),
-            max_size=len(keys),
-        )
-    )
+def test_branch_updates(key_size, keys, vals):
 
     # Empty tree
     smt = SparseMerkleTree(key_size=key_size)
 
     # NOTE: smt._get internal method is used for testing only
+    #       because it doesn't do null checks on the empty default
     EMPTY_NODE_HASHES = list(smt._get(keys[0])[1])
 
     # Objects to track proof data
