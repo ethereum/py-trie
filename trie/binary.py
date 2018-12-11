@@ -29,10 +29,6 @@ from trie.validation import (
 )
 
 
-# sanity check
-assert BLANK_HASH == keccak(b'')
-
-
 class BinaryTrie(object):
     def __init__(self, db, root_hash=BLANK_HASH):
         self.db = db

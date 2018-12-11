@@ -17,7 +17,6 @@ from trie.constants import (
     NODE_TYPE_LEAF,
     NODE_TYPE_EXTENSION,
     NODE_TYPE_BRANCH,
-    BLANK_HASH,
 )
 from trie.exceptions import (
     BadTrieProof,
@@ -46,11 +45,6 @@ from trie.validation import (
     validate_is_node,
     validate_is_bytes,
 )
-
-
-# sanity check
-assert BLANK_NODE_HASH == keccak(encode_raw(b''))
-assert BLANK_HASH == keccak(b'')
 
 
 class HexaryTrie:
