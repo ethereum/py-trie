@@ -142,10 +142,13 @@ class HexaryTrie:
     #
     @classmethod
     def get_from_proof(cls, root_hash, key, proof):
-        trie = cls({})
-
+        db = {}
         for node in proof:
-            trie._persist_node(node)
+            encoded_node = encode_raw(node)
+            encoded_node_hash = keccak(encoded_node)
+            db[encoded_node_hash] = encoded_node
+
+        trie = cls(db)
         trie.root_hash = root_hash
         try:
             return trie.get(key)
