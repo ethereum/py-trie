@@ -167,12 +167,10 @@ class HexaryTrie:
         node_type = get_node_type(node)
         if node_type == NODE_TYPE_BLANK:
             return False
-
-        if node_type == NODE_TYPE_LEAF:
+        elif node_type == NODE_TYPE_LEAF:
             current_key = extract_key(node)
             return current_key == trie_key
-
-        if node_type == NODE_TYPE_EXTENSION:
+        elif node_type == NODE_TYPE_EXTENSION:
             current_key = extract_key(node)
             if key_starts_with(trie_key, current_key):
                 node = self.get_node(node[1])
@@ -180,16 +178,14 @@ class HexaryTrie:
                 return self._get_proof(node, trie_key, proof)
             else:
                 return False
-
-        if node_type == NODE_TYPE_BRANCH:
+        elif node_type == NODE_TYPE_BRANCH:
             if not trie_key:
                 return True
-
             node = self.get_node(node[trie_key[0]])
             trie_key = trie_key[1:]
             return self._get_proof(node, trie_key, proof)
-
-        raise Exception("Invariant: This shouldn't ever happen")
+        else:
+            raise Exception("Invariant: This shouldn't ever happen")
 
     #
     # Convenience
