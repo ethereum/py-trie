@@ -159,7 +159,10 @@ class HexaryTrie:
 
         proof = []
         verified = self._get_proof(node, trie_key, proof)
-        return tuple(proof) if verified else ()
+        if verified:
+            return tuple(proof)
+        else:
+            raise KeyError("Key does not exist")
 
     def _get_proof(self, node, trie_key, proof):
         proof.append(node)

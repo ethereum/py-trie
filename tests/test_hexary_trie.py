@@ -133,13 +133,13 @@ def test_trie_using_fixtures(name, updates, expected, deleted, final_root):
     for valid_proof_key in expected:
         valid_proof = trie.get_proof(valid_proof_key)
         assert len(valid_proof) > 0
-        print(valid_proof)
+
         valid_proof_value = HexaryTrie.get_from_proof(trie.root_hash, valid_proof_key, valid_proof)
         assert valid_proof_value == trie.get(valid_proof_key)
 
     for invalid_proof_key in deleted:
-        invalid_proof = trie.get_proof(invalid_proof_key)
-        assert len(invalid_proof) == 0
+        with pytest.raises(KeyError):
+            trie.get_proof(invalid_proof_key)
 
 
 class KeyAccessLogger(dict):
