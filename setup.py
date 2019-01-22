@@ -5,7 +5,6 @@ from setuptools import setup, find_packages
 
 extras_require = {
     'test': [
-        "pytest==3.0.7",
         "pytest-xdist",
         "tox>=2.6.0,<3",
         "hypothesis==3.7.0",
