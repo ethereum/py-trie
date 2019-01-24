@@ -28,6 +28,7 @@ from trie.utils.nibbles import (
     bytes_to_nibbles,
     decode_nibbles,
     encode_nibbles,
+    nibbles_to_bytes,
 )
 from trie.utils.nodes import (
     decode_node,
@@ -157,36 +158,39 @@ class HexaryTrie:
         node = self.get_node(self.root_hash)
         trie_key = bytes_to_nibbles(key)
 
-        proof = []
-        verified = self._get_proof(node, trie_key, proof)
-        if verified:
-            return tuple(proof)
-        else:
-            raise KeyError("Key does not exist")
+        return self._get_proof(node, trie_key)
 
-    def _get_proof(self, node, trie_key, proof):
-        proof.append(node)
+    @staticmethod
+    def _missing_key_error(key_nibbles):
+        raise KeyError("Key %s does not exist" % nibbles_to_bytes(key_nibbles))
+
+    def _get_proof(self, node, trie_key, proven_len=0, last_proof=tuple()):
+        updated_proof = last_proof + (node, )
+        unproven_key = trie_key[proven_len:]
 
         node_type = get_node_type(node)
         if node_type == NODE_TYPE_BLANK:
-            return False
+            raise self._missing_key_error(trie_key)
         elif node_type == NODE_TYPE_LEAF:
             current_key = extract_key(node)
-            return current_key == trie_key
+            if current_key == unproven_key:
+                return updated_proof
+            else:
+                raise self._missing_key_error(trie_key)
         elif node_type == NODE_TYPE_EXTENSION:
             current_key = extract_key(node)
-            if key_starts_with(trie_key, current_key):
+            if key_starts_with(unproven_key, current_key):
                 node = self.get_node(node[1])
-                trie_key = trie_key[len(current_key):]
-                return self._get_proof(node, trie_key, proof)
+                new_proven_len = proven_len + len(current_key)
+                return self._get_proof(node, trie_key, new_proven_len, updated_proof)
             else:
-                return False
+                raise self._missing_key_error(trie_key)
         elif node_type == NODE_TYPE_BRANCH:
-            if not trie_key:
-                return True
-            node = self.get_node(node[trie_key[0]])
-            trie_key = trie_key[1:]
-            return self._get_proof(node, trie_key, proof)
+            if not unproven_key:
+                return updated_proof
+            node = self.get_node(node[unproven_key[0]])
+            new_proven_len = proven_len + 1
+            return self._get_proof(node, trie_key, new_proven_len, updated_proof)
         else:
             raise Exception("Invariant: This shouldn't ever happen")
 
