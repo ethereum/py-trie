@@ -180,17 +180,17 @@ class HexaryTrie:
         elif node_type == NODE_TYPE_EXTENSION:
             current_key = extract_key(node)
             if key_starts_with(unproven_key, current_key):
-                node = self.get_node(node[1])
+                next_node = self.get_node(node[1])
                 new_proven_len = proven_len + len(current_key)
-                return self._get_proof(node, trie_key, new_proven_len, updated_proof)
+                return self._get_proof(next_node, trie_key, new_proven_len, updated_proof)
             else:
                 raise self._missing_key_error(trie_key)
         elif node_type == NODE_TYPE_BRANCH:
             if not unproven_key:
                 return updated_proof
-            node = self.get_node(node[unproven_key[0]])
+            next_node = self.get_node(node[unproven_key[0]])
             new_proven_len = proven_len + 1
-            return self._get_proof(node, trie_key, new_proven_len, updated_proof)
+            return self._get_proof(next_node, trie_key, new_proven_len, updated_proof)
         else:
             raise Exception("Invariant: This shouldn't ever happen")
 
