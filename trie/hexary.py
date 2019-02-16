@@ -215,7 +215,8 @@ class HexaryTrie:
             return BLANK_NODE_HASH
 
         if value is None:
-            # some nodes
+            # Some nodes are so small that they are not encoded during _node_to_db_mapping,
+            # so we manually encode and hash it here:
             encoded_node = encode_raw(key)
             node_hash = keccak(encoded_node)
         else:
