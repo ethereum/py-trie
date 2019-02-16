@@ -36,13 +36,9 @@ def test_get_from_proof_empty():
 def test_get_from_proof_node_less_than_32bytes():
     t = HexaryTrie(db={})
     t[b'some key'] = b'some value'
-    assert HexaryTrie.get_from_proof(t.root_hash, b'some key', [t.root_node]) == b'some value'
+    proof1 = t.get_proof(b'some key')
+    assert HexaryTrie.get_from_proof(t.root_hash, b'some key', proof1) == b'some value'
 
     t[b'some key2'] = b'some value2'
-
-    proof = [
-        t.root_node,
-        [b'', b'', b'', [b'2', b'some value2'], b'', b'', b'',
-         b'', b'', b'', b'', b'', b'', b'', b'', b'', b'some value']
-    ]
-    assert HexaryTrie.get_from_proof(t.root_hash, b'some key2', proof) == b'some value2'
+    proof2 = t.get_proof(b'some key2')
+    assert HexaryTrie.get_from_proof(t.root_hash, b'some key2', proof2) == b'some value2'
