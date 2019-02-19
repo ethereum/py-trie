@@ -102,6 +102,14 @@ def trim_long_bytes(param):
         return repr('0x' + param[:3].hex() + '...')
 
 
+def assert_proof(trie, key):
+    proof = trie.get_proof(key)
+    assert len(proof) > 0
+
+    proof_value = HexaryTrie.get_from_proof(trie.root_hash, key, proof)
+    assert proof_value == trie.get(key)
+
+
 @pytest.mark.parametrize(
     'name, updates, expected, deleted, final_root',
     FIXTURES_PERMUTED,
@@ -115,6 +123,7 @@ def test_trie_using_fixtures(name, updates, expected, deleted, final_root):
             del trie[key]
         else:
             trie[key] = value
+            assert_proof(trie, key)
 
     for key in deleted:
         del trie[key]
@@ -131,11 +140,7 @@ def test_trie_using_fixtures(name, updates, expected, deleted, final_root):
     assert actual_root == final_root
 
     for valid_proof_key in expected:
-        valid_proof = trie.get_proof(valid_proof_key)
-        assert len(valid_proof) > 0
-
-        valid_proof_value = HexaryTrie.get_from_proof(trie.root_hash, valid_proof_key, valid_proof)
-        assert valid_proof_value == trie.get(valid_proof_key)
+        assert_proof(trie, valid_proof_key)
 
     for invalid_proof_key in deleted:
         with pytest.raises(KeyError):

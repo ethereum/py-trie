@@ -145,7 +145,7 @@ class HexaryTrie:
         trie = cls({})
 
         for node in proof:
-            trie._persist_node(node)
+            trie._set_raw_node(node)
         trie.root_hash = root_hash
         try:
             return trie.get(key)
@@ -208,6 +208,24 @@ class HexaryTrie:
     #
     # Utils
     #
+    def _set_raw_node(self, raw_node):
+        key, value = self._node_to_db_mapping(raw_node)
+        if key == BLANK_NODE:
+            # skip saving the blank node to DB
+            return BLANK_NODE_HASH
+
+        if value is None:
+            # Some nodes are so small that they are not encoded during _node_to_db_mapping,
+            # so we manually encode and hash it here:
+            encoded_node = encode_raw(key)
+            node_hash = keccak(encoded_node)
+        else:
+            encoded_node = value
+            node_hash = key
+
+        self.db[node_hash] = encoded_node
+        return node_hash
+
     def _set_root_node(self, root_node):
         validate_is_node(root_node)
         if self.is_pruning:
@@ -215,13 +233,7 @@ class HexaryTrie:
             if old_root_hash != BLANK_NODE_HASH and old_root_hash in self.db:
                 del self.db[old_root_hash]
 
-        if is_blank_node(root_node):
-            self.root_hash = BLANK_NODE_HASH
-        else:
-            encoded_root_node = encode_raw(root_node)
-            new_root_hash = keccak(encoded_root_node)
-            self.db[new_root_hash] = encoded_root_node
-            self.root_hash = new_root_hash
+        self.root_hash = self._set_raw_node(root_node)
 
     def get_node(self, node_hash):
         if node_hash == BLANK_NODE:
