@@ -105,21 +105,29 @@ class HexaryTrie:
         self._set_root_node(new_node)
 
     def _set(self, node, trie_key, value):
-        self._prune_node(node)
-
         node_type = get_node_type(node)
 
+        # node is mutable, so capture the key for later pruning now
+        prune_key = self._get_prune_key(node)
+
         if node_type == NODE_TYPE_BLANK:
-            return [
+            new_node = [
                 compute_leaf_key(trie_key),
                 value,
             ]
         elif node_type in {NODE_TYPE_LEAF, NODE_TYPE_EXTENSION}:
-            return self._set_kv_node(node, trie_key, value)
+            new_node = self._set_kv_node(node, trie_key, value)
         elif node_type == NODE_TYPE_BRANCH:
-            return self._set_branch_node(node, trie_key, value)
+            new_node = self._set_branch_node(node, trie_key, value)
         else:
             raise Exception("Invariant: This shouldn't ever happen")
+
+        # In case of missing trie data, earlier methods may raise exceptions,
+        # don't prune in that case
+        if prune_key is not None:
+            del self.db[prune_key]
+
+        return new_node
 
     def exists(self, key):
         validate_is_bytes(key)
@@ -146,17 +154,25 @@ class HexaryTrie:
     def _delete(self, node, trie_key):
         node_type = get_node_type(node)
 
-        self._prune_node(node)
+        # node is mutable, so capture the key for later pruning now
+        prune_key = self._get_prune_key(node)
 
         if node_type == NODE_TYPE_BLANK:
             # ignore attempt to delete key from empty node
-            return BLANK_NODE
+            new_node = BLANK_NODE
         elif node_type in {NODE_TYPE_LEAF, NODE_TYPE_EXTENSION}:
-            return self._delete_kv_node(node, trie_key)
+            new_node = self._delete_kv_node(node, trie_key)
         elif node_type == NODE_TYPE_BRANCH:
-            return self._delete_branch_node(node, trie_key)
+            new_node = self._delete_branch_node(node, trie_key)
         else:
             raise Exception("Invariant: This shouldn't ever happen")
+
+        # In case of missing trie data, earlier methods may raise exceptions,
+        # don't prune in that case
+        if prune_key is not None:
+            del self.db[prune_key]
+
+        return new_node
 
     #
     # Trie Proofs
@@ -306,11 +322,18 @@ class HexaryTrie:
             self.db[key] = value
         return key
 
-    def _prune_node(self, node):
+    def _get_prune_key(self, node):
         if self.is_pruning:
             key, value = self._node_to_db_mapping(node)
             if value is not None:
-                del self.db[key]
+                return key
+
+        return None
+
+    def _prune_node(self, node):
+        prune_key = self._get_prune_key(node)
+        if prune_key is not None:
+            del self.db[prune_key]
 
     #
     # Node Operation Helpers
