@@ -1,19 +1,21 @@
-import pytest
-
-import itertools
+from collections import defaultdict
 import fnmatch
+import itertools
 import json
 import os
 
 from eth_utils import (
+    ValidationError,
     is_0x_prefixed,
     decode_hex,
     encode_hex,
     text_if_str,
     to_bytes,
 )
+import pytest
 
 from trie import HexaryTrie
+from trie.constants import BLANK_NODE_HASH
 from trie.exceptions import MissingTrieNode
 from trie.utils.nodes import (
     decode_node,
@@ -166,13 +168,20 @@ class KeyAccessLogger(dict):
 def test_hexary_trie_saves_each_root():
     changes = ((b'ab', b'b'*32), (b'ac', b'c'*32), (b'ac', None), (b'ad', b'd'*32))
     expected = ((b'ab', b'b'*32), (b'ad', b'd'*32))
+
+    # track which key is expected to be present in which root
+    expected_by_root = defaultdict(set)
+    missing_by_root = defaultdict(set)
+
     db = {}
     trie = HexaryTrie(db=db)
     for key, val in changes:
         if val is None:
             del trie[key]
+            missing_by_root[trie.root_hash].add(key)
         else:
             trie[key] = val
+            expected_by_root[trie.root_hash].add((key, val))
 
     # access all of the values in the trie, triggering reads for all the database keys
     # that support the final state
@@ -185,6 +194,19 @@ def test_hexary_trie_saves_each_root():
     # the state with the final root_hash
     unread = flagged_usage_db.unread_keys()
     assert len(unread) > 0
+
+    # check that the values are still reachable at the old state roots
+    for root_hash, expected_items in expected_by_root.items():
+        for key, val in expected_items:
+            with trie.at_root(root_hash) as snapshot:
+                assert key in snapshot
+                assert snapshot[key] == val
+
+    # check that missing values are not reachable at the old state roots
+    for root_hash, missing_keys in missing_by_root.items():
+        for key in missing_keys:
+            with trie.at_root(root_hash) as snapshot:
+                assert key not in snapshot
 
 
 @pytest.mark.parametrize(
@@ -316,3 +338,12 @@ def test_hexary_trie_missing_node():
 
     # Other keys are still accessible
     assert trie.get(key2) == b'val2'
+
+
+def test_hexary_trie_raises_on_pruning_snapshot():
+    db = {}
+    trie = HexaryTrie(db, prune=True)
+
+    with pytest.raises(ValidationError):
+        with trie.at_root(BLANK_NODE_HASH):
+            pass

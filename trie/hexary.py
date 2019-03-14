@@ -8,7 +8,11 @@ from eth_hash.auto import (
     keccak,
 )
 
-from eth_utils import to_list, to_tuple
+from eth_utils import (
+    ValidationError,
+    to_list,
+    to_tuple,
+)
 
 from trie.constants import (
     BLANK_NODE,
@@ -527,6 +531,9 @@ class HexaryTrie:
     def __contains__(self, key):
         return self.exists(key)
 
+    #
+    # Context APIs
+    #
     @contextlib.contextmanager
     def squash_changes(self):
         scratch_db = ScratchDB(self.db)
@@ -534,6 +541,14 @@ class HexaryTrie:
             memory_trie = type(self)(scratch_db, self.root_hash, prune=True)
             yield memory_trie
         self.root_node = memory_trie.root_node
+
+    @contextlib.contextmanager
+    def at_root(self, at_root_hash):
+        if self.is_pruning:
+            raise ValidationError("Cannot use trie snapshot while pruning")
+
+        snapshot = type(self)(self.db, at_root_hash, prune=False)
+        yield snapshot
 
 
 @to_tuple
