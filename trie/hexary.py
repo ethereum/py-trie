@@ -107,27 +107,18 @@ class HexaryTrie:
     def _set(self, node, trie_key, value):
         node_type = get_node_type(node)
 
-        # node is mutable, so capture the key for later pruning now
-        prune_key = self._get_prune_key(node)
-
-        if node_type == NODE_TYPE_BLANK:
-            new_node = [
-                compute_leaf_key(trie_key),
-                value,
-            ]
-        elif node_type in {NODE_TYPE_LEAF, NODE_TYPE_EXTENSION}:
-            new_node = self._set_kv_node(node, trie_key, value)
-        elif node_type == NODE_TYPE_BRANCH:
-            new_node = self._set_branch_node(node, trie_key, value)
-        else:
-            raise Exception("Invariant: This shouldn't ever happen")
-
-        # In case of missing trie data, earlier methods may raise exceptions,
-        # don't prune in that case
-        if prune_key is not None:
-            del self.db[prune_key]
-
-        return new_node
+        with self._prune_node(node):
+            if node_type == NODE_TYPE_BLANK:
+                return [
+                    compute_leaf_key(trie_key),
+                    value,
+                ]
+            elif node_type in {NODE_TYPE_LEAF, NODE_TYPE_EXTENSION}:
+                return self._set_kv_node(node, trie_key, value)
+            elif node_type == NODE_TYPE_BRANCH:
+                return self._set_branch_node(node, trie_key, value)
+            else:
+                raise Exception("Invariant: This shouldn't ever happen")
 
     def exists(self, key):
         validate_is_bytes(key)
@@ -154,25 +145,16 @@ class HexaryTrie:
     def _delete(self, node, trie_key):
         node_type = get_node_type(node)
 
-        # node is mutable, so capture the key for later pruning now
-        prune_key = self._get_prune_key(node)
-
-        if node_type == NODE_TYPE_BLANK:
-            # ignore attempt to delete key from empty node
-            new_node = BLANK_NODE
-        elif node_type in {NODE_TYPE_LEAF, NODE_TYPE_EXTENSION}:
-            new_node = self._delete_kv_node(node, trie_key)
-        elif node_type == NODE_TYPE_BRANCH:
-            new_node = self._delete_branch_node(node, trie_key)
-        else:
-            raise Exception("Invariant: This shouldn't ever happen")
-
-        # In case of missing trie data, earlier methods may raise exceptions,
-        # don't prune in that case
-        if prune_key is not None:
-            del self.db[prune_key]
-
-        return new_node
+        with self._prune_node(node):
+            if node_type == NODE_TYPE_BLANK:
+                # ignore attempt to delete key from empty node
+                return BLANK_NODE
+            elif node_type in {NODE_TYPE_LEAF, NODE_TYPE_EXTENSION}:
+                return self._delete_kv_node(node, trie_key)
+            elif node_type == NODE_TYPE_BRANCH:
+                return self._delete_branch_node(node, trie_key)
+            else:
+                raise Exception("Invariant: This shouldn't ever happen")
 
     #
     # Trie Proofs
@@ -248,6 +230,30 @@ class HexaryTrie:
     #
     # Utils
     #
+
+    @contextlib.contextmanager
+    def _prune_node(self, node):
+        """
+        Prune the given node if context exits cleanly.
+        """
+        if self.is_pruning:
+            # node is mutable, so capture the key for later pruning now
+            prune_key, node_body = self._node_to_db_mapping(node)
+        else:
+            node_body = None
+
+        # Nothing to prune
+        if node_body is None:
+            yield
+        else:
+            # Prune only if no exception is raised
+            try:
+                yield
+            except:
+                raise
+            else:
+                del self.db[prune_key]
+
     def _set_raw_node(self, raw_node):
         key, value = self._node_to_db_mapping(raw_node)
         if key == BLANK_NODE:
@@ -322,19 +328,6 @@ class HexaryTrie:
             self.db[key] = value
         return key
 
-    def _get_prune_key(self, node):
-        if self.is_pruning:
-            key, value = self._node_to_db_mapping(node)
-            if value is not None:
-                return key
-
-        return None
-
-    def _prune_node(self, node):
-        prune_key = self._get_prune_key(node)
-        if prune_key is not None:
-            del self.db[prune_key]
-
     #
     # Node Operation Helpers
     def _normalize_branch_node(self, node):
@@ -358,14 +351,13 @@ class HexaryTrie:
         sub_node = self.get_node(sub_node_hash)
         sub_node_type = get_node_type(sub_node)
 
-        self._prune_node(sub_node)
-
         if sub_node_type in {NODE_TYPE_LEAF, NODE_TYPE_EXTENSION}:
-            new_subnode_key = encode_nibbles(tuple(itertools.chain(
-                [sub_node_idx],
-                decode_nibbles(sub_node[0]),
-            )))
-            return [new_subnode_key, sub_node[1]]
+            with self._prune_node(sub_node):
+                new_subnode_key = encode_nibbles(tuple(itertools.chain(
+                    [sub_node_idx],
+                    decode_nibbles(sub_node[0]),
+                )))
+                return [new_subnode_key, sub_node[1]]
         elif sub_node_type == NODE_TYPE_BRANCH:
             subnode_hash = self._persist_node(sub_node)
             return [encode_nibbles([sub_node_idx]), subnode_hash]
@@ -376,6 +368,9 @@ class HexaryTrie:
     # Node Operations
     #
     def _delete_branch_node(self, node, trie_key):
+        """
+        Delete a key from inside or underneath a branch node
+        """
         if not trie_key:
             node[-1] = BLANK_NODE
             return self._normalize_branch_node(node)
@@ -423,9 +418,9 @@ class HexaryTrie:
 
         new_sub_node_type = get_node_type(new_sub_node)
         if new_sub_node_type in {NODE_TYPE_LEAF, NODE_TYPE_EXTENSION}:
-            self._prune_node(new_sub_node)
-            new_key = current_key + decode_nibbles(new_sub_node[0])
-            return [encode_nibbles(new_key), new_sub_node[1]]
+            with self._prune_node(new_sub_node):
+                new_key = current_key + decode_nibbles(new_sub_node[0])
+                return [encode_nibbles(new_key), new_sub_node[1]]
 
         if new_sub_node_type == NODE_TYPE_BRANCH:
             return [encode_nibbles(current_key), encoded_new_sub_node]
