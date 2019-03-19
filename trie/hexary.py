@@ -239,20 +239,15 @@ class HexaryTrie:
         if self.is_pruning:
             # node is mutable, so capture the key for later pruning now
             prune_key, node_body = self._node_to_db_mapping(node)
+            should_prune = (node_body is not None)
         else:
-            node_body = None
+            should_prune = False
 
-        # Nothing to prune
-        if node_body is None:
-            yield
-        else:
-            # Prune only if no exception is raised
-            try:
-                yield
-            except:
-                raise
-            else:
-                del self.db[prune_key]
+        yield
+
+        # Prune only if no exception is raised
+        if should_prune:
+            del self.db[prune_key]
 
     def _set_raw_node(self, raw_node):
         key, value = self._node_to_db_mapping(raw_node)
