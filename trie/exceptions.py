@@ -38,7 +38,7 @@ class MissingTrieNode(KeyError):
 
     Subclasses KeyError for backwards compatibility.
     """
-    def __init__(self, missing_node_hash, root_hash, requested_key):
+    def __init__(self, missing_node_hash, root_hash, requested_key, *args):
         if not isinstance(missing_node_hash, bytes):
             raise TypeError("Missing node hash must be bytes, was: %r" % missing_node_hash)
         elif not isinstance(root_hash, bytes):
@@ -46,7 +46,7 @@ class MissingTrieNode(KeyError):
         elif not isinstance(requested_key, bytes):
             raise TypeError("Requested key must be bytes, was: %r" % requested_key)
 
-        super().__init__(missing_node_hash, root_hash, requested_key)
+        super().__init__(missing_node_hash, root_hash, requested_key, *args)
 
     def __repr__(self):
         return "MissingTrieNode: {}".format(self)
