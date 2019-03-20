@@ -9,7 +9,6 @@ from eth_hash.auto import (
 )
 
 from eth_utils import (
-    ValidationError,
     to_list,
     to_tuple,
 )
@@ -25,6 +24,7 @@ from trie.constants import (
 from trie.exceptions import (
     BadTrieProof,
     MissingTrieNode,
+    ValidationError,
 )
 from trie.utils.db import (
     ScratchDB,
@@ -169,11 +169,12 @@ class HexaryTrie:
 
         for node in proof:
             trie._set_raw_node(node)
-        trie.root_hash = root_hash
-        try:
-            return trie.get(key)
-        except KeyError as e:
-            raise BadTrieProof("Missing proof node with hash {}".format(e.args))
+
+        with trie.at_root(root_hash) as proven_snapshot:
+            try:
+                return proven_snapshot.get(key)
+            except KeyError as e:
+                raise BadTrieProof("Missing proof node with hash {}".format(e.args))
 
     def get_proof(self, key):
         validate_is_bytes(key)

@@ -5,10 +5,9 @@ import json
 import os
 
 from eth_utils import (
-    ValidationError,
-    is_0x_prefixed,
     decode_hex,
     encode_hex,
+    is_0x_prefixed,
     text_if_str,
     to_bytes,
 )
@@ -16,7 +15,10 @@ import pytest
 
 from trie import HexaryTrie
 from trie.constants import BLANK_NODE_HASH
-from trie.exceptions import MissingTrieNode
+from trie.exceptions import (
+    MissingTrieNode,
+    ValidationError,
+)
 from trie.utils.nodes import (
     decode_node,
 )
@@ -169,19 +171,13 @@ def test_hexary_trie_saves_each_root():
     changes = ((b'ab', b'b'*32), (b'ac', b'c'*32), (b'ac', None), (b'ad', b'd'*32))
     expected = ((b'ab', b'b'*32), (b'ad', b'd'*32))
 
-    # track which key is expected to be present in which root
-    expected_by_root = defaultdict(set)
-    missing_by_root = defaultdict(set)
-
     db = {}
     trie = HexaryTrie(db=db)
     for key, val in changes:
         if val is None:
             del trie[key]
-            missing_by_root[trie.root_hash].add(key)
         else:
             trie[key] = val
-            expected_by_root[trie.root_hash].add((key, val))
 
     # access all of the values in the trie, triggering reads for all the database keys
     # that support the final state
@@ -194,6 +190,23 @@ def test_hexary_trie_saves_each_root():
     # the state with the final root_hash
     unread = flagged_usage_db.unread_keys()
     assert len(unread) > 0
+
+
+def test_hexary_trie_at_root_lookups():
+    changes = ((b'ab', b'b'*32), (b'ac', b'c'*32), (b'ac', None), (b'ad', b'd'*32))
+
+    # track which key is expected to be present in which root
+    expected_by_root = defaultdict(set)
+    missing_by_root = defaultdict(set)
+
+    trie = HexaryTrie({})
+    for key, val in changes:
+        if val is None:
+            del trie[key]
+            missing_by_root[trie.root_hash].add(key)
+        else:
+            trie[key] = val
+            expected_by_root[trie.root_hash].add((key, val))
 
     # check that the values are still reachable at the old state roots
     for root_hash, expected_items in expected_by_root.items():
@@ -341,8 +354,7 @@ def test_hexary_trie_missing_node():
 
 
 def test_hexary_trie_raises_on_pruning_snapshot():
-    db = {}
-    trie = HexaryTrie(db, prune=True)
+    trie = HexaryTrie({}, prune=True)
 
     with pytest.raises(ValidationError):
         with trie.at_root(BLANK_NODE_HASH):
