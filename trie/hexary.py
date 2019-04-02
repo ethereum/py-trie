@@ -12,6 +12,9 @@ from eth_utils import (
     to_list,
     to_tuple,
 )
+from eth_utils.toolz import (
+    merge,
+)
 
 from trie.constants import (
     BLANK_NODE,
@@ -550,6 +553,162 @@ class HexaryTrie:
 
         snapshot = type(self)(self.db, at_root_hash, prune=False)
         yield snapshot
+
+    #
+    # Differ
+    #
+    @classmethod
+    def diff(cls, trie1, trie2):
+        diffed = cls._diff_nodes(trie1, trie2, trie1.root_node, trie2.root_node)
+        return {
+            nibbles_to_bytes(nibbles): valdiff
+            for nibbles, valdiff
+            in diffed.items()
+        }
+
+    @classmethod
+    def _diff_nodes(cls, trie1, trie2, node1, node2):
+        if node1 == node2:
+            return {}
+        node1type = get_node_type(node1)
+        node2type = get_node_type(node2)
+
+        if node1type == NODE_TYPE_BRANCH:
+            if node1[-1]:
+                raise NotImplementedError
+            elif node2type == NODE_TYPE_BLANK:
+                return merge([
+                    {
+                        (branch_nibble, ) + keytail: val
+                        for keytail, val
+                        in cls._diff_nodes(trie1, trie2, trie1._get_subnode(subnode), node2).items()
+                    }
+                    for branch_nibble, subnode in enumerate(node1[:-1])
+                ])
+            elif node2type == NODE_TYPE_LEAF:
+                key2 = extract_key(node2)
+                leaf_nibble = key2[0]
+                branch_subnode = trie1._get_subnode(node1[leaf_nibble])
+                if len(key2) == 1:
+                    if not is_leaf_node(branch_subnode):
+                        raise NotImplementedError
+                    elif branch_subnode[1] != node2[-1]:
+                        diff_leaf = {key2: (branch_subnode[1] or None, node2[-1])}
+                    else:
+                        diff_leaf = {}
+                else:
+                    trimmed_leaf = [
+                        compute_leaf_key(key2[1:]),
+                        node2[1],
+                    ]
+                    diff_leaf = {
+                        (leaf_nibble, ) + keytail: val
+                        for keytail, val
+                        in cls._diff_nodes(trie1, trie2, branch_subnode, trimmed_leaf).items()
+                    }
+
+                diff_blanks = [
+                    {
+                        (branch_nibble, ) + keytail: val
+                        for keytail, val
+                        in cls._diff_nodes(trie1, trie2, trie1._get_subnode(subnode), BLANK_NODE).items()
+                    }
+                    for branch_nibble, subnode in enumerate(node1[:-1])
+                    if branch_nibble != leaf_nibble
+                ]
+                return merge(diff_leaf, *diff_blanks)
+            elif node2type == NODE_TYPE_BRANCH:
+                if node2[-1]:
+                    raise NotImplementedError
+                return merge([
+                    {
+                        (branch_nibble, ) + keytail: val
+                        for keytail, val
+                        in cls._diff_nodes(
+                            trie1,
+                            trie2,
+                            trie1._get_subnode(subnode),
+                            trie2._get_subnode(node2[branch_nibble])
+                        ).items()
+                    }
+                    for branch_nibble, subnode in enumerate(node1[:-1])
+                    if subnode != node2[branch_nibble]
+                ])
+            else:
+                raise NotImplementedError
+
+        elif node1type == NODE_TYPE_EXTENSION:
+            key1 = extract_key(node1)
+            subnode = trie1._get_subnode(node1[1])
+            if node2type == NODE_TYPE_BLANK:
+                return {
+                    key1 + keytail: val
+                    for keytail, val
+                    in cls._diff_nodes(trie1, trie2, subnode, node2)
+                }
+            elif node2type == NODE_TYPE_LEAF:
+                key2 = extract_key(node2)
+                common_prefix, key1_remainder, key2_remainder = consume_common_prefix(
+                    key1,
+                    key2,
+                )
+                if not common_prefix:
+                    return merge(
+                        cls._diff_nodes(trie1, trie2, node1, BLANK_NODE),
+                        cls._diff_nodes(trie1, trie2, BLANK_NODE, node2),
+                    )
+                elif not key1_remainder and key2_remainder:
+                    trimmed_leaf = [
+                        compute_leaf_key(key2_remainder),
+                        node2[1],
+                    ]
+                    return {
+                        common_prefix + keytail: val
+                        for keytail, val
+                        in cls._diff_nodes(trie1, trie2, subnode, trimmed_leaf).items()
+                    }
+                else:
+                    raise NotImplementedError
+
+            else:
+                raise NotImplementedError
+
+        elif is_leaf_node(node1):
+            key1 = extract_key(node1)
+            if is_blank_node(node2):
+                return {key1: (node1[1], None)}
+            elif is_leaf_node(node2):
+                diff = {}
+                key2 = extract_key(node2)
+                if key2 == key1:
+                    diff[key1] = (node1[1], node2[1])
+                else:
+                    diff[key1] = (node1[1], None)
+                    diff[key2] = (None, node2[1])
+                return diff
+            elif node2type in (NODE_TYPE_EXTENSION, NODE_TYPE_BRANCH):
+                return cls._flip_diff(trie1, trie2, node1, node2)
+            else:
+                raise NotImplementedError
+        elif is_blank_node(node1):
+            if is_leaf_node(node2):
+                return cls._flip_diff(trie1, trie2, node1, node2)
+            else:
+                raise NotImplementedError
+        else:
+            raise NotImplementedError
+        raise NotImplementedError
+
+    def _get_subnode(self, subnode_ref):
+        if len(subnode_ref) == 32:
+            return self.get_node(subnode_ref)
+        else:
+            return subnode_ref
+
+    @classmethod
+    def _flip_diff(cls, t1, t2, h1, h2):
+        return {k: (diff1, diff2) for k, (diff2, diff1) in cls._diff_nodes(t2, t1, h2, h1).items()}
+
 
 
 @to_tuple
