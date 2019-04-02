@@ -47,7 +47,7 @@ def get_node_type(node):
     elif len(node) == 17:
         return NODE_TYPE_BRANCH
     else:
-        raise InvalidNode("Unable to determine node type")
+        raise InvalidNode("Unable to determine node type: %r" % node)
 
 
 def is_blank_node(node):
