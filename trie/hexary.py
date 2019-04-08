@@ -541,7 +541,13 @@ class HexaryTrie:
         with scratch_db.batch_commit(do_deletes=self.is_pruning):
             memory_trie = type(self)(scratch_db, self.root_hash, prune=True)
             yield memory_trie
-        self.root_node = memory_trie.root_node
+        try:
+            self.root_node = memory_trie.root_node
+        except MissingTrieNode:
+            # if the new root node is missing,
+            #   (or no changes happened in a squash trie where the old root node was missing),
+            #   then we shouldn't crash here
+            self.root_hash = memory_trie.root_hash
 
     @contextlib.contextmanager
     def at_root(self, at_root_hash):

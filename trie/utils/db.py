@@ -1,5 +1,7 @@
 import contextlib
 
+DELETED = object()
+
 
 class ScratchDB:
     """
@@ -22,19 +24,23 @@ class ScratchDB:
     # if not key is found, return None
     def __getitem__(self, key):
         if key in self.cache:
-            return self.cache[key]
+            val = self.cache[key]
+            if val is not DELETED:
+                return val
+            else:
+                return self.wrapped_db[key]
         else:
-            return self.wrapped_db.get(key, None)
+            return self.wrapped_db[key]
 
     def __setitem__(self, key, value):
         self.cache[key] = value
 
     def __delitem__(self, key):
-        self.cache[key] = None
+        self.cache[key] = DELETED
 
     def __contains__(self, key):
-        if key in self.cache:
-            return self.cache[key] is not None
+        if key in self.cache and self.cache[key] is not DELETED:
+            return True
         else:
             return key in self.wrapped_db
 
@@ -49,7 +55,7 @@ class ScratchDB:
             raise exc
         else:
             for key, value in self.cache.items():
-                if value is not None:
+                if value is not DELETED:
                     self.wrapped_db[key] = value
                 elif do_deletes:
                     self.wrapped_db.pop(key, None)

@@ -289,6 +289,78 @@ def test_hexary_trie_batch_save_drops_last_root_data_when_pruning():
     assert encode_hex(old_root_hash) in str(excinfo.value)
 
 
+def test_squash_changes_can_still_access_underlying_deleted_data():
+    db = {}
+    trie = HexaryTrie(db, prune=True)
+    trie.set(b'what floats on water?', b'very small rocks')
+    old_root_hash = trie.root_hash
+
+    with trie.squash_changes() as memory_trie:
+        memory_trie.set(b'what floats on water?', b'a duck')
+
+        # change to a root hash that the memory trie doesn't have anymore
+        memory_trie.root_hash
+        memory_trie.root_hash = old_root_hash
+
+        assert memory_trie[b'what floats on water?'] == b'very small rocks'
+
+
+def test_squash_changes_raises_correct_error_on_new_deleted_data():
+    db = {}
+    trie = HexaryTrie(db, prune=True)
+    trie.set(b'what floats on water?', b'very small rocks')
+
+    with trie.squash_changes() as memory_trie:
+        memory_trie.set(b'what floats on water?', b'a duck')
+        middle_root_hash = memory_trie.root_hash
+
+        memory_trie.set(b'what floats on water?', b'ooooohh')
+        memory_trie.root_hash
+
+        # change to a root hash that the memory trie doesn't have anymore
+        memory_trie.root_hash = middle_root_hash
+
+        with pytest.raises(MissingTrieNode):
+            memory_trie[b'what floats on water?']
+
+
+def test_squash_changes_raises_correct_error_on_underlying_missing_data():
+    db = {}
+    trie = HexaryTrie(db, prune=True)
+    trie.set(b'what floats on water?', b'very small rocks')
+    old_root_hash = trie.root_hash
+
+    # what if the root node hash is missing from the beginning?
+    del db[old_root_hash]
+
+    # the appropriate exception should be raised, when squashing changes
+    with trie.squash_changes() as memory_trie:
+        with pytest.raises(MissingTrieNode):
+            memory_trie[b'what floats on water?']
+
+
+def test_squash_changes_reverts_trie_root_on_exception():
+    db = {}
+    trie = HexaryTrie(db, prune=True)
+    trie.set(b'\x00', b'B'*32)
+    trie.set(b'\xff', b'C'*32)
+    old_root_hash = trie.root_hash
+
+    # delete the node that will be used during trie fixup
+    del db[trie.root_node[0xf]]
+
+    with pytest.raises(MissingTrieNode):
+        with trie.squash_changes() as memory_trie:
+            try:
+                memory_trie[b'\x11'] = b'new val'
+            except MissingTrieNode:
+                assert False, "Only the squash_changes context exit should raise this exception"
+
+            del memory_trie[b'\xff']
+
+    assert trie.root_hash == old_root_hash
+
+
 def test_hexary_trie_missing_node():
     db = {}
     trie = HexaryTrie(db, prune=True)
