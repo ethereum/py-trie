@@ -194,13 +194,9 @@ class HexaryTrie:
 
         node_type = get_node_type(node)
         if node_type == NODE_TYPE_BLANK:
-            raise self._missing_key_error(trie_key)
+            return last_proof
         elif node_type == NODE_TYPE_LEAF:
-            current_key = extract_key(node)
-            if current_key == unproven_key:
-                return updated_proof
-            else:
-                raise self._missing_key_error(trie_key)
+            return updated_proof
         elif node_type == NODE_TYPE_EXTENSION:
             current_key = extract_key(node)
             if key_starts_with(unproven_key, current_key):
@@ -208,7 +204,7 @@ class HexaryTrie:
                 new_proven_len = proven_len + len(current_key)
                 return self._get_proof(next_node, trie_key, new_proven_len, updated_proof)
             else:
-                raise self._missing_key_error(trie_key)
+                return updated_proof
         elif node_type == NODE_TYPE_BRANCH:
             if not unproven_key:
                 return updated_proof
