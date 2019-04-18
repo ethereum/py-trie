@@ -33,7 +33,6 @@ from trie.utils.nibbles import (
     bytes_to_nibbles,
     decode_nibbles,
     encode_nibbles,
-    nibbles_to_bytes,
 )
 from trie.utils.nodes import (
     decode_node,
