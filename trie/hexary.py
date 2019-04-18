@@ -182,6 +182,9 @@ class HexaryTrie:
         node = self.get_node(self.root_hash)
         trie_key = bytes_to_nibbles(key)
 
+        if node == BLANK_NODE:
+            return (node,)
+
         return self._get_proof(node, trie_key)
 
     @staticmethod
