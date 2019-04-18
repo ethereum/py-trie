@@ -148,9 +148,8 @@ def test_trie_using_fixtures(name, updates, expected, deleted, final_root):
     for valid_proof_key in expected:
         assert_proof(trie, valid_proof_key)
 
-    for invalid_proof_key in deleted:
-        with pytest.raises(KeyError):
-            trie.get_proof(invalid_proof_key)
+    for absence_proof_key in deleted:
+        assert_proof(trie, absence_proof_key)
 
 
 class KeyAccessLogger(dict):
