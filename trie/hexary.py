@@ -187,10 +187,6 @@ class HexaryTrie:
 
         return self._get_proof(node, trie_key)
 
-    @staticmethod
-    def _missing_key_error(key_nibbles):
-        raise KeyError("Key %s does not exist" % nibbles_to_bytes(key_nibbles))
-
     def _get_proof(self, node, trie_key, proven_len=0, last_proof=tuple()):
         updated_proof = last_proof + (node, )
         unproven_key = trie_key[proven_len:]
