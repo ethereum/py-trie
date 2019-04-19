@@ -110,7 +110,6 @@ def trim_long_bytes(param):
 
 def assert_proof(trie, key):
     proof = trie.get_proof(key)
-    assert len(proof) > 0
 
     proof_value = HexaryTrie.get_from_proof(trie.root_hash, key, proof)
     assert proof_value == trie.get(key)
