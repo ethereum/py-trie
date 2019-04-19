@@ -33,7 +33,6 @@ from trie.utils.nibbles import (
     bytes_to_nibbles,
     decode_nibbles,
     encode_nibbles,
-    nibbles_to_bytes,
 )
 from trie.utils.nodes import (
     decode_node,
@@ -184,23 +183,15 @@ class HexaryTrie:
 
         return self._get_proof(node, trie_key)
 
-    @staticmethod
-    def _missing_key_error(key_nibbles):
-        raise KeyError("Key %s does not exist" % nibbles_to_bytes(key_nibbles))
-
     def _get_proof(self, node, trie_key, proven_len=0, last_proof=tuple()):
         updated_proof = last_proof + (node, )
         unproven_key = trie_key[proven_len:]
 
         node_type = get_node_type(node)
         if node_type == NODE_TYPE_BLANK:
-            raise self._missing_key_error(trie_key)
+            return last_proof
         elif node_type == NODE_TYPE_LEAF:
-            current_key = extract_key(node)
-            if current_key == unproven_key:
-                return updated_proof
-            else:
-                raise self._missing_key_error(trie_key)
+            return updated_proof
         elif node_type == NODE_TYPE_EXTENSION:
             current_key = extract_key(node)
             if key_starts_with(unproven_key, current_key):
@@ -208,7 +199,7 @@ class HexaryTrie:
                 new_proven_len = proven_len + len(current_key)
                 return self._get_proof(next_node, trie_key, new_proven_len, updated_proof)
             else:
-                raise self._missing_key_error(trie_key)
+                return updated_proof
         elif node_type == NODE_TYPE_BRANCH:
             if not unproven_key:
                 return updated_proof
