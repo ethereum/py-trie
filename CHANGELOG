@@ -3,6 +3,8 @@ Unreleased
 
 * New `with trie.at_root(hash) as snapshot:` context API, to look up values on a
   different root hash (https://github.com/ethereum/py-trie/pull/84)
+* Can now build a proof that a key is missing:
+  https://github.com/ethereum/py-trie/pull/91
 
 1.3.8
 --------
