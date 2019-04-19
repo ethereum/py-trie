@@ -181,9 +181,6 @@ class HexaryTrie:
         node = self.get_node(self.root_hash)
         trie_key = bytes_to_nibbles(key)
 
-        if node == BLANK_NODE:
-            return (node,)
-
         return self._get_proof(node, trie_key)
 
     def _get_proof(self, node, trie_key, proven_len=0, last_proof=tuple()):
