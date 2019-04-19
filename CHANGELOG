@@ -1,10 +1,27 @@
 Unreleased
 --------------
 
-* New `with trie.at_root(hash) as snapshot:` context API, to look up values on a
-  different root hash (https://github.com/ethereum/py-trie/pull/84)
-* Can now build a proof that a key is missing:
-  https://github.com/ethereum/py-trie/pull/91
+- Python 3.7 support
+  https://github.com/ethereum/py-trie/pull/73
+- Several proof (aka witness) updates
+  - Added HexaryTrie.get_proof for proving a key exists https://github.com/ethereum/py-trie/pull/80
+  - Prove a key is missing with get_proof https://github.com/ethereum/py-trie/pull/91
+  - Bugfix getting a key from a proof with short nodes https://github.com/ethereum/py-trie/pull/82
+- Raise MissingTrieNode with extra info, when an expected trie node is missing from the database
+  (includes update so that pruning old nodes waits until set/delete succeeds)
+  https://github.com/ethereum/py-trie/pull/83
+  https://github.com/ethereum/py-trie/pull/86 (minor cleanup of 83)
+  https://github.com/ethereum/py-trie/pull/90 (squash_changes() support for missing nodes)
+- New `with trie.at_root(hash) as snapshot:` API, to read trie at a different root hash
+  https://github.com/ethereum/py-trie/pull/84
+- EXPERIMENTAL Sparse Merkle Trie in trie.smt (unstable API: could change at minor version)
+  https://github.com/ethereum/py-trie/pull/77
+- Dropped support for rlp v0.x
+  https://github.com/ethereum/py-trie/pull/75
+- Doc updates
+  - https://github.com/ethereum/py-trie/pull/62
+  - https://github.com/ethereum/py-trie/pull/64
+  - https://github.com/ethereum/py-trie/pull/72 (plus other maintenance)
 
 1.3.8
 --------
