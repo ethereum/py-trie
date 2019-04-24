@@ -1,5 +1,12 @@
 Unreleased
---------------
+----------
+
+None
+
+1.4.0
+----------
+
+Released 2019-04-24
 
 - Python 3.7 support
   https://github.com/ethereum/py-trie/pull/73
