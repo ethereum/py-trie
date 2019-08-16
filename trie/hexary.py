@@ -1,3 +1,4 @@
+from collections import defaultdict
 import contextlib
 import functools
 import itertools
@@ -53,17 +54,34 @@ from trie.validation import (
 
 
 class HexaryTrie:
-    __slots__ = ('db', 'root_hash', 'is_pruning')
+    __slots__ = ('db', 'root_hash', 'is_pruning', '_ref_count')
 
     # Shortcuts
     BLANK_NODE_HASH = BLANK_NODE_HASH
     BLANK_NODE = BLANK_NODE
 
     def __init__(self, db, root_hash=BLANK_NODE_HASH, prune=False):
+        """
+        Important note about Pruning:
+
+        The prune keyword is not intended for direct usage. It is likely
+        to be changed or removed in future versions. If you want to prevent
+        storage of unnecessary intermediate nodes, use the :meth:`squash_changes`
+        context manager instead.
+
+        Why? Unless working with an empty database, pruning will be overly aggressive,
+        and delete nodes that are still used by other parts of the trie. This
+        is prevented by squash_changes (by being overly conservative and not
+        deleting any pre-existing nodes).
+        """
         self.db = db
         validate_is_bytes(root_hash)
         self.root_hash = root_hash
         self.is_pruning = prune
+        if prune:
+            self._ref_count = defaultdict(int)
+        else:
+            self._ref_count = None
 
     def get(self, key):
         validate_is_bytes(key)
@@ -159,6 +177,13 @@ class HexaryTrie:
             else:
                 raise Exception("Invariant: This shouldn't ever happen")
 
+    @property
+    def ref_count(self):
+        if self._ref_count is None:
+            raise Exception("Trie does not track node usage unless pruning is enabled")
+        else:
+            return self._ref_count
+
     #
     # Trie Proofs
     #
@@ -243,7 +268,34 @@ class HexaryTrie:
 
         # Prune only if no exception is raised
         if should_prune:
-            del self.db[prune_key]
+            self._prune_key(prune_key)
+
+    def _prune_key(self, key):
+        self.ref_count[key] -= 1
+        if not self.ref_count[key]:
+            del self.db[key]
+
+    def regenerate_ref_count(self):
+        new_ref_count = defaultdict(int)
+
+        keys_to_count = [self.root_hash]
+        while keys_to_count:
+            key = keys_to_count.pop()
+            if key == b'' or isinstance(key, list) or key == BLANK_NODE_HASH:
+                continue
+            new_ref_count[key] += 1
+
+            node = self.get_node(key)
+            node_type = get_node_type(node)
+
+            if node_type == NODE_TYPE_BLANK:
+                continue
+            if node_type == NODE_TYPE_BRANCH:
+                keys_to_count.extend(node[:16])
+            elif node_type == NODE_TYPE_EXTENSION:
+                keys_to_count.append(node[1])
+
+        return new_ref_count
 
     def _set_raw_node(self, raw_node):
         key, value = self._node_to_db_mapping(raw_node)
@@ -260,15 +312,20 @@ class HexaryTrie:
             encoded_node = value
             node_hash = key
 
-        self.db[node_hash] = encoded_node
+        self._set_db_value(node_hash, encoded_node)
         return node_hash
+
+    def _set_db_value(self, key, value):
+        self.db[key] = value
+        if self.is_pruning:
+            self.ref_count[key] += 1
 
     def _set_root_node(self, root_node):
         validate_is_node(root_node)
         if self.is_pruning:
             old_root_hash = self.root_hash
             if old_root_hash != BLANK_NODE_HASH and old_root_hash in self.db:
-                del self.db[old_root_hash]
+                self._prune_key(old_root_hash)
 
         self.root_hash = self._set_raw_node(root_node)
 
@@ -316,7 +373,7 @@ class HexaryTrie:
     def _persist_node(self, node):
         key, value = self._node_to_db_mapping(node)
         if value is not None:
-            self.db[key] = value
+            self._set_db_value(key, value)
         return key
 
     #
@@ -350,8 +407,7 @@ class HexaryTrie:
                 )))
                 return [new_subnode_key, sub_node[1]]
         elif sub_node_type == NODE_TYPE_BRANCH:
-            subnode_hash = self._persist_node(sub_node)
-            return [encode_nibbles([sub_node_idx]), subnode_hash]
+            return [encode_nibbles([sub_node_idx]), sub_node_hash]
         else:
             raise Exception("Invariant: this code block should be unreachable")
 
@@ -372,6 +428,7 @@ class HexaryTrie:
         encoded_sub_node = self._persist_node(sub_node)
 
         if encoded_sub_node == node[trie_key[0]]:
+            # If no change, (value already empty), short-circuit and skip any other work.
             return node
 
         node[trie_key[0]] = encoded_sub_node

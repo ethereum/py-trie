@@ -1,7 +1,10 @@
 Unreleased
 ----------
 
-None
+- Pruning Bugfix: with duplicate values at multiple keys, pruning would sometimes incorrectly
+  prune out a node that was still required. This is fixed for fresh databases, and unfixable
+  for existing databases. (Prune is not designed for on-disk/existing DBs anyhow)
+  https://github.com/ethereum/py-trie/pull/93
 
 1.4.0
 ----------
