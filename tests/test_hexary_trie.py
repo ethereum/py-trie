@@ -12,6 +12,7 @@ from eth_utils import (
     to_bytes,
 )
 import pytest
+import rlp
 
 from trie import HexaryTrie
 from trie.constants import BLANK_NODE_HASH
@@ -262,6 +263,7 @@ def test_hexary_trie_batch_save_keeps_last_root_data():
 
     with trie.squash_changes() as memory_trie:
         memory_trie.set(b'what floats on water?', b'a duck')
+        verify_ref_count(memory_trie)
 
     assert trie[b'what floats on water?'] == b'a duck'
 
@@ -277,6 +279,7 @@ def test_hexary_trie_batch_save_drops_last_root_data_when_pruning():
 
     with trie.squash_changes() as memory_trie:
         memory_trie.set(b'what floats on water?', b'a duck')
+        verify_ref_count(memory_trie)
 
     assert trie[b'what floats on water?'] == b'a duck'
 
@@ -295,6 +298,7 @@ def test_squash_changes_can_still_access_underlying_deleted_data():
 
     with trie.squash_changes() as memory_trie:
         memory_trie.set(b'what floats on water?', b'a duck')
+        verify_ref_count(memory_trie)
 
         # change to a root hash that the memory trie doesn't have anymore
         memory_trie.root_hash
@@ -310,10 +314,12 @@ def test_squash_changes_raises_correct_error_on_new_deleted_data():
 
     with trie.squash_changes() as memory_trie:
         memory_trie.set(b'what floats on water?', b'a duck')
+        verify_ref_count(memory_trie)
         middle_root_hash = memory_trie.root_hash
 
         memory_trie.set(b'what floats on water?', b'ooooohh')
         memory_trie.root_hash
+        verify_ref_count(memory_trie)
 
         # change to a root hash that the memory trie doesn't have anymore
         memory_trie.root_hash = middle_root_hash
@@ -429,3 +435,69 @@ def test_hexary_trie_raises_on_pruning_snapshot():
     with pytest.raises(ValidationError):
         with trie.at_root(BLANK_NODE_HASH):
             pass
+
+
+def verify_ref_count(trie):
+    enumerated_ref_count = trie.regenerate_ref_count()
+
+    tracked_keys = set(trie.ref_count.keys())
+    enumerated_keys = set(enumerated_ref_count.keys())
+
+    # we shouldn't be able to find any keys via enumeration that are untracked
+    untracked_keys = enumerated_keys - tracked_keys
+    assert len(untracked_keys) == 0
+
+    # any tracked keys that aren't enumerated should have 0 references
+    # (maybe they were added and subsequently removed)
+    for unenumerated_key in tracked_keys - enumerated_keys:
+        assert trie.ref_count[unenumerated_key] == 0
+
+    # all keys that were found in enumeration and tracking should have the same reference count
+    for matching_key in tracked_keys & enumerated_keys:
+        actual_num = trie.ref_count[matching_key]
+        expected_num = enumerated_ref_count[matching_key]
+        assert actual_num == expected_num
+
+
+@pytest.mark.parametrize(
+    'name, updates, expected, deleted, final_root',
+    FIXTURES_PERMUTED,
+    ids=trim_long_bytes,
+)
+def test_hexary_trie_ref_count(name, updates, expected, deleted, final_root):
+    db = {}
+    trie = HexaryTrie(db=db)
+    with trie.squash_changes() as memory_trie:
+        for key, value in updates:
+            if value is None:
+                del memory_trie[key]
+            else:
+                memory_trie[key] = value
+
+            verify_ref_count(memory_trie)
+
+        for key in deleted:
+            del memory_trie[key]
+            verify_ref_count(memory_trie)
+
+
+def test_hexary_trie_avoid_over_pruning():
+    db = {}
+    trie = HexaryTrie(db, prune=True)
+
+    def _insert(trie, index, val):
+        index_key = rlp.encode(index, sedes=rlp.sedes.big_endian_int)
+        trie[index_key] = val
+        return index_key
+
+    inserted_keys = []
+    for index, val in enumerate([b'\0' * 32] * 129):
+        new_key = _insert(trie, index, val)
+        inserted_keys.append(new_key)
+
+        # poke the trie to make sure all nodes are still present
+        for key in inserted_keys:
+            # If there's a problem, this will raise a MissingTrieNode
+            trie.get(key)
+
+        verify_ref_count(trie)
