@@ -271,9 +271,21 @@ class HexaryTrie:
             self._prune_key(prune_key)
 
     def _prune_key(self, key):
-        self.ref_count[key] -= 1
-        if not self.ref_count[key]:
-            del self.db[key]
+        new_count = self.ref_count[key] - 1
+
+        if new_count <= 0:
+            # Ref count doesn't track keys that are already in the starting database,
+            #   so ref count can go negative. Then, detect if key is in underlying:
+            #   - If so, delete it and set the refcount down to 0
+            #   - If not, raise an exception about trying to prune a node that doesn't exist
+            try:
+                del self.db[key]
+            except KeyError as exc:
+                raise ValidationError("Tried to prune key %r that doesn't exist" % key) from exc
+            else:
+                new_count = 0
+
+        self.ref_count[key] = new_count
 
     def regenerate_ref_count(self):
         new_ref_count = defaultdict(int)

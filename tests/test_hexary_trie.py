@@ -263,6 +263,7 @@ def test_hexary_trie_batch_save_keeps_last_root_data():
 
     with trie.squash_changes() as memory_trie:
         memory_trie.set(b'what floats on water?', b'a duck')
+        verify_ref_count(memory_trie)
 
     assert trie[b'what floats on water?'] == b'a duck'
 
@@ -278,6 +279,7 @@ def test_hexary_trie_batch_save_drops_last_root_data_when_pruning():
 
     with trie.squash_changes() as memory_trie:
         memory_trie.set(b'what floats on water?', b'a duck')
+        verify_ref_count(memory_trie)
 
     assert trie[b'what floats on water?'] == b'a duck'
 
@@ -296,6 +298,7 @@ def test_squash_changes_can_still_access_underlying_deleted_data():
 
     with trie.squash_changes() as memory_trie:
         memory_trie.set(b'what floats on water?', b'a duck')
+        verify_ref_count(memory_trie)
 
         # change to a root hash that the memory trie doesn't have anymore
         memory_trie.root_hash
@@ -311,10 +314,12 @@ def test_squash_changes_raises_correct_error_on_new_deleted_data():
 
     with trie.squash_changes() as memory_trie:
         memory_trie.set(b'what floats on water?', b'a duck')
+        verify_ref_count(memory_trie)
         middle_root_hash = memory_trie.root_hash
 
         memory_trie.set(b'what floats on water?', b'ooooohh')
         memory_trie.root_hash
+        verify_ref_count(memory_trie)
 
         # change to a root hash that the memory trie doesn't have anymore
         memory_trie.root_hash = middle_root_hash
