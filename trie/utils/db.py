@@ -3,6 +3,20 @@ import contextlib
 DELETED = object()
 
 
+class KeyAccessLogger(dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.read_keys = set()
+
+    def __getitem__(self, key):
+        result = super().__getitem__(key)
+        self.read_keys.add(key)
+        return result
+
+    def unread_keys(self):
+        return self.keys() - self.read_keys
+
+
 class ScratchDB:
     """
     A wrapper of basic DB objects with uncommitted DB changes stored in local cache,

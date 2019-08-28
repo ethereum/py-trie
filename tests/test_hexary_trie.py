@@ -20,6 +20,9 @@ from trie.exceptions import (
     MissingTrieNode,
     ValidationError,
 )
+from trie.utils.db import (
+    KeyAccessLogger,
+)
 from trie.utils.nodes import (
     decode_node,
 )
@@ -150,20 +153,6 @@ def test_trie_using_fixtures(name, updates, expected, deleted, final_root):
 
     for absence_proof_key in deleted:
         assert_proof(trie, absence_proof_key)
-
-
-class KeyAccessLogger(dict):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.read_keys = set()
-
-    def __getitem__(self, key):
-        result = super().__getitem__(key)
-        self.read_keys.add(key)
-        return result
-
-    def unread_keys(self):
-        return self.keys() - self.read_keys
 
 
 def test_hexary_trie_saves_each_root():
