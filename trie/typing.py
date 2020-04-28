@@ -2,6 +2,7 @@ import enum
 from typing import (
     List,
     NamedTuple,
+    Sequence,
     Tuple,
     Union,
 )
@@ -57,9 +58,15 @@ class Nibble(enum.IntEnum):
         return hex(self.value)
 
 
-class Nibbles(tuple):
-    def __new__(cls, nibbles):
-        if not is_list_like(nibbles):
+# A user-input value, where each element will be validated as a Nibble instead of int
+NibblesInput = Sequence[int]
+
+
+class Nibbles(Tuple[Nibble, ...]):
+    def __new__(cls, nibbles: NibblesInput) -> 'Nibbles':
+        if type(nibbles) is Nibbles:
+            return nibbles
+        elif not is_list_like(nibbles):
             raise TypeError(f"Must pass in a tuple of nibbles, but got {nibbles!r}")
         else:
             return tuple.__new__(cls, (Nibble(maybe_nibble) for maybe_nibble in nibbles))

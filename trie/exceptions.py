@@ -173,3 +173,21 @@ class TraversedPartialPath(Exception):
         where traversal went part-way into the path. It must not be a branch node.
         """
         return self.args[1]
+
+
+class PerfectVisibility(Exception):
+    """
+    Raised when calling :class:`trie.fog.HexaryTrieFog` methods that look for unknown prefixes,
+    like :meth:`~trie.fog.HexaryTrieFog.nearest_unknown`, and there are no unknown parts of
+    the trie. (in other words the fog reports :meth:`~trie.fog.HexaryTrieFog.is_complete` as True.
+    """
+    pass
+
+
+class FullDirectionalVisibility(Exception):
+    """
+    Raised when calling :meth:`trie.fog.HexaryTrieFog.nearest_right`, and there are no unknown
+    prefixes *in that direction* of the trie. (The fog may not report
+    :meth:`~trie.fog.HexaryTrieFog.is_complete` as True, because more may be available to the left).
+    """
+    pass
