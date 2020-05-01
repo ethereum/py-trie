@@ -26,7 +26,7 @@ EXAMPLE_809368 = 809368
 
 
 @given(random=strategies.randoms())
-@settings(max_examples=50)
+@settings(max_examples=50, deadline=500)
 @example(random=RandomWithSeed(EXAMPLE_37968))
 @example(random=RandomWithSeed(EXAMPLE_809368))
 def test_trie_sync(random):
