@@ -2,6 +2,9 @@ from collections import defaultdict
 import contextlib
 import functools
 import itertools
+from typing import (
+    Tuple,
+)
 
 from rlp.codec import encode_raw
 
@@ -24,6 +27,7 @@ from trie.constants import (
 )
 from trie.exceptions import (
     BadTrieProof,
+    InvalidNibbles,
     MissingTrieNode,
     ValidationError,
 )
@@ -34,6 +38,7 @@ from trie.utils.nibbles import (
     bytes_to_nibbles,
     decode_nibbles,
     encode_nibbles,
+    nibbles_to_bytes,
 )
 from trie.utils.nodes import (
     decode_node,
@@ -87,28 +92,121 @@ class HexaryTrie:
         validate_is_bytes(key)
 
         trie_key = bytes_to_nibbles(key)
-        try:
-            root_node = self.get_node(self.root_hash)
+        return self._get(self.root_hash, trie_key)
 
-            return self._get(root_node, trie_key)
-        except KeyError as exc:
-            self._raise_missing_node(exc, key)
+    def _get(self, root_hash, trie_key):
+        node, remaining_key = self._traverse(root_hash, trie_key)
 
-    def _get(self, node, trie_key):
         node_type = get_node_type(node)
 
         if node_type == NODE_TYPE_BLANK:
             return BLANK_NODE
-        elif node_type in {NODE_TYPE_LEAF, NODE_TYPE_EXTENSION}:
-            return self._get_kv_node(node, trie_key)
+        elif node_type == NODE_TYPE_LEAF:
+            if remaining_key == extract_key(node):
+                return node[1]
+            else:
+                # Any remaining key that isn't an exact match for the leaf node must
+                #   be pointing to a value that doesn't exist.
+                return BLANK_NODE
+        elif node_type == NODE_TYPE_EXTENSION:
+            if len(remaining_key) > 0:
+                # Any remaining key should have traversed down into the extension's child.
+                #   (or returned a blank node if the key didn't match the extension)
+                raise ValidationError(
+                    "Traverse should never return an extension node with remaining key, "
+                    f"but returned node {node!r} with remaining key {remaining_key}."
+                )
+            else:
+                return BLANK_NODE
         elif node_type == NODE_TYPE_BRANCH:
-            return self._get_branch_node(node, trie_key)
+            if len(remaining_key) > 0:
+                # Any remaining key should have traversed down into the branch's child, even
+                #   if the branch had an empty child, which would then return a BLANK_NODE.
+                raise ValidationError(
+                    "Traverse should never return a non-empty branch node with remaining key, "
+                    f"but returned node {node!r} with remaining key {remaining_key}."
+                )
+            else:
+                return node[-1]
         else:
             raise Exception("Invariant: This shouldn't ever happen")
 
+    def _traverse(self, root_hash, trie_key) -> Tuple['Node', Tuple[int, ...]]:
+        """
+        Traverse down the trie from the root hash, using the trie_key to navigate.
+
+        At each node, consume a prefix from the key, and navigate to its child. Repeat with that
+        child node and so on, until:
+        - there is no key remaining, or
+        - the child node is a blank node, or
+        - the child node is a leaf node
+
+        :return: (the deepest child node, the unconsumed suffix of the key)
+        :raises MissingTrieNode: if a node body is missing from the database
+        """
+        try:
+            node = self.get_node(root_hash)
+        except KeyError:
+            try:
+                requested_key_bytes = nibbles_to_bytes(trie_key)
+            except InvalidNibbles:
+                requested_key_bytes = None
+
+            raise MissingTrieNode(root_hash, root_hash, requested_key_bytes, ())
+
+        remaining_key = trie_key
+        while remaining_key:
+            node_type = get_node_type(node)
+
+            if node_type == NODE_TYPE_BLANK:
+                return BLANK_NODE, remaining_key
+            elif node_type == NODE_TYPE_LEAF:
+                return node, remaining_key
+            elif node_type == NODE_TYPE_EXTENSION:
+                next_node_pointer, remaining_key = self._descend_extension_node(node, remaining_key)
+            elif node_type == NODE_TYPE_BRANCH:
+                next_node_pointer = node[remaining_key[0]]
+                remaining_key = remaining_key[1:]
+            else:
+                raise Exception("Invariant: This shouldn't ever happen")
+
+            try:
+                node = self.get_node(next_node_pointer)
+            except KeyError as exc:
+                used_key = trie_key[:len(trie_key) - len(remaining_key)]
+
+                try:
+                    requested_key_bytes = nibbles_to_bytes(trie_key)
+                except InvalidNibbles:
+                    requested_key_bytes = None
+
+                raise MissingTrieNode(exc.args[0], self.root_hash, requested_key_bytes, used_key)
+
+        # navigated down the full key
+        return node, ()
+
+    def _descend_extension_node(self, node, trie_key):
+        current_key = extract_key(node)
+
+        common_prefix, current_key_remainder, trie_key_remainder = consume_common_prefix(
+            current_key,
+            trie_key,
+        )
+
+        if len(current_key_remainder) == 0:
+            # The full extension node's key was consumed
+            return node[1], trie_key[len(current_key):]
+        elif len(trie_key_remainder) == 0:
+            # The trie key was consumed before reaching the end of the extension node's key
+            return BLANK_NODE, ()
+        else:
+            # The trie key and extension node key branch away from each other, so there
+            # is no node at the specified key.
+            return BLANK_NODE, trie_key_remainder
+
     def _raise_missing_node(self, exception, key):
         # Indicate more information about which key was requested, which node was missing, etc
-        raise MissingTrieNode(exception.args[0], self.root_hash, key) from exception
+        raise MissingTrieNode(exception.args[0], self.root_hash, key, prefix=None) from exception
 
     def set(self, key, value):
         validate_is_bytes(key)
@@ -144,10 +242,7 @@ class HexaryTrie:
     def exists(self, key):
         validate_is_bytes(key)
 
-        try:
-            return self.get(key) != BLANK_NODE
-        except KeyError as exc:
-            self._raise_missing_node(exc, key)
+        return self.get(key) != BLANK_NODE
 
     def delete(self, key):
         validate_is_bytes(key)
@@ -197,8 +292,8 @@ class HexaryTrie:
         with trie.at_root(root_hash) as proven_snapshot:
             try:
                 return proven_snapshot.get(key)
-            except KeyError as e:
-                raise BadTrieProof("Missing proof node with hash {}".format(e.args))
+            except MissingTrieNode as e:
+                raise BadTrieProof("Missing proof node with hash {}".format(e.missing_node_hash))
 
     def get_proof(self, key):
         validate_is_bytes(key)
@@ -242,7 +337,7 @@ class HexaryTrie:
         try:
             return self.get_node(self.root_hash)
         except KeyError as exc:
-            self._raise_missing_node(exc, b'')
+            raise MissingTrieNode(self.root_hash, self.root_hash, requested_key=None, prefix=())
 
     @root_node.setter
     def root_node(self, value):
@@ -399,8 +494,8 @@ class HexaryTrie:
         if any(iter_node) and any(iter_node):
             return node
 
-        if node[16]:
-            return [compute_leaf_key([]), node[16]]
+        if node[-1]:
+            return [compute_leaf_key([]), node[-1]]
 
         sub_node_idx, sub_node_hash = next(
             (idx, v)
@@ -551,31 +646,6 @@ class HexaryTrie:
             return [compute_extension_key(common_prefix), new_node_key]
         else:
             return new_node
-
-    def _get_branch_node(self, node, trie_key):
-        if not trie_key:
-            return node[16]
-        else:
-            sub_node = self.get_node(node[trie_key[0]])
-            return self._get(sub_node, trie_key[1:])
-
-    def _get_kv_node(self, node, trie_key):
-        current_key = extract_key(node)
-        node_type = get_node_type(node)
-
-        if node_type == NODE_TYPE_LEAF:
-            if trie_key == current_key:
-                return node[1]
-            else:
-                return BLANK_NODE
-        elif node_type == NODE_TYPE_EXTENSION:
-            if key_starts_with(trie_key, current_key):
-                sub_node = self.get_node(node[1])
-                return self._get(sub_node, trie_key[len(current_key):])
-            else:
-                return BLANK_NODE
-        else:
-            raise Exception("Invariant: unreachable code path")
 
     #
     # Dictionary API

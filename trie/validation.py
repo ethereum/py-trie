@@ -1,3 +1,7 @@
+from eth_utils import (
+    is_integer,
+)
+
 from trie.constants import (
     BLANK_NODE,
     BLANK_HASH,
@@ -16,6 +20,11 @@ def validate_is_bytes(value):
 def validate_length(value, length):
     if len(value) != length:
         raise ValidationError("Value is of length {0}.  Must be {1}".format(len(value), length))
+
+
+def validate_is_nibbles(value):
+    if not all(is_integer(nibble) and 0 <= nibble < 16 for nibble in value):
+        raise ValidationError(f"Series of nibbles includes a non-nibble: {value!r}")
 
 
 def validate_is_node(node):
