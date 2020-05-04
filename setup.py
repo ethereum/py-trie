@@ -5,9 +5,9 @@ from setuptools import setup, find_packages
 
 extras_require = {
     'test': [
-        "pytest-xdist",
+        "pytest-xdist>=1.31.0,<2",
         "tox>=2.6.0,<3",
-        "hypothesis==3.7.0",
+        "hypothesis>=5.10.4,<6",
         "pycryptodome",
     ],
     'lint': [
@@ -33,13 +33,13 @@ setup(
     version='1.4.0',
     description="""Python implementation of the Ethereum Trie structure""",
     long_description_markdown_filename='README.md',
-    author='Piper Merriam',
-    author_email='pipermerriam@gmail.com',
+    author='The Ethereum Foundation',
+    author_email='snakecharmers@ethereum.org',
     url='https://github.com/ethereum/py-trie',
     include_package_data=True,
     py_modules=['trie'],
     setup_requires=['setuptools-markdown'],
-    python_requires='>=3.5.3,<4',
+    python_requires='>=3.6,<4',
 
     install_requires=[
         "eth-hash>=0.1.0,<1.0.0",
@@ -52,15 +52,15 @@ setup(
     keywords='ethereum blockchain evm trie merkle',
     packages=find_packages(exclude=["tests", "tests.*"]),
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
         "Operating System :: OS Independent",
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: Implementation :: PyPy',
         'Topic :: Software Development',
         'Topic :: Utilities',

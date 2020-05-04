@@ -47,7 +47,7 @@ def test_trie_next_prev_using_fixtures(fixture_name, fixture):
 
 
 @given(random=strategies.randoms())
-@settings(max_examples=10)
+@settings(max_examples=10, deadline=500)
 def test_iter(random):
     trie, contents = make_random_trie(random)
     iterator = NodeIterator(trie)
