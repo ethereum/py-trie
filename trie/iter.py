@@ -1,89 +1,143 @@
-from trie.constants import (
-    NODE_TYPE_BLANK,
-    NODE_TYPE_LEAF,
-    NODE_TYPE_EXTENSION,
-    NODE_TYPE_BRANCH,
+from typing import (
+    Iterable,
+    Optional,
+)
+
+from trie.exceptions import (
+    FullDirectionalVisibility,
+    PerfectVisibility,
+)
+from trie.fog import (
+    HexaryTrieFog,
+    TrieFrontierCache,
+)
+from trie.hexary import (
+    HexaryTrie,
+)
+from trie.typing import (
+    HexaryTrieNode,
+    Nibbles,
 )
 from trie.utils.nibbles import (
     bytes_to_nibbles,
     nibbles_to_bytes,
-    remove_nibbles_terminator,
 )
 from trie.utils.nodes import (
-    get_node_type,
-    extract_key,
-    key_starts_with,
+    consume_common_prefix,
 )
 
 
-# FIXME: This is probably very inneficient and the code itself is quite convoluted. We should
-# either look into refactoring or rewriting it from scratch eventually.
 class NodeIterator:
     """Iterate over all nodes of a trie, ensuring its consistency."""
 
-    def __init__(self, trie):
-        self.trie = trie
+    def __init__(self, trie: HexaryTrie) -> None:
+        self._trie = trie
 
-    def next(self, key):
-        key = bytes_to_nibbles(key)
-        nibbles = self._iter(self.trie.root_node.raw, key)
-        if nibbles is None:
-            return None
-        return nibbles_to_bytes(remove_nibbles_terminator(nibbles))
+    def next(self, key_bytes: bytes) -> Optional[bytes]:
+        """
+        Find the next key to the right from the given key, or None if there is
+        no key to the right.
 
-    def _get_next(self, node):
-        node_type = get_node_type(node)
-        if node_type == NODE_TYPE_BLANK:
+        .. NOTE:: If you plan to iterate the full trie, use all() instead, for performance.
+
+        :return: key in bytes to the right of key_bytes, or None
+        """
+        root = self._trie.root_node
+        key = bytes_to_nibbles(key_bytes)
+        none_traversed = Nibbles(())
+        next_key = self._get_key_after(root, key, none_traversed)
+        if next_key is None:
             return None
-        elif node_type == NODE_TYPE_LEAF:
-            curr_key = extract_key(node)
-            return curr_key
-        elif node_type == NODE_TYPE_EXTENSION:
-            curr_key = extract_key(node)
-            sub_node = self.trie.get_node(node[1])
-            return curr_key + self._get_next(sub_node)
-        elif node_type == NODE_TYPE_BRANCH:
-            if node[16]:
-                return (16,)
-            for i in range(16):
-                sub_node = self.trie.get_node(node[i])
-                nibbles = self._get_next(sub_node)
-                if nibbles is not None:
-                    return (i,) + nibbles
-            raise Exception("Invariant: this means we have an empty branch node")
         else:
-            raise Exception("Invariant: unknown node type {0}".format(node))
+            return nibbles_to_bytes(next_key)
 
-    def _iter(self, node, key):
-        node_type = get_node_type(node)
-        if node_type == NODE_TYPE_BLANK:
-            return None
-        elif node_type == NODE_TYPE_LEAF:
-            descend_key = extract_key(node)
-            if descend_key > key:
-                return descend_key
-            return None
-        elif node_type == NODE_TYPE_BRANCH:
-            scan_range = range(16)
-            if len(key):
-                sub_node = self.trie.get_node(node[key[0]])
-                nibbles = self._iter(sub_node, key[1:])
-                if nibbles is not None:
-                    return (key[0],) + nibbles
-                scan_range = range(key[0] + 1, 16)
+    def _get_key_after(
+            self,
+            node: HexaryTrieNode,
+            key: Nibbles,
+            traversed: Nibbles) -> Optional[Nibbles]:
+        """
+        Find the next key in the trie after key
 
-            for i in scan_range:
-                sub_node = self.trie.get_node(node[i])
-                nibbles = self._get_next(sub_node)
-                if nibbles is not None:
-                    return (i,) + nibbles
+        :param node: the source node to search for the next key after `key`
+        :param key: the starting key used to seek the nearest key on the right
+        :param traversed: the nibbles already traversed to get down to `node`
+
+        :return: the complete key that is immediately to the right of `key` or None,
+            if no key is immediately to the right (under `node`)
+        """
+        for next_segment in node.sub_segments:
+            if key[:len(next_segment)] > next_segment:
+                # This segment is to the left of the key, keep looking...
+                continue
+            else:
+                # Either: found the exact match, or the next result to the right
+                # Either way, we'll want to take a look
+                next_node = self._trie.traverse_from(node, next_segment)
+
+                common, key_remaining, segment_remaining = consume_common_prefix(key, next_segment)
+                if len(segment_remaining) == 0:
+                    # Found a perfect match! Keep looking for keys to the right of the target
+                    next_key = self._get_key_after(
+                        next_node,
+                        key_remaining,
+                        traversed + next_segment,
+                    )
+                    if next_key is None:
+                        # Could not find a key to the right in any sub-node.
+                        # In other words, *only* the target key is in this sub-trie
+                        # So keep looking to the right...
+                        continue
+                    else:
+                        # We successfully found a key to the right in a subtree, return it up
+                        return next_key
+                else:
+                    # Found no exact match, and are now looking for the next possible key
+                    return self._get_next_key(next_node, traversed + next_segment)
+
+        if node.suffix > key:
+            # This leaf node is to the right of the target key
+            return traversed + node.suffix
+        else:
+            # Nothing found in any sub-segments
             return None
-        elif node_type == NODE_TYPE_EXTENSION:
-            descend_key = extract_key(node)
-            sub_node = self.trie.get_node(node[1])
-            sub_key = key[len(descend_key):]
-            if key_starts_with(key, descend_key):
-                nibbles = self._iter(sub_node, sub_key)
-                if nibbles is not None:
-                    return descend_key + nibbles
+
+    def _get_next_key(self, node: HexaryTrieNode, traversed: Nibbles) -> Optional[Nibbles]:
+        """
+        Find the next possible key within the given node
+
+        :param node: the parent node to search (plus all of its children)
+        :param traversed: the key used to traverse down to `node`
+
+        :return: the complete key that is the furthest left within `node`
+        """
+        if node.value:
+            # This is either a leaf node, or a branch node with a value.
+            # The value in a branch node comes before all the child values
+            return traversed + node.suffix
+        elif len(node.sub_segments) == 0:
+            # Only leaves should have 0 sub-segments, and should have a value.
+            # There shouldn't be any way to navigate to a blank node, as long as
+            # the trie hasn't changed during iteration. If it has... I guess return None here.
             return None
+        else:
+            # This is a branch node with no value, or an extension node.
+            # Either way, take the left-most child and repeat the search within it
+            next_segment = node.sub_segments[0]
+            next_node = self._trie.traverse_from(node, next_segment)
+            return self._get_next_key(next_node, traversed + next_segment)
+
+    def all(self) -> Iterable[bytes]:
+        """
+        Iterate over all values from left to right.
+        """
+        # It's possible to speed this up by ~25% by using TrieFrontierCache and HexaryTrieFog.
+        # But, it adds a good chunk more code.
+        #TODO can it be smaller?
+        key = b''
+        while True:
+            key = self.next(key)
+            if key is None:
+                return
+            else:
+                yield key

@@ -10,6 +10,7 @@ from hypothesis import (
 )
 
 from trie import HexaryTrie
+from trie.exceptions import MissingTraversalNode
 from trie.iter import NodeIterator
 from trie.utils.nodes import is_extension_node
 from .utils import make_random_trie
@@ -60,6 +61,18 @@ def test_iter(random):
     assert visited == sorted(contents.keys())
 
 
+@given(random=strategies.randoms())
+@settings(max_examples=10, deadline=500)
+def test_iter_all(random):
+    trie, contents = make_random_trie(random)
+    node_iterator = NodeIterator(trie)
+    visited = []
+    for key in node_iterator.all():
+        visited.append(key)
+    assert len(visited) > 0
+    assert visited == sorted(contents.keys())
+
+
 def test_iter_error():
     trie = HexaryTrie({})
     trie[b'cat'] = b'cat'
@@ -71,6 +84,6 @@ def test_iter_error():
     trie.db.pop(node_to_remove)
     iterator = NodeIterator(trie)
     key = b''
-    with pytest.raises(KeyError):
+    with pytest.raises(MissingTraversalNode):
         while key is not None:
             key = iterator.next(key)
