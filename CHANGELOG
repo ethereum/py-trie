@@ -1,5 +1,17 @@
-Unreleased
-----------
+Unreleased (v2)
+---------------
+
+Breaking Changes
+~~~~~~~~~~~~~~~~
+
+- Removed trie.Trie -- use trie.HexaryTrie instead
+  https://github.com/ethereum/py-trie/pull/100
+- Removed trie.sync (classes: SyncRequest and HexaryTrieSync)
+  New syncing helper tools are imminent.
+  https://github.com/ethereum/py-trie/pull/100
+
+Bugfixes
+~~~~~~~~
 
 - Pruning Bugfix: with duplicate values at multiple keys, pruning would sometimes incorrectly
   prune out a node that was still required. This is fixed for fresh databases, and unfixable
