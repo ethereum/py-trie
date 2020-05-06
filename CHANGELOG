@@ -5,6 +5,9 @@ Unreleased
   prune out a node that was still required. This is fixed for fresh databases, and unfixable
   for existing databases. (Prune is not designed for on-disk/existing DBs anyhow)
   https://github.com/ethereum/py-trie/pull/93
+- Avoid reading root node when unnecessary during squash_changes(). This can be important when
+  building a witness, if the witness is supposed to be empty. (for example, in storage tries)
+  https://github.com/ethereum/py-trie/pull/101
 
 1.4.0
 ----------

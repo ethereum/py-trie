@@ -221,6 +221,22 @@ def test_hexary_trie_at_root_lookups():
                 assert key not in snapshot
 
 
+def test_hexary_trie_empty_squash_does_not_read_root():
+    db = {}
+    trie = HexaryTrie(db=db)
+    trie[b'AAA'] = b'LONG'*32
+    trie[b'BBB'] = b'LONG'*32
+    trie[b'\xffEE'] = b'LONG'*32
+
+    flagged_usage_db = KeyAccessLogger(db)
+    flag_trie = HexaryTrie(flagged_usage_db, root_hash=trie.root_hash)
+    with flag_trie.squash_changes():
+        # root node should not be read if no changes are made during squash
+        pass
+
+    assert len(flagged_usage_db.read_keys) == 0
+
+
 @pytest.mark.parametrize(
     'name, updates, expected, deleted, final_root',
     FIXTURES_PERMUTED,
