@@ -132,8 +132,21 @@ class HexaryTrie:
             raise Exception("Invariant: This shouldn't ever happen")
 
     def _traverse(self, root_hash, trie_key) -> Tuple['Node', Tuple[int, ...]]:
+        try:
+            root_node = self.get_node(root_hash)
+        except KeyError:
+            try:
+                requested_key_bytes = nibbles_to_bytes(trie_key)
+            except InvalidNibbles:
+                requested_key_bytes = None
+
+            raise MissingTrieNode(root_hash, root_hash, requested_key_bytes, ())
+
+        return self._traverse_from(root_node, trie_key)
+
+    def _traverse_from(self, node, trie_key) -> Tuple['Node', Tuple[int, ...]]:
         """
-        Traverse down the trie from the root hash, using the trie_key to navigate.
+        Traverse down the trie from the given node, using the trie_key to navigate.
 
         At each node, consume a prefix from the key, and navigate to its child. Repeat with that
         child node and so on, until:
@@ -144,16 +157,6 @@ class HexaryTrie:
         :return: (the deepest child node, the unconsumed suffix of the key)
         :raises MissingTrieNode: if a node body is missing from the database
         """
-        try:
-            node = self.get_node(root_hash)
-        except KeyError:
-            try:
-                requested_key_bytes = nibbles_to_bytes(trie_key)
-            except InvalidNibbles:
-                requested_key_bytes = None
-
-            raise MissingTrieNode(root_hash, root_hash, requested_key_bytes, ())
-
         remaining_key = trie_key
         while remaining_key:
             node_type = get_node_type(node)
