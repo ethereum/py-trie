@@ -9,6 +9,19 @@ Breaking Changes
 - Removed trie.sync (classes: SyncRequest and HexaryTrieSync)
   New syncing helper tools are imminent.
   https://github.com/ethereum/py-trie/pull/100
+- MissingTrieNode is no longer a KeyError, paving the way for eventually raising a KeyError instead
+  of returning b'' when a key is not present in the trie
+  https://github.com/ethereum/py-trie/pull/98
+- If traversing, instead of getting a key value, then MissingTrieNode.requested_key might be None
+  https://github.com/ethereum/py-trie/pull/98
+
+Features
+~~~~~~~~
+
+- MissingTrieNode now includes the prefix of the key leading to the node body that was missing
+  from the database. This is important for other potential database layouts. The prefix may be None,
+  if it cannot be determined. For now, it will not be determined when setting or deleting a key.
+  https://github.com/ethereum/py-trie/pull/98
 
 Bugfixes
 ~~~~~~~~
