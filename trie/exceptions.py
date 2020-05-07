@@ -1,6 +1,9 @@
 from eth_utils import (
     encode_hex,
 )
+from trie.typing import (
+    Nibbles,
+)
 
 
 class InvalidNibbles(Exception):
@@ -48,13 +51,11 @@ class MissingTrieNode(Exception):
             raise TypeError("Requested key must be bytes or None, was: %r" % requested_key)
 
         if prefix is not None:
-            from trie.validation import validate_is_nibbles
-            try:
-                validate_is_nibbles(prefix)
-            except ValidationError:
-                raise TypeError("Key prefix must be tuple of ints 0-15, was: %r" % requested_key)
+            prefix_nibbles = Nibbles(prefix)
+        else:
+            prefix_nibbles = None
 
-        super().__init__(missing_node_hash, root_hash, requested_key, prefix, *args)
+        super().__init__(missing_node_hash, root_hash, requested_key, prefix_nibbles, *args)
 
     def __repr__(self):
         return (
