@@ -17,7 +17,9 @@ import rlp
 from trie import HexaryTrie
 from trie.constants import BLANK_NODE_HASH
 from trie.exceptions import (
+    MissingTraversalNode,
     MissingTrieNode,
+    TraversedPartialPath,
     ValidationError,
 )
 from trie.utils.nodes import (
@@ -300,7 +302,7 @@ def test_hexary_trie_batch_save_drops_last_root_data_when_pruning():
     assert trie[b'what floats on water?'] == b'a duck'
 
     old_trie = HexaryTrie(db, root_hash=old_root_hash)
-    with pytest.raises(MissingTrieNode) as excinfo:
+    with pytest.raises(MissingTraversalNode) as excinfo:
         old_trie.root_node
 
     assert encode_hex(old_root_hash) in str(excinfo.value)
@@ -445,6 +447,68 @@ def test_hexary_trie_missing_node():
     assert trie.get(key2) == b'val2'
 
 
+def test_hexary_trie_missing_traversal_node():
+    db = {}
+    trie = HexaryTrie(db, prune=True)
+
+    key1 = to_bytes(0x0123)
+    trie.set(key1, b'use a value long enough that it must be hashed according to trie spec')
+
+    key2 = to_bytes(0x1234)
+    trie.set(key2, b'val2')
+
+    # delete first child of the root
+    root_node = trie.root_node
+
+    first_child_hash = root_node[0]
+
+    del db[first_child_hash]
+
+    # Get exception with relevant info about lookup nibbles
+    with pytest.raises(MissingTraversalNode) as exc_info:
+        trie.traverse((0, 1, 2, 3))
+
+    exception = exc_info.value
+    assert exception.nibbles_traversed == (0, )
+    assert encode_hex(first_child_hash) in str(exception)
+
+    # Other keys are still traversable
+    node = trie.traverse((1, ))
+    assert node.value == b'val2'
+    assert node.sub_segments == ()
+
+
+def test_hexary_trie_missing_traversal_node_with_traverse_from():
+    db = {}
+    trie = HexaryTrie(db, prune=True)
+
+    key1 = to_bytes(0x0123)
+    trie.set(key1, b'use a value long enough that it must be hashed according to trie spec')
+
+    key2 = to_bytes(0x1234)
+    trie.set(key2, b'val2')
+
+    # delete first child of the root
+    root_node = trie.root_node
+
+    first_child_hash = root_node[0]
+
+    del db[first_child_hash]
+
+    # Get exception with relevant info about lookup nibbles
+    with pytest.raises(MissingTraversalNode) as exc_info:
+        trie.traverse_from(root_node, (0, 1, 2, 3))
+
+    exception = exc_info.value
+    assert exception.nibbles_traversed == (0, )
+    assert encode_hex(first_child_hash) in str(exception)
+
+    # Other keys are still traversable
+    node = trie.traverse((1, ))
+    assert node.value == b'val2'
+    assert node.sub_segments == ()
+
+
 def test_hexary_trie_raises_on_pruning_snapshot():
     trie = HexaryTrie({}, prune=True)
 
@@ -517,3 +581,177 @@ def test_hexary_trie_avoid_over_pruning():
             trie.get(key)
 
         verify_ref_count(trie)
+
+
+@pytest.mark.parametrize(
+    'name, updates, expected, deleted, final_root',
+    FIXTURES_PERMUTED,
+    ids=trim_long_bytes,
+)
+def test_hexary_trie_traverse(name, updates, expected, deleted, final_root):
+    # Create trie with fixture data
+    db = {}
+    traversal_trie = HexaryTrie(db=db)
+    with traversal_trie.squash_changes() as trie:
+        for key, value in updates:
+            if value is None:
+                del trie[key]
+            else:
+                trie[key] = value
+
+        for key in deleted:
+            del trie[key]
+
+    # Traverse full trie, starting with the root. Compares traverse() and traverse_from() results
+
+    # values found while traversing
+    found_values = set()
+
+    def traverse_via_cache(parent_prefix, parent_node, child_extension):
+        if parent_node is None:
+            # Can't traverse_from to the root node
+            node = traversal_trie.traverse(())
+        elif not len(child_extension):
+            assert False, "For all but the root node, the child extension must not be empty"
+        else:
+            logging_db = KeyAccessLogger(db)
+            single_access_trie = HexaryTrie(logging_db)
+            node = single_access_trie.traverse_from(parent_node, child_extension)
+            # Traversing from parent to child should touch at most one node (the child)
+            # It might touch 0 nodes, if the child was embedded inside the parent
+            assert len(logging_db.read_keys) in {0, 1}
+
+            # Validate that traversal from the root gives you the same result:
+            slow_node = traversal_trie.traverse(parent_prefix + child_extension)
+            assert node == slow_node
+
+        if node.value:
+            found_values.add(node.value)
+
+        for new_child in node.sub_segments:
+            # traverse into children
+            traverse_via_cache(parent_prefix + child_extension, node.raw, new_child)
+
+    # start traversal at root
+    traverse_via_cache((), None, ())
+
+    # gut check that we have traversed the whole trie by checking all expected values are visited
+    for _, expected_value in expected.items():
+        assert expected_value in found_values
+
+
+@pytest.mark.parametrize(
+    'trie_items, traverse_key, path_to_node, sub_segments, node_val',
+    (
+        (
+            ((b'1', b'leaf-at-root'), ),
+            (3,),  # first nibble in b'1'
+            (),  # nibbles to leaf node
+            (),  # no sub-segments
+            b'leaf-at-root',
+        ),
+        (
+            ((b'1', b'leaf-at-root'), ),
+            (3, 1),  # nibbles for b'1'
+            (),  # nibbles to leaf node
+            (),  # no sub-segments
+            b'leaf-at-root',
+        ),
+        (
+            ((b'AAB', b'long0'*7), (b'AAC', b'long1'*7), (b'ZED', b'long3'*7)),
+            (4, 1),  # nibbles for b'A'
+            (4, ),  # nibble to extension node (because ZED key breaks the root into a branch)
+            # nibbles down to branch separating AAB and AAC:
+            ((
+                1,  # second half of A
+                4, 1,  # next A
+                4,  # first nibble of both B and C
+            ),),
+            b'',
+        ),
+        # Same as ^ but with short values
+        (
+            ((b'AAB', b'short'), (b'AAC', b'short'), (b'ZED', b'short')),
+            (4, 1),  # nibbles for b'A'
+            (4, ),  # nibble to extension node (because ZED key breaks the root into a branch)
+            # nibbles down to branch separating AAB and AAC:
+            ((
+                1,  # second half of A
+                4, 1,  # next A
+                4,  # first nibble of both B and C
+            ),),
+            b'',
+        ),
+    ),
+)
+def test_traverse_into_partial_path(trie_items, traverse_key, path_to_node, sub_segments, node_val):
+    """
+    What happens when you try to traverse into an extension or leaf node
+    """
+    db = {}
+    trie = HexaryTrie(db)
+    for key, val in trie_items:
+        trie[key] = val
+
+    with pytest.raises(TraversedPartialPath) as excinfo:
+        trie.traverse(traverse_key)
+
+    exc = excinfo.value
+    assert exc.nibbles_traversed == path_to_node
+    assert exc.node.sub_segments == sub_segments
+    assert exc.node.value == node_val
+
+
+@pytest.mark.parametrize(
+    'trie_items, traverse_key, path_to_node, sub_segments, node_val',
+    (
+        (
+            ((b'AAB', b'long0'*7), (b'AAC', b'long1'*7), (b'ZED', b'long3'*7)),
+            (4, 1),  # nibbles for b'A'
+            (4, ),  # nibble to extension node (because ZED key breaks the root into a branch)
+            # nibbles down to branch separating AAB and AAC:
+            ((
+                1,  # second half of A
+                4, 1,  # next A
+                4,  # first nibble of both B and C
+            ),),
+            b'',
+        ),
+        # Same as ^ but with short values
+        (
+            ((b'AAB', b'short'), (b'AAC', b'short'), (b'ZED', b'short')),
+            (4, 1),  # nibbles for b'A'
+            (4, ),  # nibble to extension node (because ZED key breaks the root into a branch)
+            # nibbles down to branch separating AAB and AAC:
+            ((
+                1,  # second half of A
+                4, 1,  # next A
+                4,  # first nibble of both B and C
+            ),),
+            b'',
+        ),
+    ),
+)
+def test_traverse_from_partial_path(
+        trie_items,
+        traverse_key,
+        path_to_node,
+        sub_segments,
+        node_val):
+
+    """
+    What happens when you try to traverse_from() into an extension or leaf node
+    """
+    db = {}
+    trie = HexaryTrie(db)
+    for key, val in trie_items:
+        trie[key] = val
+
+    root = trie.root_node
+    with pytest.raises(TraversedPartialPath) as excinfo:
+        trie.traverse_from(root, traverse_key)
+
+    exc = excinfo.value
+    assert exc.nibbles_traversed == path_to_node
+    assert exc.node.sub_segments == sub_segments
+    assert exc.node.value == node_val

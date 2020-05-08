@@ -44,7 +44,9 @@ setup(
     install_requires=[
         "eth-hash>=0.1.0,<1.0.0",
         "eth-utils>=1.3.0,<2.0.0",
+        "hexbytes>=0.2.0,<0.3.0",
         "rlp>=1,<2",
+        "typing-extensions==3.7.4.2",
     ],
     extras_require=extras_require,
     license="MIT",
