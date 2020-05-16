@@ -27,9 +27,15 @@ from trie.constants import (
 )
 from trie.exceptions import (
     BadTrieProof,
-    InvalidNibbles,
+    MissingTraversalNode,
     MissingTrieNode,
+    TraversedPartialPath,
     ValidationError,
+)
+from trie.typing import (
+    Nibbles,
+    HexaryTrieNode,
+    RawHexaryNode,
 )
 from trie.utils.db import (
     ScratchDB,
@@ -38,9 +44,9 @@ from trie.utils.nibbles import (
     bytes_to_nibbles,
     decode_nibbles,
     encode_nibbles,
-    nibbles_to_bytes,
 )
 from trie.utils.nodes import (
+    annotate_node,
     decode_node,
     get_node_type,
     extract_key,
@@ -56,6 +62,15 @@ from trie.validation import (
     validate_is_node,
     validate_is_bytes,
 )
+
+
+class _PartialTraversal(Exception):
+    """
+    Tried to navigate part-way into an extension node, when traversing a trie.
+
+    An internal exception that should never escape the Trie.
+    """
+    pass
 
 
 class HexaryTrie:
@@ -92,7 +107,16 @@ class HexaryTrie:
         validate_is_bytes(key)
 
         trie_key = bytes_to_nibbles(key)
-        return self._get(self.root_hash, trie_key)
+        root_hash = self.root_hash
+        try:
+            return self._get(root_hash, trie_key)
+        except MissingTraversalNode as traverse_exc:
+            raise MissingTrieNode(
+                traverse_exc.missing_node_hash,
+                root_hash,
+                key,
+                traverse_exc.nibbles_traversed,
+            ) from traverse_exc
 
     def _get(self, root_hash, trie_key):
         node, remaining_key = self._traverse(root_hash, trie_key)
@@ -131,20 +155,61 @@ class HexaryTrie:
         else:
             raise Exception("Invariant: This shouldn't ever happen")
 
-    def _traverse(self, root_hash, trie_key) -> Tuple['Node', Tuple[int, ...]]:
+    def traverse(self, trie_key_input: Nibbles) -> HexaryTrieNode:
+        """
+        Find the node at the path of nibbles provided. The most trivial example is
+        to get the root node, using ``traverse(())``.
+
+        :param trie_key_input: the series of nibbles to traverse to arrive at the node of interest
+        :return: annotated node at the given path
+        :raises MissingTraversalNode: if a node body is missing from the database
+        :raises TraversedPartialPath: if trie key extends part-way down an extension or leaf node
+        """
+        # Since this value is supplied externally, re-verify nibble values by initializing again
+        trie_key = Nibbles(trie_key_input)
+
+        node, remaining_key = self._traverse(self.root_hash, trie_key)
+
+        annotated_node = annotate_node(node)
+
+        if remaining_key:
+            path_to_node = trie_key[:len(trie_key) - len(remaining_key)]
+            raise TraversedPartialPath(path_to_node, annotated_node)
+        else:
+            return annotated_node
+
+    def _traverse(self, root_hash, trie_key) -> Tuple[RawHexaryNode, Nibbles]:
         try:
             root_node = self.get_node(root_hash)
         except KeyError:
-            try:
-                requested_key_bytes = nibbles_to_bytes(trie_key)
-            except InvalidNibbles:
-                requested_key_bytes = None
-
-            raise MissingTrieNode(root_hash, root_hash, requested_key_bytes, ())
+            raise MissingTraversalNode(root_hash, ())
 
         return self._traverse_from(root_node, trie_key)
 
-    def _traverse_from(self, node, trie_key) -> Tuple['Node', Tuple[int, ...]]:
+    def traverse_from(self, node: RawHexaryNode, trie_key_input: Nibbles) -> HexaryTrieNode:
+        """
+        Find the node at the path of nibbles provided. You cannot navigate to the root node
+        this way (without already having the root node body, to supply as the argument).
+
+        The trie does *not* re-verify the path/hashes from the node prefix to the node.
+
+        :param trie_key_input: the sub-key used to traverse from the given node to the returned node
+        :raises MissingTraversalNode: if a node body is missing from the database
+        :raises TraversedPartialPath: if trie key extends part-way down an extension or leaf node
+        """
+        trie_key = Nibbles(trie_key_input)
+
+        node, remaining_key = self._traverse_from(node, trie_key)
+
+        annotated_node = annotate_node(node)
+
+        if remaining_key:
+            path_to_node = trie_key[:len(trie_key) - len(remaining_key)]
+            raise TraversedPartialPath(path_to_node, annotated_node)
+        else:
+            return annotated_node
+
+    def _traverse_from(self, node: RawHexaryNode, trie_key) -> Tuple[RawHexaryNode, Nibbles]:
         """
         Traverse down the trie from the given node, using the trie_key to navigate.
 
@@ -155,18 +220,22 @@ class HexaryTrie:
         - the child node is a leaf node
 
         :return: (the deepest child node, the unconsumed suffix of the key)
-        :raises MissingTrieNode: if a node body is missing from the database
+        :raises MissingTraversalNode: if a node body is missing from the database
         """
         remaining_key = trie_key
         while remaining_key:
             node_type = get_node_type(node)
 
             if node_type == NODE_TYPE_BLANK:
-                return BLANK_NODE, remaining_key
+                return BLANK_NODE, ()
             elif node_type == NODE_TYPE_LEAF:
                 return node, remaining_key
             elif node_type == NODE_TYPE_EXTENSION:
-                next_node_pointer, remaining_key = self._descend_extension_node(node, remaining_key)
+                try:
+                    next_node_pointer, remaining_key = self._traverse_extension(node, remaining_key)
+                except _PartialTraversal:
+                    # could only descend part-way into an extension node
+                    return node, remaining_key
             elif node_type == NODE_TYPE_BRANCH:
                 next_node_pointer = node[remaining_key[0]]
                 remaining_key = remaining_key[1:]
@@ -178,17 +247,12 @@ class HexaryTrie:
             except KeyError as exc:
                 used_key = trie_key[:len(trie_key) - len(remaining_key)]
 
-                try:
-                    requested_key_bytes = nibbles_to_bytes(trie_key)
-                except InvalidNibbles:
-                    requested_key_bytes = None
-
-                raise MissingTrieNode(exc.args[0], self.root_hash, requested_key_bytes, used_key)
+                raise MissingTraversalNode(exc.args[0], used_key)
 
         # navigated down the full key
         return node, ()
 
-    def _descend_extension_node(self, node, trie_key):
+    def _traverse_extension(self, node, trie_key):
         current_key = extract_key(node)
 
         common_prefix, current_key_remainder, trie_key_remainder = consume_common_prefix(
@@ -198,14 +262,14 @@ class HexaryTrie:
 
         if len(current_key_remainder) == 0:
             # The full extension node's key was consumed
-            return node[1], trie_key[len(current_key):]
+            return node[1], trie_key_remainder
         elif len(trie_key_remainder) == 0:
             # The trie key was consumed before reaching the end of the extension node's key
-            return BLANK_NODE, ()
+            raise _PartialTraversal
         else:
             # The trie key and extension node key branch away from each other, so there
             # is no node at the specified key.
-            return BLANK_NODE, trie_key_remainder
+            return BLANK_NODE, ()
 
     def _raise_missing_node(self, exception, key):
         # Indicate more information about which key was requested, which node was missing, etc
@@ -340,7 +404,7 @@ class HexaryTrie:
         try:
             return self.get_node(self.root_hash)
         except KeyError as exc:
-            raise MissingTrieNode(self.root_hash, self.root_hash, requested_key=None, prefix=())
+            raise MissingTraversalNode(self.root_hash, nibbles_traversed=())
 
     @root_node.setter
     def root_node(self, value):
@@ -678,7 +742,7 @@ class HexaryTrie:
         if self.root_hash != memory_trie.root_hash:
             try:
                 self.root_node = memory_trie.root_node
-            except MissingTrieNode:
+            except MissingTraversalNode:
                 # if the new root node is missing, then we shouldn't crash here
                 self.root_hash = memory_trie.root_hash
 

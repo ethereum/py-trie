@@ -21,6 +21,11 @@ from trie.utils.binaries import (
     encode_from_bin_keypath,
     decode_to_bin_keypath,
 )
+from trie.typing import (
+    HexaryTrieNode,
+    Nibbles,
+    RawHexaryNode,
+)
 from trie.validation import (
     validate_length,
     validate_is_bytes,
@@ -173,3 +178,46 @@ def encode_leaf_node(value):
     if value is None or value == b'':
         raise ValidationError("Value of leaf node can not be empty")
     return LEAF_TYPE_PREFIX + value
+
+
+def annotate_node(node_body: RawHexaryNode) -> HexaryTrieNode:
+    """
+    Normalize the raw node body to a HexaryTrieNode, for external consumption.
+    """
+    node_type = get_node_type(node_body)
+    if node_type == NODE_TYPE_LEAF:
+        return HexaryTrieNode(
+            sub_segments=(),
+            value=node_body[-1],
+            suffix=Nibbles(extract_key(node_body)),
+            raw=node_body,
+        )
+    elif node_type == NODE_TYPE_BRANCH:
+        sub_segments = tuple(
+           Nibbles((nibble,))
+           for nibble in range(16) if bool(node_body[nibble])
+        )
+        return HexaryTrieNode(
+            sub_segments=sub_segments,
+            value=node_body[-1],
+            suffix=(),
+            raw=node_body,
+        )
+    elif node_type == NODE_TYPE_EXTENSION:
+        key_extension = extract_key(node_body)
+        return HexaryTrieNode(
+            sub_segments=(Nibbles(key_extension), ),
+            value=b'',
+            suffix=(),
+            raw=node_body,
+        )
+    elif node_type == NODE_TYPE_BLANK:
+        # empty trie
+        return HexaryTrieNode(
+            sub_segments=(),
+            value=b'',
+            suffix=(),
+            raw=node_body,
+        )
+    else:
+        raise NotImplementedError()
