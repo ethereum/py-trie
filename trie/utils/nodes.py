@@ -23,6 +23,7 @@ from trie.utils.binaries import (
 )
 from trie.typing import (
     HexaryTrieNode,
+    Nibbles,
     RawHexaryNode,
 )
 from trie.validation import (
@@ -188,11 +189,14 @@ def annotate_node(node_body: RawHexaryNode) -> HexaryTrieNode:
         return HexaryTrieNode(
             sub_segments=(),
             value=node_body[-1],
-            suffix=extract_key(node_body),
+            suffix=Nibbles(extract_key(node_body)),
             raw=node_body,
         )
     elif node_type == NODE_TYPE_BRANCH:
-        sub_segments = tuple((nibble,) for nibble in range(16) if bool(node_body[nibble]))
+        sub_segments = tuple(
+           Nibbles((nibble,))
+           for nibble in range(16) if bool(node_body[nibble])
+        )
         return HexaryTrieNode(
             sub_segments=sub_segments,
             value=node_body[-1],
@@ -202,7 +206,7 @@ def annotate_node(node_body: RawHexaryNode) -> HexaryTrieNode:
     elif node_type == NODE_TYPE_EXTENSION:
         key_extension = extract_key(node_body)
         return HexaryTrieNode(
-            sub_segments=(key_extension, ),
+            sub_segments=(Nibbles(key_extension), ),
             value=b'',
             suffix=(),
             raw=node_body,

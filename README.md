@@ -3,8 +3,6 @@
 [![PyPI](https://img.shields.io/pypi/v/trie.svg)](https://pypi.org/project/trie/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/trie.svg)
 
-> Warning: This is an early release and is likely to contain bugs as well as
-> breaking API changes.
 > This library and repository was previously located at [pipermerriam/py-trie](https://github.com/pipermerriam/py-trie). It was transferred to the Ethereum foundation GitHub in 
 > November 2017 and renamed to `py-trie`.
 
@@ -25,7 +23,7 @@ pip install -e .[dev]
 You can run the tests with:
 
 ```sh
-py.test tests
+pytest tests
 ```
 
 Or you can install `tox` to run the full test suite.
@@ -106,6 +104,44 @@ True
 >>> del t[b'another-key']
 >>> b'another-key' in t
 False
+```
+
+### Traversing (inspecting trie internals)
+
+```python
+>>> from trie import HexaryTrie
+>>> t = HexaryTrie(db={})
+>>> t.root_hash
+b'V\xe8\x1f\x17\x1b\xccU\xa6\xff\x83E\xe6\x92\xc0\xf8n[H\xe0\x1b\x99l\xad\xc0\x01b/\xb5\xe3c\xb4!'
+>>> t[b'my-key'] = b'some-value'
+>>> t[b'my-other-key']  = b'another-value'
+
+# Look at the root node:
+>>> root_node = t.traverse(())
+>>> root_node
+HexaryTrieNode(sub_segments=((0x6, 0xd, 0x7, 0x9, 0x2, 0xd, 0x6),), value=b'', suffix=(), raw=[b'\x16\xd7\x92\xd6', b'\xb4q\xb8h\xec\x1c\xe1\xf4\\\x88\xda\xb4\xc1\xc2n\xbaw\xd0\x9c\xf1\xacV\xb4Dk\xa7\xe6\xd7qf\xc2\x82'])
+
+# the root node is an extension down, because the first 7 nibbles are the same between the two keys
+
+# Let's walk down to the child of that extension 
+>>> prefix6d792d6 = t.traverse(root_node.sub_segments[0])
+>>> prefix6d792d6
+HexaryTrieNode(sub_segments=((0xb,), (0xf,)), value=b'', suffix=(), raw=[b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', [b' ey', b'some-value'], b'', b'', b'', [b' ther-key', b'another-value'], b''])
+
+# A branch node separates the second nibbles of b'k' and b'o': 0xb and 0xf
+# Notice the position of the children in the 11th and 15th index
+
+# Another way to get there without loading the root node from the database is using traverse_from:
+>>> assert t.traverse_from(root_node.raw, root_node.sub_segments[0]) == prefix6d792d6
+
+# Embedded nodes can be traversed to the same way as nodes stored in the database:
+
+>>> t.traverse(root_node.sub_segments[0] + (0xb,))
+HexaryTrieNode(sub_segments=(), value=b'some-value', suffix=(0x6, 0x5, 0x7, 0x9), raw=[b' ey', b'some-value'])
+
+# This leaf node includes the suffix (the rest of the key, in nibbles, that haven't been traversed,
+# just b'ey': 0x6579
+
 ```
 
 ## BinaryTrie
