@@ -15,6 +15,11 @@ Breaking Changes
 - If a trie body is missing when calling HexaryTrie.root_node, the exception will be
   MissingTraversalNode instead of MissingTrieNode
   https://github.com/ethereum/py-trie/pull/102
+- Remove support for setting the trie's raw root node directly, via
+  HexaryTrie.root_node = new_raw_root_node
+  https://github.com/ethereum/py-trie/pull/106
+- Return new annotated HexaryTrieNode from HexaryTrie.root_node property
+  https://github.com/ethereum/py-trie/pull/106
 
 Features
 ~~~~~~~~

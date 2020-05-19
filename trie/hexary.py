@@ -400,15 +400,13 @@ class HexaryTrie:
     # Convenience
     #
     @property
-    def root_node(self):
+    def root_node(self) -> HexaryTrieNode:
         try:
-            return self.get_node(self.root_hash)
+            raw_node = self.get_node(self.root_hash)
         except KeyError:
             raise MissingTraversalNode(self.root_hash, nibbles_traversed=())
-
-    @root_node.setter
-    def root_node(self, value):
-        self._set_root_node(value)
+        else:
+            return annotate_node(raw_node)
 
     #
     # Utils
@@ -741,7 +739,7 @@ class HexaryTrie:
 
         if self.root_hash != memory_trie.root_hash:
             try:
-                self.root_node = memory_trie.root_node
+                self._set_root_node(memory_trie.root_node.raw)
             except MissingTraversalNode:
                 # if the new root node is missing, then we shouldn't crash here
                 self.root_hash = memory_trie.root_hash
