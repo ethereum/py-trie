@@ -1,9 +1,13 @@
 from typing import Optional
 
+from eth_typing import (
+    Hash32,
+)
 from hexbytes import HexBytes
 
 from trie.typing import (
     Nibbles,
+    NibblesInput,
     HexaryTrieNode,
 )
 
@@ -46,8 +50,8 @@ class MissingTrieNode(Exception):
     """
     def __init__(
             self,
-            missing_node_hash: 'Hash32',
-            root_hash: 'Hash32',
+            missing_node_hash: Hash32,
+            root_hash: Hash32,
             requested_key: bytes,
             prefix: Nibbles = None,
             *args):
@@ -60,7 +64,7 @@ class MissingTrieNode(Exception):
             raise TypeError("Requested key must be bytes, was: %r" % requested_key)
 
         if prefix is not None:
-            prefix_nibbles = Nibbles(prefix)
+            prefix_nibbles: Optional[Nibbles] = Nibbles(prefix)
         else:
             prefix_nibbles = None
 
@@ -74,8 +78,8 @@ class MissingTrieNode(Exception):
 
     def __repr__(self) -> str:
         return (
-            f"MissingTrieNode({self.missing_node_hash}, {self.root_hash}, "
-            f"{self.requested_key}, prefix={self.prefix})"
+            f"MissingTrieNode({self.missing_node_hash!r}, {self.root_hash!r}, "
+            f"{self.requested_key!r}, prefix={self.prefix!r})"
         )
 
     def __str__(self) -> str:
@@ -117,14 +121,14 @@ class MissingTraversalNode(Exception):
         - traverse_from() ignore's the trie's root, so the root hash is unknown
         - the requested_key and prefix are unavailable because only the suffix of the key is known
     """
-    def __init__(self, missing_node_hash: 'Hash32', nibbles_traversed: Nibbles, *args) -> None:
+    def __init__(self, missing_node_hash: Hash32, nibbles_traversed: NibblesInput, *args) -> None:
         if not isinstance(missing_node_hash, bytes):
             raise TypeError("Missing node hash must be bytes, was: %r" % missing_node_hash)
 
         super().__init__(HexBytes(missing_node_hash), Nibbles(nibbles_traversed), *args)
 
     def __repr__(self) -> str:
-        return f"MissingTraversalNode({self.missing_node_hash}, {self.nibbles_traversed})"
+        return f"MissingTraversalNode({self.missing_node_hash!r}, {self.nibbles_traversed!r})"
 
     def __str__(self) -> str:
         return (
@@ -149,8 +153,7 @@ class TraversedPartialPath(Exception):
     Raised when a traversal key ends in the middle of a partial path. It might be in
     an extension node or a leaf node.
     """
-    def __init__(self, nibbles_traversed: Nibbles, node: HexaryTrieNode, *args) -> None:
-        # TODO drop Nibbles() cast when type checking is turned on
+    def __init__(self, nibbles_traversed: NibblesInput, node: HexaryTrieNode, *args) -> None:
         super().__init__(Nibbles(nibbles_traversed), node, *args)
 
     def __repr__(self) -> str:

@@ -188,7 +188,7 @@ def annotate_node(node_body: RawHexaryNode) -> HexaryTrieNode:
     if node_type == NODE_TYPE_LEAF:
         return HexaryTrieNode(
             sub_segments=(),
-            value=node_body[-1],
+            value=bytes(node_body[-1]),
             suffix=Nibbles(extract_key(node_body)),
             raw=node_body,
         )
@@ -199,8 +199,8 @@ def annotate_node(node_body: RawHexaryNode) -> HexaryTrieNode:
         )
         return HexaryTrieNode(
             sub_segments=sub_segments,
-            value=node_body[-1],
-            suffix=(),
+            value=bytes(node_body[-1]),
+            suffix=Nibbles(()),
             raw=node_body,
         )
     elif node_type == NODE_TYPE_EXTENSION:
@@ -208,7 +208,7 @@ def annotate_node(node_body: RawHexaryNode) -> HexaryTrieNode:
         return HexaryTrieNode(
             sub_segments=(Nibbles(key_extension), ),
             value=b'',
-            suffix=(),
+            suffix=Nibbles(()),
             raw=node_body,
         )
     elif node_type == NODE_TYPE_BLANK:
@@ -216,7 +216,7 @@ def annotate_node(node_body: RawHexaryNode) -> HexaryTrieNode:
         return HexaryTrieNode(
             sub_segments=(),
             value=b'',
-            suffix=(),
+            suffix=Nibbles(()),
             raw=node_body,
         )
     else:

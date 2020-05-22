@@ -68,13 +68,15 @@ NibblesInput = Sequence[int]
 class Nibbles(Tuple[Nibble, ...]):
     def __new__(cls, nibbles: NibblesInput) -> 'Nibbles':
         if type(nibbles) is Nibbles:
-            return nibbles
+            # instanceof thinks that a Tuple[Nibble, ...] *is* a Nibbles, so we use
+            #   a stricter type check here
+            return nibbles  # type: ignore  # mypy doesn't recognize that this is now a Nibbles
         elif not is_list_like(nibbles):
             raise TypeError(f"Must pass in a tuple of nibbles, but got {nibbles!r}")
         else:
             return tuple.__new__(cls, (Nibble(maybe_nibble) for maybe_nibble in nibbles))
 
-    def __add__(self, other: NibblesInput) -> 'Nibbles':
+    def __add__(self, other: Tuple[Nibble, ...]) -> 'Nibbles':
         return Nibbles(super().__add__(other))
 
 

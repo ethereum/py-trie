@@ -34,6 +34,7 @@ from trie.exceptions import (
 )
 from trie.typing import (
     Nibbles,
+    NibblesInput,
     HexaryTrieNode,
     RawHexaryNode,
 )
@@ -155,7 +156,7 @@ class HexaryTrie:
         else:
             raise Exception("Invariant: This shouldn't ever happen")
 
-    def traverse(self, trie_key_input: Nibbles) -> HexaryTrieNode:
+    def traverse(self, trie_key_input: NibblesInput) -> HexaryTrieNode:
         """
         Find the node at the path of nibbles provided. The most trivial example is
         to get the root node, using ``traverse(())``.
@@ -165,7 +166,6 @@ class HexaryTrie:
         :raises MissingTraversalNode: if a node body is missing from the database
         :raises TraversedPartialPath: if trie key extends part-way down an extension or leaf node
         """
-        # Since this value is supplied externally, re-verify nibble values by initializing again
         trie_key = Nibbles(trie_key_input)
 
         node, remaining_key = self._traverse(self.root_hash, trie_key)
@@ -227,7 +227,7 @@ class HexaryTrie:
             node_type = get_node_type(node)
 
             if node_type == NODE_TYPE_BLANK:
-                return BLANK_NODE, ()
+                return BLANK_NODE, Nibbles(())  # type: ignore # mypy thinks BLANK_NODE != b''
             elif node_type == NODE_TYPE_LEAF:
                 return node, remaining_key
             elif node_type == NODE_TYPE_EXTENSION:
@@ -250,7 +250,7 @@ class HexaryTrie:
                 raise MissingTraversalNode(exc.args[0], used_key)
 
         # navigated down the full key
-        return node, ()
+        return node, Nibbles(())
 
     def _traverse_extension(self, node, trie_key):
         current_key = extract_key(node)

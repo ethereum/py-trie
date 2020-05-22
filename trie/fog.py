@@ -306,7 +306,7 @@ class TrieFrontierCache:
 
         # add cache entry for each child
         for segment in sub_segments:
-            new_prefix = node_prefix + segment
+            new_prefix = node_prefix + Nibbles(segment)
             self._cache[new_prefix] = (trie_node, Nibbles(segment))
 
     def delete(self, prefix: NibblesInput) -> None:
