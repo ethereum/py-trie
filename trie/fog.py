@@ -2,6 +2,8 @@ import ast
 from itertools import zip_longest
 from typing import (
     Any,
+    Dict,
+    Iterable,
     Sequence,
     Tuple,
 )
@@ -17,6 +19,7 @@ from trie.exceptions import (
     PerfectVisibility,
 )
 from trie.typing import (
+    GenericSortedSet,
     Nibbles,
     NibblesInput,
     RawHexaryNode,
@@ -39,7 +42,7 @@ class HexaryTrieFog:
     Object is immutable. Any changes, like marking a key prefix as complete, will
     return a new HexaryTrieFog object.
     """
-    _unexplored_prefixes: SortedSet
+    _unexplored_prefixes: GenericSortedSet[Nibbles]
 
     # INVARIANT: No unexplored prefix may start with another unexplored prefix
     #   For example, _unexplored_prefixes may not be {(1, 2), (1, 2, 3)}.
@@ -105,7 +108,7 @@ class HexaryTrieFog:
         new_fog_prefixes.update([old_prefix + segment for segment in sub_segments])
         return self._new_trie_fog(new_fog_prefixes)
 
-    def mark_all_complete(self, prefixes: Sequence[NibblesInput]) -> 'HexaryTrieFog':
+    def mark_all_complete(self, prefix_inputs: Sequence[NibblesInput]) -> 'HexaryTrieFog':
         """
         These might be leaves, or prefixes with 0 unknown keys within the range.
 
@@ -116,7 +119,7 @@ class HexaryTrieFog:
                 result_fog = result_fog.explore(complete_prefix, ())
         """
         new_unexplored_prefixes = self._unexplored_prefixes.copy()
-        for prefix in prefixes:
+        for prefix in map(Nibbles, prefix_inputs):
             if prefix not in new_unexplored_prefixes:
                 raise ValidationError(
                     f"When marking {prefix} complete, could not find in {new_unexplored_prefixes!r}"
@@ -193,7 +196,7 @@ class HexaryTrieFog:
 
     @staticmethod
     @to_tuple
-    def _prefix_distance(low_key: Nibbles, high_key: Nibbles) -> Tuple[int, ...]:
+    def _prefix_distance(low_key: Nibbles, high_key: Nibbles) -> Iterable[int]:
         """
         How far are the two keys from each other, as a sequence of differences.
         The first non-zero distance must be positive, but the remaining distances may
@@ -242,7 +245,7 @@ class HexaryTrieFog:
     def deserialize(cls, encoded: bytes) -> 'HexaryTrieFog':
         serial_prefix = b'HexaryTrieFog:'
         if not encoded.startswith(serial_prefix):
-            raise ValueError(f"Cannot deserialize this into HexaryTrieFog object: {encoded}")
+            raise ValueError(f"Cannot deserialize this into HexaryTrieFog object: {encoded!r}")
         else:
             encoded_list = encoded[len(serial_prefix):]
             prefix_list = ast.literal_eval(encoded_list.decode())
@@ -268,7 +271,7 @@ class TrieFrontierCache:
     only one database lookup instead of log(n).
     """
     def __init__(self) -> None:
-        self._cache = {}
+        self._cache: Dict[Nibbles, Tuple[RawHexaryNode, Nibbles]] = {}
 
     def get(self, prefix: NibblesInput) -> Tuple[RawHexaryNode, Nibbles]:
         """
@@ -278,11 +281,11 @@ class TrieFrontierCache:
 
         :raises KeyError: if there is no cached value for the prefix
         """
-        return self._cache[prefix]
+        return self._cache[Nibbles(prefix)]
 
     def add(
             self,
-            node_prefix: NibblesInput,
+            node_prefix_input: NibblesInput,
             trie_node: RawHexaryNode,
             sub_segments: Sequence[NibblesInput]) -> None:
 
@@ -294,6 +297,7 @@ class TrieFrontierCache:
         :param trie_node: the body to cache
         :param sub_segments: all of the children of the parent which should be made indexable
         """
+        node_prefix = Nibbles(node_prefix_input)
 
         # remove the cache entry for looking up node_prefix as a child
         if node_prefix != ():
@@ -302,7 +306,7 @@ class TrieFrontierCache:
 
         # add cache entry for each child
         for segment in sub_segments:
-            new_prefix = Nibbles(node_prefix + segment)
+            new_prefix = node_prefix + segment
             self._cache[new_prefix] = (trie_node, Nibbles(segment))
 
     def delete(self, prefix: NibblesInput) -> None:
