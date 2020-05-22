@@ -128,7 +128,7 @@ class HexaryTrieFog:
             new_unexplored_prefixes.remove(prefix)
         return self._new_trie_fog(new_unexplored_prefixes)
 
-    def nearest_unknown(self, key_input: NibblesInput) -> Nibbles:
+    def nearest_unknown(self, key_input: NibblesInput = ()) -> Nibbles:
         """
         Find the foggy prefix that is nearest to the supplied key.
 

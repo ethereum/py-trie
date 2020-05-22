@@ -37,6 +37,10 @@ Features
 - New TraversedPartialPath exception, raised when you try to navigate to a node, but end up
   part-way inside an extension node, or try to navigate into a leaf node.
   https://github.com/ethereum/py-trie/pull/102
+- New HexaryTrieFog to help track unexplored prefixes, when walking a trie. Serializeable to bytes.
+  New exceptions PerfectVisibility or FullDirectionalVisibility when no prefixes are unexplored.
+  New TrieFrontierCache to reduce duplicate database accesses on a full trie walk.
+  https://github.com/ethereum/py-trie/pull/95
 
 Bugfixes
 ~~~~~~~~
@@ -48,6 +52,12 @@ Bugfixes
 - Avoid reading root node when unnecessary during squash_changes(). This can be important when
   building a witness, if the witness is supposed to be empty. (for example, in storage tries)
   https://github.com/ethereum/py-trie/pull/101
+
+Misc
+~~~~
+
+- Type annotation cleanups & upgrades flake8/eth-utils
+  https://github.com/ethereum/py-trie/pull/95
 
 1.4.0
 ----------
