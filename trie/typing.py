@@ -79,6 +79,13 @@ class Nibbles(Tuple[Nibble, ...]):
     def __add__(self, other: Tuple[Nibble, ...]) -> 'Nibbles':
         return Nibbles(super().__add__(other))
 
+    def _repr_pretty_(self, p, cycle: bool) -> None:
+        # Weird, ipython seems to drop the trailing comma in the pretty repr they do. Fixing...
+        if cycle:
+            p.text('(...)')
+        else:
+            p.text(super().__repr__())
+
 
 class HexaryTrieNode(NamedTuple):
     """
