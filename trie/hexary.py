@@ -403,7 +403,7 @@ class HexaryTrie:
     def root_node(self):
         try:
             return self.get_node(self.root_hash)
-        except KeyError as exc:
+        except KeyError:
             raise MissingTraversalNode(self.root_hash, nibbles_traversed=())
 
     @root_node.setter
