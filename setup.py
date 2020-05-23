@@ -11,7 +11,7 @@ extras_require = {
         "pycryptodome",
     ],
     'lint': [
-        "flake8==3.4.1",
+        "flake8==3.8.1",
     ],
     'dev': [
         "bumpversion>=0.5.3,<1",
@@ -43,9 +43,10 @@ setup(
 
     install_requires=[
         "eth-hash>=0.1.0,<1.0.0",
-        "eth-utils>=1.3.0,<2.0.0",
+        "eth-utils>=1.6.1,<2.0.0",
         "hexbytes>=0.2.0,<0.3.0",
         "rlp>=1,<2",
+        "sortedcontainers>=2.1.0,<3",
         "typing-extensions==3.7.4.2",
     ],
     extras_require=extras_require,

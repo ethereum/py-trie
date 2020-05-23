@@ -1,3 +1,8 @@
+from hypothesis import (
+    example,
+    given,
+    strategies as st,
+)
 import pytest
 
 from trie.typing import (
@@ -37,3 +42,29 @@ def test_valid_nibbles(valid_nibbles):
 def test_invalid_nibbles(invalid_nibbles, exception):
     with pytest.raises(exception):
         Nibbles(invalid_nibbles)
+
+
+@given(st.lists(st.integers(min_value=0, max_value=0xf)), st.booleans())
+@example([0], True)
+def test_nibbles_repr(nibbles_input, as_ipython):
+    nibbles = Nibbles(nibbles_input)
+
+    if as_ipython:
+
+        class FakePrinter:
+            str_buffer = ''
+
+            def text(self, new_text):
+                self.str_buffer += new_text
+
+        p = FakePrinter()
+        nibbles._repr_pretty_(p, cycle=False)
+        repr_string = p.str_buffer
+    else:
+        repr_string = repr(nibbles)
+
+    evaluated_repr = eval(repr_string)
+    assert evaluated_repr == tuple(nibbles_input)
+
+    re_cast = Nibbles(evaluated_repr)
+    assert re_cast == nibbles

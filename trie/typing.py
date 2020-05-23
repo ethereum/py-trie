@@ -1,12 +1,16 @@
 import enum
 from typing import (
+    Iterable,
     List,
     NamedTuple,
+    Sequence,
     Tuple,
+    TypeVar,
     Union,
 )
 from typing_extensions import (
     Literal,
+    Protocol,
 )
 
 from eth_utils import (
@@ -57,12 +61,30 @@ class Nibble(enum.IntEnum):
         return hex(self.value)
 
 
-class Nibbles(tuple):
-    def __new__(cls, nibbles):
-        if not is_list_like(nibbles):
+# A user-input value, where each element will be validated as a Nibble instead of int
+NibblesInput = Sequence[int]
+
+
+class Nibbles(Tuple[Nibble, ...]):
+    def __new__(cls, nibbles: NibblesInput) -> 'Nibbles':
+        if type(nibbles) is Nibbles:
+            # instanceof thinks that a Tuple[Nibble, ...] *is* a Nibbles, so we use
+            #   a stricter type check here
+            return nibbles  # type: ignore  # mypy doesn't recognize that this is now a Nibbles
+        elif not is_list_like(nibbles):
             raise TypeError(f"Must pass in a tuple of nibbles, but got {nibbles!r}")
         else:
             return tuple.__new__(cls, (Nibble(maybe_nibble) for maybe_nibble in nibbles))
+
+    def __add__(self, other: Tuple[Nibble, ...]) -> 'Nibbles':
+        return Nibbles(super().__add__(other))
+
+    def _repr_pretty_(self, p, cycle: bool) -> None:
+        # Weird, ipython seems to drop the trailing comma in the pretty repr they do. Fixing...
+        if cycle:
+            p.text('(...)')
+        else:
+            p.text(super().__repr__())
 
 
 class HexaryTrieNode(NamedTuple):
@@ -98,3 +120,39 @@ class HexaryTrieNode(NamedTuple):
     The node body, which is useful for calls to HexaryTrie.traverse_from(...),
     for faster access of sub-nodes.
     """
+
+
+T = TypeVar('T')
+
+
+class GenericSortedSet(Protocol[T]):
+    """
+    A protocol definining the minimal subset of features used from
+    sortedcontainers.SortedSet. Feel free to add more as needed.
+    """
+    def __contains__(self, search_value: T) -> bool:
+        ...
+
+    def __getitem__(self, index: int) -> T:
+        ...
+
+    def __len__(self) -> int:
+        ...
+
+    def __iter__(self) -> 'GenericSortedSet[T]':
+        ...
+
+    def __next__(self) -> T:
+        ...
+
+    def bisect(self, search_value: T) -> int:
+        ...
+
+    def copy(self) -> 'GenericSortedSet[T]':
+        ...
+
+    def remove(self, to_remove: T) -> None:
+        ...
+
+    def update(self, new_values: Iterable[T]) -> None:
+        ...
