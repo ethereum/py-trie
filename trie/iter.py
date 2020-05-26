@@ -4,7 +4,6 @@ from typing import (
 )
 
 from trie.exceptions import (
-    FullDirectionalVisibility,
     PerfectVisibility,
 )
 from trie.fog import (
@@ -129,15 +128,34 @@ class NodeIterator:
 
     def all(self) -> Iterable[bytes]:
         """
-        Iterate over all values from left to right.
+        Iterate over all values from left to right. Some performance benefit over
+        using :meth:`next` repeatedly, by caching node accesses between yielded values.
         """
-        # It's possible to speed this up by ~25% by using TrieFrontierCache and HexaryTrieFog.
-        # But, it adds a good chunk more code.
-        #TODO can it be smaller?
-        key = b''
+        next_fog = HexaryTrieFog()
+        cache = TrieFrontierCache()
+
         while True:
-            key = self.next(key)
-            if key is None:
+            try:
+                # Always get the furthest left unexplored value
+                nearest_prefix = next_fog.nearest_right(())
+            except PerfectVisibility:
+                # No more unexplored nodes
                 return
+
+            try:
+                cached_node, uncached_key = cache.get(nearest_prefix)
+            except KeyError:
+                node = self._trie.traverse(nearest_prefix)
             else:
-                yield key
+                node = self._trie.traverse_from(cached_node, uncached_key)
+
+            next_fog = next_fog.explore(nearest_prefix, node.sub_segments)
+
+            if node.sub_segments:
+                cache.add(nearest_prefix, node, node.sub_segments)
+            else:
+                cache.delete(nearest_prefix)
+
+            if node.value:
+                full_key = nearest_prefix + node.suffix
+                yield nibbles_to_bytes(full_key)
