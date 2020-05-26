@@ -31,7 +31,7 @@ Features
 - New HexaryTrie.traverse(tuple_of_nibbles) returns an annotated trie node found at the
   given path of nibbles, starting from the root.
   https://github.com/ethereum/py-trie/pull/102
-- New HexaryTrie.traverse_from(node_body, tuple_of_nibbles) returns an annotated trie node found
+- New HexaryTrie.traverse_from(node, tuple_of_nibbles) returns an annotated trie node found
   when navigating from the given node_body down through the given path of nibbles. Useful for
   avoiding database reads when the parent node body is known. Otherwise, navigating down from
   the root would be required every time.

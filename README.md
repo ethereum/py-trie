@@ -132,7 +132,7 @@ HexaryTrieNode(sub_segments=((0xb,), (0xf,)), value=b'', suffix=(), raw=[b'', b'
 # Notice the position of the children in the 11th and 15th index
 
 # Another way to get there without loading the root node from the database is using traverse_from:
->>> assert t.traverse_from(root_node.raw, root_node.sub_segments[0]) == prefix6d792d6
+>>> assert t.traverse_from(root_node, root_node.sub_segments[0]) == prefix6d792d6
 
 # Embedded nodes can be traversed to the same way as nodes stored in the database:
 

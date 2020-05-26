@@ -20,9 +20,9 @@ from trie.exceptions import (
 )
 from trie.typing import (
     GenericSortedSet,
+    HexaryTrieNode,
     Nibbles,
     NibblesInput,
-    RawHexaryNode,
 )
 from trie.utils.nibbles import (
     decode_nibbles,
@@ -265,15 +265,15 @@ class HexaryTrieFog:
 
 class TrieFrontierCache:
     """
-    Keep a cache of RawHexaryNode bodies for use with traverse_from. This
+    Keep a cache of HexaryTrieNodes for use with traverse_from. This
     can be used neatly with HexaryTrieFog to only keep a cache of the frontier
     of unexplored nodes, so that every expansion into a new unexplored node requires
     only one database lookup instead of log(n).
     """
     def __init__(self) -> None:
-        self._cache: Dict[Nibbles, Tuple[RawHexaryNode, Nibbles]] = {}
+        self._cache: Dict[Nibbles, Tuple[HexaryTrieNode, Nibbles]] = {}
 
-    def get(self, prefix: NibblesInput) -> Tuple[RawHexaryNode, Nibbles]:
+    def get(self, prefix: NibblesInput) -> Tuple[HexaryTrieNode, Nibbles]:
         """
         Find the cached node body of the parent of the given prefix.
 
@@ -286,7 +286,7 @@ class TrieFrontierCache:
     def add(
             self,
             node_prefix_input: NibblesInput,
-            trie_node: RawHexaryNode,
+            trie_node: HexaryTrieNode,
             sub_segments: Sequence[NibblesInput]) -> None:
 
         """

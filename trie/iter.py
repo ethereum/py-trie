@@ -26,7 +26,7 @@ class NodeIterator:
 
     def next(self, key):
         key = bytes_to_nibbles(key)
-        nibbles = self._iter(self.trie.root_node, key)
+        nibbles = self._iter(self.trie.root_node.raw, key)
         if nibbles is None:
             return None
         return nibbles_to_bytes(remove_nibbles_terminator(nibbles))

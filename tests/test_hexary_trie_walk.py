@@ -427,7 +427,7 @@ def test_trie_walk_root_change_with_cached_traverse_from(
             fog = fog.explore(nearest_prefix, node.sub_segments)
 
             if node.sub_segments:
-                cache.add(nearest_prefix, node.raw, node.sub_segments)
+                cache.add(nearest_prefix, node, node.sub_segments)
             else:
                 cache.delete(nearest_prefix)
 
@@ -491,7 +491,7 @@ def test_trie_walk_root_change_with_cached_traverse_from(
         fog = fog.explore(nearest_prefix, sub_segments)
 
         if sub_segments:
-            cache.add(nearest_prefix, node.raw, sub_segments)
+            cache.add(nearest_prefix, node, sub_segments)
         else:
             cache.delete(nearest_prefix)
     else:

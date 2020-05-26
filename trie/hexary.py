@@ -186,7 +186,7 @@ class HexaryTrie:
 
         return self._traverse_from(root_node, trie_key)
 
-    def traverse_from(self, node: RawHexaryNode, trie_key_input: Nibbles) -> HexaryTrieNode:
+    def traverse_from(self, parent_node: HexaryTrieNode, trie_key_input: Nibbles) -> HexaryTrieNode:
         """
         Find the node at the path of nibbles provided. You cannot navigate to the root node
         this way (without already having the root node body, to supply as the argument).
@@ -199,7 +199,7 @@ class HexaryTrie:
         """
         trie_key = Nibbles(trie_key_input)
 
-        node, remaining_key = self._traverse_from(node, trie_key)
+        node, remaining_key = self._traverse_from(parent_node.raw, trie_key)
 
         annotated_node = annotate_node(node)
 

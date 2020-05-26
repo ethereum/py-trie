@@ -65,8 +65,9 @@ def test_iter_error():
     trie[b'cat'] = b'cat'
     trie[b'dog'] = b'dog'
     trie[b'bird'] = b'bird'
-    assert is_extension_node(trie.root_node)
-    node_to_remove = trie.root_node[1]
+    raw_root_node = trie.root_node.raw
+    assert is_extension_node(raw_root_node)
+    node_to_remove = raw_root_node[1]
     trie.db.pop(node_to_remove)
     iterator = NodeIterator(trie)
     key = b''
