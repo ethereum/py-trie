@@ -223,6 +223,15 @@ def test_hexary_trie_at_root_lookups():
                 assert key not in snapshot
 
 
+def test_hexary_trie_root_node_annotation():
+    trie = HexaryTrie({})
+    trie[b'\x41A'] = b'LONG'*32
+    trie[b'\xffE'] = b'LONG'*32
+    root = trie.root_node
+
+    assert root == trie.traverse(())
+
+
 def test_hexary_trie_empty_squash_does_not_read_root():
     db = {}
     trie = HexaryTrie(db=db)
@@ -369,7 +378,7 @@ def test_squash_changes_reverts_trie_root_on_exception():
     old_root_hash = trie.root_hash
 
     # delete the node that will be used during trie fixup
-    del db[trie.root_node[0xf]]
+    del db[trie.root_node.raw[0xf]]
 
     with pytest.raises(MissingTrieNode):
         with trie.squash_changes() as memory_trie:
@@ -396,7 +405,7 @@ def test_hexary_trie_missing_node():
     trie_root_hash = trie.root_hash
 
     # delete first child of the root
-    root_node = trie.root_node
+    root_node = trie.root_node.raw
 
     first_child_hash = root_node[0]
 
@@ -458,7 +467,7 @@ def test_hexary_trie_missing_traversal_node():
     trie.set(key2, b'val2')
 
     # delete first child of the root
-    root_node = trie.root_node
+    root_node = trie.root_node.raw
 
     first_child_hash = root_node[0]
 
@@ -491,7 +500,7 @@ def test_hexary_trie_missing_traversal_node_with_traverse_from():
     # delete first child of the root
     root_node = trie.root_node
 
-    first_child_hash = root_node[0]
+    first_child_hash = root_node.raw[0]
 
     del db[first_child_hash]
 
@@ -630,7 +639,7 @@ def test_hexary_trie_traverse(name, updates, expected, deleted, final_root):
 
         for new_child in node.sub_segments:
             # traverse into children
-            traverse_via_cache(parent_prefix + child_extension, node.raw, new_child)
+            traverse_via_cache(parent_prefix + child_extension, node, new_child)
 
     # start traversal at root
     traverse_via_cache((), None, ())

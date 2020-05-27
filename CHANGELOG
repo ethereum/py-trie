@@ -15,6 +15,11 @@ Breaking Changes
 - If a trie body is missing when calling HexaryTrie.root_node, the exception will be
   MissingTraversalNode instead of MissingTrieNode
   https://github.com/ethereum/py-trie/pull/102
+- Remove support for setting the trie's raw root node directly, via
+  HexaryTrie.root_node = new_raw_root_node
+  https://github.com/ethereum/py-trie/pull/106
+- Return new annotated HexaryTrieNode from HexaryTrie.root_node property
+  https://github.com/ethereum/py-trie/pull/106
 
 Features
 ~~~~~~~~
@@ -26,7 +31,7 @@ Features
 - New HexaryTrie.traverse(tuple_of_nibbles) returns an annotated trie node found at the
   given path of nibbles, starting from the root.
   https://github.com/ethereum/py-trie/pull/102
-- New HexaryTrie.traverse_from(node_body, tuple_of_nibbles) returns an annotated trie node found
+- New HexaryTrie.traverse_from(node, tuple_of_nibbles) returns an annotated trie node found
   when navigating from the given node_body down through the given path of nibbles. Useful for
   avoiding database reads when the parent node body is known. Otherwise, navigating down from
   the root would be required every time.
