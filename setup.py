@@ -27,18 +27,22 @@ extras_require['dev'] = (
     extras_require['lint']
 )
 
+with open('README.md') as readme_file:
+    long_description = readme_file.read()
+
 setup(
     name='trie',
     # *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
     version='2.0.0-alpha.0',
     description="""Python implementation of the Ethereum Trie structure""",
     long_description_markdown_filename='README.md',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     author='The Ethereum Foundation',
     author_email='snakecharmers@ethereum.org',
     url='https://github.com/ethereum/py-trie',
     include_package_data=True,
     py_modules=['trie'],
-    setup_requires=['setuptools-markdown'],
     python_requires='>=3.6,<4',
 
     install_requires=[
