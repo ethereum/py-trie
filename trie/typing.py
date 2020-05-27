@@ -96,6 +96,7 @@ class HexaryTrieNode(NamedTuple):
     """
     Sub segments are the _complete_ list of possible subkeys.
     All sub segments *not* listed can be considered to not exist.
+    Sub segments are sorted.
 
     Each sub segment does not include the trie node prefix. For example:
         - Branch nodes have length-1 tuples as sub_segments.

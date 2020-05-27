@@ -32,18 +32,6 @@ def _make_trie(keys):
     return node_db, trie
 
 
-def _all_keys(trie):
-    """
-    Iterate through all keys in a trie
-    """
-    # TODO: delete me after NodeIterator.all() is added
-    iterator = NodeIterator(trie)
-    key = iterator.next(b'')
-    while key is not None:
-        yield key
-        key = iterator.next(key)
-
-
 @given(
     st.lists(
         st.binary(min_size=3, max_size=3),
@@ -99,7 +87,8 @@ def test_trie_walk_backfilling(trie_keys, index_nibbles):
     # Make sure the fog agrees that it's completed
     assert fog.is_complete
     # Make sure we can walk the whole trie without any missing nodes
-    found_keys = set(_all_keys(trie))
+    iterator = NodeIterator(trie)
+    found_keys = set(iterator.all())
     # Make sure we found all the keys
     assert found_keys == set(trie_keys)
 
@@ -162,7 +151,8 @@ def test_trie_walk_backfilling_with_traverse_from(trie_keys, index_nibbles):
     # Make sure the fog agrees that it's completed
     assert fog.is_complete
     # Make sure we can walk the whole trie without any missing nodes
-    found_keys = set(_all_keys(trie))
+    iterator = NodeIterator(trie)
+    found_keys = set(iterator.all())
     # Make sure we found all the keys
     assert found_keys == set(trie_keys)
 
@@ -330,7 +320,8 @@ def test_trie_walk_root_change_with_traverse(
     # We do *not* know that we have replaced all the missing_nodes, because of the trie changes
 
     # Make sure we can walk the whole trie without any missing nodes
-    found_keys = set(_all_keys(trie))
+    iterator = NodeIterator(trie)
+    found_keys = set(iterator.all())
     assert found_keys == expected_final_keys
 
 
@@ -502,5 +493,6 @@ def test_trie_walk_root_change_with_cached_traverse_from(
     # We do *not* know that we have replaced all the missing_nodes, because of the trie changes
 
     # Make sure we can walk the whole trie without any missing nodes
-    found_keys = set(_all_keys(trie))
+    iterator = NodeIterator(trie)
+    found_keys = set(iterator.all())
     assert found_keys == expected_final_keys
