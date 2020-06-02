@@ -88,7 +88,7 @@ def test_trie_walk_backfilling(trie_keys, index_nibbles):
     assert fog.is_complete
     # Make sure we can walk the whole trie without any missing nodes
     iterator = NodeIterator(trie)
-    found_keys = set(iterator.all())
+    found_keys = set(iterator.keys())
     # Make sure we found all the keys
     assert found_keys == set(trie_keys)
 
@@ -152,7 +152,7 @@ def test_trie_walk_backfilling_with_traverse_from(trie_keys, index_nibbles):
     assert fog.is_complete
     # Make sure we can walk the whole trie without any missing nodes
     iterator = NodeIterator(trie)
-    found_keys = set(iterator.all())
+    found_keys = set(iterator.keys())
     # Make sure we found all the keys
     assert found_keys == set(trie_keys)
 
@@ -321,7 +321,7 @@ def test_trie_walk_root_change_with_traverse(
 
     # Make sure we can walk the whole trie without any missing nodes
     iterator = NodeIterator(trie)
-    found_keys = set(iterator.all())
+    found_keys = set(iterator.keys())
     assert found_keys == expected_final_keys
 
 
@@ -494,5 +494,5 @@ def test_trie_walk_root_change_with_cached_traverse_from(
 
     # Make sure we can walk the whole trie without any missing nodes
     iterator = NodeIterator(trie)
-    found_keys = set(iterator.all())
+    found_keys = set(iterator.keys())
     assert found_keys == expected_final_keys

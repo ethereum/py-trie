@@ -1,18 +1,26 @@
 import json
 import os
 
-import pytest
-
 from hypothesis import (
+    example,
     given,
-    settings,
+    strategies as st,
 )
+import pytest
+import rlp
 
 from trie import HexaryTrie
 from trie.exceptions import MissingTraversalNode
 from trie.iter import NodeIterator
+from trie.tools.strategies import (
+    random_trie_strategy,
+    trie_from_keys,
+    trie_keys_with_extensions,
+)
+from trie.utils.nibbles import (
+    nibbles_to_bytes,
+)
 from trie.utils.nodes import is_extension_node
-from .utils import random_trie_strategy
 
 
 ROOT_PROJECT_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -47,8 +55,7 @@ def test_trie_next_prev_using_fixtures(fixture_name, fixture):
 
 
 @given(random_trie_strategy())
-@settings(max_examples=200)
-def test_iter(random_trie):
+def test_iter_next(random_trie):
     trie, contents = random_trie
     iterator = NodeIterator(trie)
 
@@ -66,15 +73,65 @@ def test_iter(random_trie):
         assert visited == sorted(contents.keys())
 
 
-@given(random_trie_strategy())
-@settings(max_examples=200)
-def test_iter_all(random_trie):
-    trie, contents = random_trie
+@given(trie_keys_with_extensions(), st.integers(min_value=1, max_value=33))
+def test_iter_keys(trie_keys, min_value_length):
+    trie, contents = trie_from_keys(trie_keys, min_value_length)
     node_iterator = NodeIterator(trie)
     visited = []
-    for key in node_iterator.all():
+    for key in node_iterator.keys():
         visited.append(key)
     assert visited == sorted(contents.keys())
+
+
+@given(trie_keys_with_extensions(), st.integers(min_value=1, max_value=33))
+@example(
+    # Test when the values are in reversed order (so that a larger value appears
+    #   earlier in a trie). Test that values sorted in key order, not value order.
+    trie_keys=(b'\x01\x00', b'\x01\x00\x00'),
+    min_value_length=6,
+)
+def test_iter_values(trie_keys, min_value_length):
+    trie, contents = trie_from_keys(trie_keys, min_value_length)
+    node_iterator = NodeIterator(trie)
+    visited = []
+    for value in node_iterator.values():
+        visited.append(value)
+    values_sorted_by_key = [
+        val for _, val  # only look at value
+        in sorted(contents.items())  # but sort by key
+    ]
+    assert visited == values_sorted_by_key
+
+
+@given(trie_keys_with_extensions(), st.integers(min_value=1, max_value=33))
+def test_iter_items(trie_keys, min_value_length):
+    trie, contents = trie_from_keys(trie_keys, min_value_length)
+    node_iterator = NodeIterator(trie)
+    visited = []
+    for item in node_iterator.items():
+        visited.append(item)
+    assert visited == sorted(contents.items())
+
+
+@given(trie_keys_with_extensions(), st.integers(min_value=1, max_value=33))
+def test_iter_nodes(trie_keys, min_value_length):
+    trie, contents = trie_from_keys(trie_keys, min_value_length)
+    visited = set()
+    for prefix, node in NodeIterator(trie).nodes():
+        # Save a copy of the encoded node to check against the database
+        visited.add(rlp.encode(node.raw))
+        # Verify that navigating to the node directly returns the same node as this iterator
+        assert node == trie.traverse(prefix)
+        # Double-check that if the node stores a value, then the implied key matches
+        if node.value:
+            iterated_key = nibbles_to_bytes(prefix + node.suffix)
+            assert node.value == contents[iterated_key]
+
+    # All nodes should be visited
+    # Note that because of node embedding, the node iterator will return more nodes
+    #   than actually exist in the underlying DB (it returns embedded nodes as if they
+    #   were not embedded). So we can't simply test that trie.db.values() equals visited here.
+    assert set(trie.db.values()) - visited == set()
 
 
 def test_iter_error():
