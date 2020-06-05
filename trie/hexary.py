@@ -284,7 +284,10 @@ class HexaryTrie:
         try:
             root_node = self.get_node(self.root_hash)
 
-            new_node = self._set(root_node, trie_key, value)
+            if value == b'':
+                new_node = self._delete(root_node, trie_key)
+            else:
+                new_node = self._set(root_node, trie_key, value)
         except KeyError as exc:
             self._raise_missing_node(exc, key)
 
