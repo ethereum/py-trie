@@ -413,6 +413,83 @@ def test_squash_changes_does_not_prune_on_missing_trie_node(inserts_and_updates)
                     change_complete = True
 
 
+@given(
+    st.lists(st.tuples(st.binary(), st.binary())),
+    st.lists(st.binary()),
+)
+@example(
+    # The root node is special: it always gets turned into a node, even if it's short.
+    # The rest of the pruning machinery expects to only prune long nodes.
+    # If you *never* try to prune the root node, then it will leave straggler nodes in the database.
+    #   This is because the "normal" pruning machinery will not mark a short root node for pruning.
+    #   The test will fail in the flagged_usage_db test below, which makes sure
+    #   that all present database keys are used when walking through the trie.
+    updates=[(b'', b'\x00'), (b'', b'\x00'), (b'', b'')],
+    deleted=[],
+)
+@example(
+    # Continuation of special root node handling from above...
+    # If you *always* try to prune the root node in _set_root_node,
+    #   then you will *double* mark it (because if the root node is big enough, it will already
+    #   be handled by the "normal" pruning machinery). So this test just makes sure you don't
+    #   accidentally over-prune the root node. If you do, then the test will raise a MissingTrieNode
+    updates=[(b'\xa0', b'\x00\x00\x00\x00\x00\x00'), (b'\xa1', b'\x00\x00')],
+    deleted=[b''],
+)
+@example(
+    # Hm, the reason for this test case is lost to the sands of time.
+    # It had to do with some intermediate pruning implementation that didn't survive a squash.
+    updates=[(b'', b''), (b'', b'')],
+    deleted=[b''],
+)
+def test_hexary_trie_squash_all_changes(updates, deleted):
+    db = {}
+    trie = HexaryTrie(db=db)
+    expected = {}
+    root_hashes = set()
+    with trie.squash_changes() as memory_trie:
+        for _index, (key, value) in enumerate(updates):
+            if value is None:
+                del memory_trie[key]
+                expected.pop(key, None)
+            else:
+                memory_trie[key] = value
+                expected[key] = value
+            root_hashes.add(memory_trie.root_hash)
+
+        for _index, key in enumerate(deleted):
+            del memory_trie[key]
+            expected.pop(key, None)
+            root_hashes.add(memory_trie.root_hash)
+
+    final_root_hash = trie.root_hash
+
+    # access all of the values in the trie, triggering reads for all the database keys
+    # that support the final state
+    flagged_usage_db = KeyAccessLogger(db)
+    flag_trie = HexaryTrie(flagged_usage_db, root_hash=final_root_hash)
+    for key, val in expected.items():
+        assert flag_trie[key] == val
+
+    # assert that no unnecessary database values were created
+    unread = flagged_usage_db.unread_keys()
+    straggler_data = {k: (db[k], decode_node(db[k])) for k in unread}
+    assert len(unread) == 0, straggler_data
+
+    # rebuild without squashing, to compare root hash
+    verbose_trie = HexaryTrie({})
+    for key, value in updates:
+        if value is None:
+            del verbose_trie[key]
+        else:
+            verbose_trie[key] = value
+
+    for _index, key in enumerate(deleted):
+        del verbose_trie[key]
+
+    assert final_root_hash == verbose_trie.root_hash
+
+
 @pytest.mark.parametrize(
     'name, updates, expected, deleted, final_root',
     FIXTURES_PERMUTED,

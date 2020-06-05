@@ -3,7 +3,10 @@ import contextlib
 import functools
 import itertools
 from typing import (
+    Callable,
     Tuple,
+    TypeVar,
+    cast,
 )
 
 from rlp.codec import encode_raw
@@ -64,6 +67,8 @@ from trie.validation import (
     validate_is_bytes,
 )
 
+WrappedFunc = TypeVar('WrappedFunc', bound=Callable[..., None])
+
 
 class _PartialTraversal(Exception):
     """
@@ -74,8 +79,16 @@ class _PartialTraversal(Exception):
     pass
 
 
+def prune_pending(fn: WrappedFunc) -> WrappedFunc:
+    @functools.wraps(fn)
+    def wrapped(trie_self, *args) -> None:
+        with trie_self._prune_on_success():
+            fn(trie_self, *args)
+    return cast(WrappedFunc, wrapped)
+
+
 class HexaryTrie:
-    __slots__ = ('db', 'root_hash', 'is_pruning', '_ref_count')
+    __slots__ = ('db', 'root_hash', 'is_pruning', '_ref_count', '_pending_prune_keys')
 
     # Shortcuts
     BLANK_NODE_HASH = BLANK_NODE_HASH
@@ -103,6 +116,7 @@ class HexaryTrie:
             self._ref_count = defaultdict(int)
         else:
             self._ref_count = None
+        self._pending_prune_keys = None
 
     def get(self, key):
         validate_is_bytes(key)
@@ -275,6 +289,7 @@ class HexaryTrie:
         # Indicate more information about which key was requested, which node was missing, etc
         raise MissingTrieNode(exception.args[0], self.root_hash, key, prefix=None) from exception
 
+    @prune_pending
     def set(self, key, value):
         validate_is_bytes(key)
         validate_is_bytes(value)
@@ -296,24 +311,26 @@ class HexaryTrie:
     def _set(self, node, trie_key, value):
         node_type = get_node_type(node)
 
-        with self._prune_node(node):
-            if node_type == NODE_TYPE_BLANK:
-                return [
-                    compute_leaf_key(trie_key),
-                    value,
-                ]
-            elif node_type in {NODE_TYPE_LEAF, NODE_TYPE_EXTENSION}:
-                return self._set_kv_node(node, trie_key, value)
-            elif node_type == NODE_TYPE_BRANCH:
-                return self._set_branch_node(node, trie_key, value)
-            else:
-                raise Exception("Invariant: This shouldn't ever happen")
+        self._prune_node(node)
+
+        if node_type == NODE_TYPE_BLANK:
+            return [
+                compute_leaf_key(trie_key),
+                value,
+            ]
+        elif node_type in {NODE_TYPE_LEAF, NODE_TYPE_EXTENSION}:
+            return self._set_kv_node(node, trie_key, value)
+        elif node_type == NODE_TYPE_BRANCH:
+            return self._set_branch_node(node, trie_key, value)
+        else:
+            raise Exception("Invariant: This shouldn't ever happen")
 
     def exists(self, key):
         validate_is_bytes(key)
 
         return self.get(key) != BLANK_NODE
 
+    @prune_pending
     def delete(self, key):
         validate_is_bytes(key)
 
@@ -331,16 +348,17 @@ class HexaryTrie:
     def _delete(self, node, trie_key):
         node_type = get_node_type(node)
 
-        with self._prune_node(node):
-            if node_type == NODE_TYPE_BLANK:
-                # ignore attempt to delete key from empty node
-                return BLANK_NODE
-            elif node_type in {NODE_TYPE_LEAF, NODE_TYPE_EXTENSION}:
-                return self._delete_kv_node(node, trie_key)
-            elif node_type == NODE_TYPE_BRANCH:
-                return self._delete_branch_node(node, trie_key)
-            else:
-                raise Exception("Invariant: This shouldn't ever happen")
+        self._prune_node(node)
+
+        if node_type == NODE_TYPE_BLANK:
+            # ignore attempt to delete key from empty node
+            return BLANK_NODE
+        elif node_type in {NODE_TYPE_LEAF, NODE_TYPE_EXTENSION}:
+            return self._delete_kv_node(node, trie_key)
+        elif node_type == NODE_TYPE_BRANCH:
+            return self._delete_branch_node(node, trie_key)
+        else:
+            raise Exception("Invariant: This shouldn't ever happen")
 
     @property
     def ref_count(self):
@@ -416,39 +434,50 @@ class HexaryTrie:
     #
 
     @contextlib.contextmanager
+    def _prune_on_success(self):
+        if self.is_pruning:
+            if self._pending_prune_keys is None:
+                self._pending_prune_keys = defaultdict(int)
+            else:
+                raise ValidationError("Cannot set/delete simultaneously, run them in serial")
+        try:
+            yield
+            if self.is_pruning:
+                self._complete_pruning()
+        finally:
+            # Reset for next set/delete
+            self._pending_prune_keys = None
+
     def _prune_node(self, node):
         """
         Prune the given node if context exits cleanly.
         """
         if self.is_pruning:
-            # node is mutable, so capture the key for later pruning now
             prune_key, node_body = self._node_to_db_mapping(node)
-            should_prune = (node_body is not None)
-        else:
-            should_prune = False
+            if node_body is not None:
+                self._pending_prune_keys[prune_key] += 1
 
-        yield
+    def _complete_pruning(self):
+        for key, number_prunes in self._pending_prune_keys.items():
+            new_count = self._ref_count[key] - number_prunes
 
-        # Prune only if no exception is raised
-        if should_prune:
-            self._prune_key(prune_key)
+            if new_count <= 0:
+                # Ref count doesn't track keys that are already in the starting database,
+                #   so ref count can go negative. Then, detect if key is in underlying:
+                #   - If so, delete it and set the refcount down to 0
+                #   - If not, raise an exception about trying to prune a node that doesn't exist
+                try:
+                    del self.db[key]
+                except KeyError as exc:
+                    raise ValidationError("Tried to prune key %r that doesn't exist" % key) from exc
+                else:
+                    new_count = 0
 
-    def _prune_key(self, key):
-        new_count = self.ref_count[key] - 1
-
-        if new_count <= 0:
-            # Ref count doesn't track keys that are already in the starting database,
-            #   so ref count can go negative. Then, detect if key is in underlying:
-            #   - If so, delete it and set the refcount down to 0
-            #   - If not, raise an exception about trying to prune a node that doesn't exist
-            try:
-                del self.db[key]
-            except KeyError as exc:
-                raise ValidationError("Tried to prune key %r that doesn't exist" % key) from exc
+            if new_count == 0:
+                # This is an optimization, to reduce the size of the _ref_count dict
+                del self._ref_count[key]
             else:
-                new_count = 0
-
-        self.ref_count[key] = new_count
+                self._ref_count[key] = new_count
 
     def regenerate_ref_count(self):
         new_ref_count = defaultdict(int)
@@ -493,14 +522,27 @@ class HexaryTrie:
     def _set_db_value(self, key, value):
         self.db[key] = value
         if self.is_pruning:
-            self.ref_count[key] += 1
+            self._ref_count[key] += 1
 
     def _set_root_node(self, root_node):
         validate_is_node(root_node)
+
         if self.is_pruning:
+            # Root nodes are special: they are always hashed, which is a surprise to the rest of
+            #   the pruning logic. We have to catch if the root node is small and prune it here.
             old_root_hash = self.root_hash
-            if old_root_hash != BLANK_NODE_HASH and old_root_hash in self.db:
-                self._prune_key(old_root_hash)
+            if old_root_hash != BLANK_NODE_HASH:
+                try:
+                    old_root_node = self.get_node(old_root_hash)
+                except KeyError:
+                    # The old root node is missing from the database, but the only
+                    #   reason we were retrieving it is to potentially prune it away.
+                    # So just ignore the pruning if the old node is already missing
+                    pass
+                else:
+                    prune_key, node_body = self._node_to_db_mapping(old_root_node)
+                    if node_body is None and old_root_hash in self.db:
+                        self._pending_prune_keys[old_root_hash] += 1
 
         self.root_hash = self._set_raw_node(root_node)
 
@@ -575,12 +617,13 @@ class HexaryTrie:
         sub_node_type = get_node_type(sub_node)
 
         if sub_node_type in {NODE_TYPE_LEAF, NODE_TYPE_EXTENSION}:
-            with self._prune_node(sub_node):
-                new_subnode_key = encode_nibbles(tuple(itertools.chain(
-                    [sub_node_idx],
-                    decode_nibbles(sub_node[0]),
-                )))
-                return [new_subnode_key, sub_node[1]]
+            self._prune_node(sub_node)
+
+            new_subnode_key = encode_nibbles(tuple(itertools.chain(
+                [sub_node_idx],
+                decode_nibbles(sub_node[0]),
+            )))
+            return [new_subnode_key, sub_node[1]]
         elif sub_node_type == NODE_TYPE_BRANCH:
             return [encode_nibbles([sub_node_idx]), sub_node_hash]
         else:
@@ -641,9 +684,10 @@ class HexaryTrie:
 
         new_sub_node_type = get_node_type(new_sub_node)
         if new_sub_node_type in {NODE_TYPE_LEAF, NODE_TYPE_EXTENSION}:
-            with self._prune_node(new_sub_node):
-                new_key = current_key + decode_nibbles(new_sub_node[0])
-                return [encode_nibbles(new_key), new_sub_node[1]]
+            self._prune_node(new_sub_node)
+
+            new_key = current_key + decode_nibbles(new_sub_node[0])
+            return [encode_nibbles(new_key), new_sub_node[1]]
 
         if new_sub_node_type == NODE_TYPE_BRANCH:
             return [encode_nibbles(current_key), encoded_new_sub_node]
