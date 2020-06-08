@@ -118,7 +118,10 @@ def consume_common_prefix(left_key, right_key):
 
 
 def key_starts_with(full_key, partial_key):
-    return all(left == right for left, right in zip(full_key, partial_key))
+    if len(full_key) < len(partial_key):
+        return False
+    else:
+        return all(left == right for left, right in zip(full_key, partial_key))
 
 
 # Binary Trie node utils

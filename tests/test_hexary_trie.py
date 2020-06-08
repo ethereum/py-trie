@@ -442,6 +442,13 @@ def test_squash_changes_does_not_prune_on_missing_trie_node(inserts_and_updates)
     updates=[(b'', b''), (b'', b'')],
     deleted=[b''],
 )
+@example(
+    # Wow, found a bug where a deleting a missing key could delete a *different, longer* key
+    # Deleting the b'' key here will cause the b'\x01' key to get deleted!
+    updates=[(b'\x01', b'\x00'), (b'\x01\x00', b'\x00')],
+    deleted=[b''],
+)
+@settings(max_examples=1000)
 def test_hexary_trie_squash_all_changes(updates, deleted):
     db = {}
     trie = HexaryTrie(db=db)
