@@ -1,14 +1,24 @@
+from hypothesis import (
+    strategies as st,
+)
+
 from trie import HexaryTrie
 
 
-def make_random_trie(random):
+@st.composite
+def random_trie_strategy(draw):
+    trie_items = draw(st.lists(
+        st.tuples(
+            # key
+            st.binary(max_size=32),
+            # value
+            st.binary(min_size=1, max_size=64),
+        ),
+        unique=True,
+        max_size=512,
+    ))
+
     trie = HexaryTrie({})
-    contents = {}
-    for _ in range(512):
-        key_length = random.randint(2, 32)
-        key = bytes([random.randint(0, 255) for _ in range(key_length)])
-        value_length = random.randint(2, 64)
-        value = bytes([random.randint(0, 255) for _ in range(value_length)])
+    for key, value in trie_items:
         trie[key] = value
-        contents[key] = value
-    return trie, contents
+    return trie, dict(trie_items)

@@ -6,14 +6,13 @@ import pytest
 from hypothesis import (
     given,
     settings,
-    strategies,
 )
 
 from trie import HexaryTrie
 from trie.exceptions import MissingTraversalNode
 from trie.iter import NodeIterator
 from trie.utils.nodes import is_extension_node
-from .utils import make_random_trie
+from .utils import random_trie_strategy
 
 
 ROOT_PROJECT_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -47,29 +46,34 @@ def test_trie_next_prev_using_fixtures(fixture_name, fixture):
         assert nxt == iterator.next(point)
 
 
-@given(random=strategies.randoms())
-@settings(max_examples=10, deadline=500)
-def test_iter(random):
-    trie, contents = make_random_trie(random)
+@given(random_trie_strategy())
+@settings(max_examples=200)
+def test_iter(random_trie):
+    trie, contents = random_trie
     iterator = NodeIterator(trie)
-    visited = []
-    key = iterator.next(b'')
-    assert key is not None
-    while key is not None:
-        visited.append(key)
-        key = iterator.next(key)
-    assert visited == sorted(contents.keys())
+
+    key = iterator.next()
+
+    if len(contents) == 0:
+        assert key is None
+    else:
+        assert key is not None
+
+        visited = []
+        while key is not None:
+            visited.append(key)
+            key = iterator.next(key)
+        assert visited == sorted(contents.keys())
 
 
-@given(random=strategies.randoms())
-@settings(max_examples=10, deadline=500)
-def test_iter_all(random):
-    trie, contents = make_random_trie(random)
+@given(random_trie_strategy())
+@settings(max_examples=200)
+def test_iter_all(random_trie):
+    trie, contents = random_trie
     node_iterator = NodeIterator(trie)
     visited = []
     for key in node_iterator.all():
         visited.append(key)
-    assert len(visited) > 0
     assert visited == sorted(contents.keys())
 
 
