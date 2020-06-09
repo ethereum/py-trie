@@ -32,19 +32,27 @@ class NodeIterator:
     def __init__(self, trie: HexaryTrie) -> None:
         self._trie = trie
 
-    def next(self, key_bytes: bytes) -> Optional[bytes]:
+    def next(self, key_bytes: Optional[bytes] = None) -> Optional[bytes]:
         """
         Find the next key to the right from the given key, or None if there is
         no key to the right.
 
         .. NOTE:: If you plan to iterate the full trie, use all() instead, for performance.
 
+        :param key_bytes: the key to start your search from. If None, return
+            the first possible key.
+
         :return: key in bytes to the right of key_bytes, or None
         """
         root = self._trie.root_node
-        key = bytes_to_nibbles(key_bytes)
         none_traversed = Nibbles(())
-        next_key = self._get_key_after(root, key, none_traversed)
+
+        if key_bytes is None:
+            next_key = self._get_next_key(root, none_traversed)
+        else:
+            key = bytes_to_nibbles(key_bytes)
+            next_key = self._get_key_after(root, key, none_traversed)
+
         if next_key is None:
             return None
         else:
