@@ -1,5 +1,11 @@
 import contextlib
 
+from eth_utils import to_dict
+from eth_utils.toolz import (
+    merge,
+    valfilter,
+)
+
 DELETED = object()
 
 
@@ -43,6 +49,11 @@ class ScratchDB:
             return True
         else:
             return key in self.wrapped_db
+
+    @to_dict
+    def copy(self):
+        combined = merge(self.wrapped_db, self.cache)
+        return valfilter(lambda val: val is not DELETED, combined)
 
     @contextlib.contextmanager
     def batch_commit(self, *, do_deletes=False):
