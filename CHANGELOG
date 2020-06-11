@@ -1,7 +1,27 @@
 Unreleased
 ---------------
 
-None
+Features
+~~~~~~~~
+
+- Can now use NodeIterator to navigate to the empty key b'', using NodeIterator.next(key=None) or
+  simply NodeIterator.next().
+  https://github.com/ethereum/py-trie/pull/110
+
+Bugfixes
+~~~~~~~~
+
+- In certain cases, deleting key b'short' would actually delete the key at b'short-nope-long'!
+  Changed key_starts_with() to fix it
+  https://github.com/ethereum/py-trie/pull/109
+- HexaryTrie.set(key, b'') would sometimes try to create a leaf node with an
+  empty value. Instead, it should act exactly the same as HexaryTrie.delete(key)
+  https://github.com/ethereum/py-trie/pull/109
+- When a MissingTrieNode is raised during pruning (or using squash_changes()), a node body
+  that was pruned before the exception was raised might stay pruned, even though the trie
+  wasn't updated.
+  https://github.com/ethereum/py-trie/pull/109
+
 
 v2.0.0-alpha.1
 ---------------
