@@ -1015,6 +1015,29 @@ def test_traverse_from_partial_path(
     assert exc.node.value == node_val
 
 
+def test_traverse_non_matching_leaf():
+    trie = HexaryTrie({})
+    EMPTY_NODE = trie.root_node
+
+    trie[b'\xFFleaf-at-root'] = b'some-value'
+    final_root = trie.root_node
+
+    # Traversing partway into the leaf raises the TraversedPartialPath exception
+    with pytest.raises(TraversedPartialPath):
+        trie.traverse((0xf,))
+    with pytest.raises(TraversedPartialPath):
+        trie.traverse_from(final_root, (0xf,))
+
+    # But traversing to any *non*-matching nibble should return a blank node, because no
+    #   children reside underneath that nibble. Returning the leaf with a mismatched nibble
+    #   would be a bug.
+    for nibble in range(0xf):
+        # Note that we do not want to look at the 0xf nibble, because that's the one that
+        #   should raise the exception above
+        assert trie.traverse((nibble,)) == EMPTY_NODE
+        assert trie.traverse_from(final_root, (nibble,)) == EMPTY_NODE
+
+
 def test_squash_a_pruning_trie_keeps_unchanged_short_root_node():
     db = {}
     trie = HexaryTrie(db, prune=True)

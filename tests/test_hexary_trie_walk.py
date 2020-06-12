@@ -199,6 +199,16 @@ def test_trie_walk_backfilling_with_traverse_from(trie_keys, index_nibbles):
     index_nibbles=[],
     index_nibbles2=[],
 )
+@example(
+    # Catch bug where TraversedPartialPath is raised when traversing into a leaf,
+    #   even though the leaf suffix doesn't match the prefix that was being traversed to.
+    trie_keys=[b'\x00\x00\x00', b'\x10\x00\x00'],
+    minimum_value_length=26,
+    number_explorations=86,
+    trie_changes=[(1, None)],
+    index_nibbles=[],
+    index_nibbles2=[],
+)
 def test_trie_walk_root_change_with_traverse(
         trie_keys,
         minimum_value_length,
