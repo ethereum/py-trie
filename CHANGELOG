@@ -4,6 +4,11 @@ Unreleased
 Features
 ~~~~~~~~
 
+- Added NodeIterator.keys(), .items(), .values() (mimicking the dict version of these), as well
+  as NodeIterator.nodes(), which yields all of the annotated trie nodes.
+  https://github.com/ethereum/py-trie/pull/112
+- Improved repr(HexaryTrie)
+  https://github.com/ethereum/py-trie/pull/112
 - Can now use NodeIterator to navigate to the empty key b'', using NodeIterator.next(key=None) or
   simply NodeIterator.next().
   https://github.com/ethereum/py-trie/pull/110

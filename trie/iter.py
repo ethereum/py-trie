@@ -1,6 +1,7 @@
 from typing import (
     Iterable,
     Optional,
+    Tuple,
 )
 
 from trie.exceptions import (
@@ -37,7 +38,7 @@ class NodeIterator:
         Find the next key to the right from the given key, or None if there is
         no key to the right.
 
-        .. NOTE:: If you plan to iterate the full trie, use all() instead, for performance.
+        .. NOTE:: To iterate the full trie, consider using keys() instead, for performance
 
         :param key_bytes: the key to start your search from. If None, return
             the first possible key.
@@ -134,10 +135,35 @@ class NodeIterator:
             next_node = self._trie.traverse_from(node, next_segment)
             return self._get_next_key(next_node, traversed + next_segment)
 
-    def all(self) -> Iterable[bytes]:
+    def keys(self) -> Iterable[bytes]:
         """
-        Iterate over all values from left to right. Some performance benefit over
+        Iterate over all trie keys from left to right. Some performance benefit over
         using :meth:`next` repeatedly, by caching node accesses between yielded values.
+        """
+        for key, _ in self.items():
+            yield key
+
+    def items(self) -> Iterable[Tuple[bytes, bytes]]:
+        """
+        Iterate over all (key, value) pairs from left to right.
+        """
+        for prefix, node in self.nodes():
+            if node.value:
+                full_key = prefix + node.suffix
+                yield nibbles_to_bytes(full_key), node.value
+
+    def values(self) -> Iterable[bytes]:
+        """
+        Iterate over all stored values from left to right.
+        """
+        for _, node in self.nodes():
+            if node.value:
+                yield node.value
+
+    def nodes(self) -> Iterable[Tuple[Nibbles, HexaryTrieNode]]:
+        """
+        Iterate over all trie nodes, starting at the left-most available one (the root),
+        then the left-most available one (its left-most child) and so on.
         """
         next_fog = HexaryTrieFog()
         cache = TrieFrontierCache()
@@ -164,6 +190,4 @@ class NodeIterator:
             else:
                 cache.delete(nearest_prefix)
 
-            if node.value:
-                full_key = nearest_prefix + node.suffix
-                yield nibbles_to_bytes(full_key)
+            yield nearest_prefix, node

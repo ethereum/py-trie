@@ -799,6 +799,9 @@ class HexaryTrie:
         snapshot = type(self)(self.db, at_root_hash, prune=False)
         yield snapshot
 
+    def __repr__(self) -> str:
+        return f"HexaryTrie({self.db!r}, root_hash={self.root_hash}, prune={self.is_pruning})"
+
 
 @to_tuple
 def tuplify(node):
