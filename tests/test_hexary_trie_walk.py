@@ -209,6 +209,19 @@ def test_trie_walk_backfilling_with_traverse_from(trie_keys, minimum_value_lengt
     index_nibbles=[],
     index_nibbles2=[],
 )
+@example(
+    # Interesting scenario:
+    #   - during trie change, delete prunes leaf node for key b'\x00\x01\x00'
+    #   - *after* pruning, a MissingTrieNode is raised during a normalize step
+    #   - this exception ought to revert the delete, but it's too late
+    #   - a subsequent attempt to delete the key fails because the leaf node is missing
+    trie_keys=[b'\x00\x01\x00', b'\x00\x01\x01', b'\x00\x00\x00'],
+    minimum_value_length=27,
+    number_explorations=0,
+    trie_changes=[(1, None), (3, None)],
+    index_nibbles=[],
+    index_nibbles2=[],
+)
 def test_trie_walk_root_change_with_traverse(
         trie_keys,
         minimum_value_length,
