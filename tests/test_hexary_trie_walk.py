@@ -17,14 +17,14 @@ from trie.iter import NodeIterator
 from trie.typing import Nibbles
 
 
-def _make_trie(keys):
+def _make_trie(keys, prune=False):
     """
     Make a new HexaryTrie, insert all the given keys, with the value equal to the key.
     Return the raw database and the HexaryTrie.
     """
     # Create trie
     node_db = {}
-    trie = HexaryTrie(node_db)
+    trie = HexaryTrie(node_db, prune=prune)
     with trie.squash_changes() as trie_batch:
         for k in keys:
             trie_batch[k] = k
