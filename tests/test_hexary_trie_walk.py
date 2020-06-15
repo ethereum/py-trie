@@ -150,6 +150,8 @@ def test_trie_walk_backfilling_with_traverse_from(trie_keys, index_nibbles):
         min_size=1,
         max_size=1024,
     ),
+    # minimum value length (to help force trie nodes to stop embedding)
+    st.integers(min_value=0, max_value=32),
     # how many fog expansions to try before modifying the trie
     st.integers(min_value=0, max_value=10000),
     # all trie changes to make before the second trie walk
@@ -191,6 +193,7 @@ def test_trie_walk_backfilling_with_traverse_from(trie_keys, index_nibbles):
         b'\x01\x00\x01',
         b'\x10\x00\x00',
     ],
+    minimum_value_length=0,
     number_explorations=212,
     trie_changes=[(1, b'\x00\x00\x00\x00\x00\x00\x00'), (4, None)],
     index_nibbles=[],
@@ -198,6 +201,7 @@ def test_trie_walk_backfilling_with_traverse_from(trie_keys, index_nibbles):
 )
 def test_trie_walk_root_change_with_traverse(
         trie_keys,
+        minimum_value_length,
         number_explorations,
         trie_changes,
         index_nibbles,
