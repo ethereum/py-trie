@@ -26,6 +26,10 @@ Bugfixes
   that was pruned before the exception was raised might stay pruned, even though the trie
   wasn't updated.
   https://github.com/ethereum/py-trie/pull/109
+- When using squash_changes() on a HexaryTrie with prune=True, doing a no-op change would
+  cause the root node to get pruned (deleted even though it was still needed for the current
+  root hash!).
+  https://github.com/ethereum/py-trie/pull/113
 
 
 v2.0.0-alpha.1
