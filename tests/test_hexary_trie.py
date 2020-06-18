@@ -377,7 +377,7 @@ def trie_updates_strategy(draw, max_size=256):
         ],
     ),
 )
-@settings(max_examples=300)
+@settings(max_examples=100)
 def test_squash_changes_does_not_prune_on_missing_trie_node(inserts_and_updates):
     inserts, updates = inserts_and_updates
     node_db = {}
@@ -448,7 +448,7 @@ def test_squash_changes_does_not_prune_on_missing_trie_node(inserts_and_updates)
     updates=[(b'\x01', b'\x00'), (b'\x01\x00', b'\x00')],
     deleted=[b''],
 )
-@settings(max_examples=1000)
+@settings(max_examples=500)
 def test_hexary_trie_squash_all_changes(updates, deleted):
     db = {}
     trie = HexaryTrie(db=db)
