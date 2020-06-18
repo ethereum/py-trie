@@ -12,6 +12,9 @@ Features
 - Can now use NodeIterator to navigate to the empty key b'', using NodeIterator.next(key=None) or
   simply NodeIterator.next().
   https://github.com/ethereum/py-trie/pull/110
+- TraversedPartialPath has a new simulated_node attribute, which we can treat as a node that
+  would have been at the traversed path if the traversal had succeeded. See the readme for more.
+  https://github.com/ethereum/py-trie/pull/111
 
 Bugfixes
 ~~~~~~~~

@@ -194,7 +194,7 @@ class HexaryTrie:
 
         if remaining_key:
             path_to_node = trie_key[:len(trie_key) - len(remaining_key)]
-            raise TraversedPartialPath(path_to_node, annotated_node)
+            raise TraversedPartialPath(path_to_node, annotated_node, remaining_key)
         else:
             return annotated_node
 
@@ -225,7 +225,7 @@ class HexaryTrie:
 
         if remaining_key:
             path_to_node = trie_key[:len(trie_key) - len(remaining_key)]
-            raise TraversedPartialPath(path_to_node, annotated_node)
+            raise TraversedPartialPath(path_to_node, annotated_node, remaining_key)
         else:
             return annotated_node
 
