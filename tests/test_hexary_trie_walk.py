@@ -185,20 +185,6 @@ def test_trie_walk_backfilling_with_traverse_from(trie_keys, index_nibbles):
         max_size=4 * 2,  # one byte (two nibbles) deeper than the longest key above
     ),
 )
-@settings(max_examples=200)
-@example(
-    trie_keys=[
-        b'\x00\x00\x00',
-        b'\x01\x00\x00',
-        b'\x01\x00\x01',
-        b'\x10\x00\x00',
-    ],
-    minimum_value_length=0,
-    number_explorations=212,
-    trie_changes=[(1, b'\x00\x00\x00\x00\x00\x00\x00'), (4, None)],
-    index_nibbles=[],
-    index_nibbles2=[],
-)
 @example(
     # Catch bug where TraversedPartialPath is raised when traversing into a leaf,
     #   even though the leaf suffix doesn't match the prefix that was being traversed to.
