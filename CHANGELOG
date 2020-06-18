@@ -30,6 +30,9 @@ Bugfixes
   cause the root node to get pruned (deleted even though it was still needed for the current
   root hash!).
   https://github.com/ethereum/py-trie/pull/113
+- Only raise a TraversedPartialPath when traversing into a matching leaf node. Instead, return
+  an empty node when traversing into a divergent path.
+  https://github.com/ethereum/py-trie/pull/114
 
 
 v2.0.0-alpha.1

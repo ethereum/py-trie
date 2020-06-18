@@ -377,7 +377,7 @@ def trie_updates_strategy(draw, max_size=256):
         ],
     ),
 )
-@settings(max_examples=300)
+@settings(max_examples=100)
 def test_squash_changes_does_not_prune_on_missing_trie_node(inserts_and_updates):
     inserts, updates = inserts_and_updates
     node_db = {}
@@ -448,7 +448,7 @@ def test_squash_changes_does_not_prune_on_missing_trie_node(inserts_and_updates)
     updates=[(b'\x01', b'\x00'), (b'\x01\x00', b'\x00')],
     deleted=[b''],
 )
-@settings(max_examples=1000)
+@settings(max_examples=500)
 def test_hexary_trie_squash_all_changes(updates, deleted):
     db = {}
     trie = HexaryTrie(db=db)
@@ -1013,6 +1013,29 @@ def test_traverse_from_partial_path(
     assert exc.nibbles_traversed == path_to_node
     assert exc.node.sub_segments == sub_segments
     assert exc.node.value == node_val
+
+
+def test_traverse_non_matching_leaf():
+    trie = HexaryTrie({})
+    EMPTY_NODE = trie.root_node
+
+    trie[b'\xFFleaf-at-root'] = b'some-value'
+    final_root = trie.root_node
+
+    # Traversing partway into the leaf raises the TraversedPartialPath exception
+    with pytest.raises(TraversedPartialPath):
+        trie.traverse((0xf,))
+    with pytest.raises(TraversedPartialPath):
+        trie.traverse_from(final_root, (0xf,))
+
+    # But traversing to any *non*-matching nibble should return a blank node, because no
+    #   children reside underneath that nibble. Returning the leaf with a mismatched nibble
+    #   would be a bug.
+    for nibble in range(0xf):
+        # Note that we do not want to look at the 0xf nibble, because that's the one that
+        #   should raise the exception above
+        assert trie.traverse((nibble,)) == EMPTY_NODE
+        assert trie.traverse_from(final_root, (nibble,)) == EMPTY_NODE
 
 
 def test_squash_a_pruning_trie_keeps_unchanged_short_root_node():

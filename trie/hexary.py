@@ -247,9 +247,15 @@ class HexaryTrie:
             node_type = get_node_type(node)
 
             if node_type == NODE_TYPE_BLANK:
-                return BLANK_NODE, Nibbles(())  # type: ignore # mypy thinks BLANK_NODE != b''
+                return BLANK_NODE, ()  # type: ignore # mypy thinks BLANK_NODE != b''
             elif node_type == NODE_TYPE_LEAF:
-                return node, remaining_key
+                leaf_key = extract_key(node)
+                if key_starts_with(leaf_key, remaining_key):
+                    return node, remaining_key
+                else:
+                    # The trie key and leaf node key branch away from each other, so there
+                    # is no node at the specified key.
+                    return BLANK_NODE, ()  # type: ignore # mypy thinks BLANK_NODE != b''
             elif node_type == NODE_TYPE_EXTENSION:
                 try:
                     next_node_pointer, remaining_key = self._traverse_extension(node, remaining_key)
