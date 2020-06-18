@@ -4,6 +4,7 @@ from hypothesis import (
     settings,
     strategies as st,
 )
+import pytest
 
 from trie.exceptions import (
     TraversedPartialPath,
@@ -14,6 +15,7 @@ from trie.exceptions import (
 from trie.fog import HexaryTrieFog, TrieFrontierCache
 from trie.iter import NodeIterator
 from trie.tools.builder import trie_from_keys
+from trie.tools.strategies import trie_keys_with_extensions
 from trie.typing import Nibbles
 
 
@@ -142,14 +144,9 @@ def test_trie_walk_backfilling_with_traverse_from(trie_keys, minimum_value_lengt
 
 @given(
     # starting trie keys
-    st.lists(
-        st.binary(min_size=3, max_size=3),
-        unique=True,
-        min_size=1,
-        max_size=1024,
-    ),
+    trie_keys_with_extensions(allow_empty_trie=False),
     # minimum value length (to help force trie nodes to stop embedding)
-    st.integers(min_value=0, max_value=32),
+    st.integers(min_value=1, max_value=32),
     # how many fog expansions to try before modifying the trie
     st.integers(min_value=0, max_value=10000),
     # all trie changes to make before the second trie walk
@@ -226,6 +223,17 @@ def test_trie_walk_backfilling_with_traverse_from(trie_keys, minimum_value_lengt
     index_nibbles=[],
     index_nibbles2=[],
 )
+@example(
+    # Test that covers a TraversedPartialPath exception, to make sure the sub_segments
+    #   are correctly generated on the simulated node of the exception
+    trie_keys=[b'\x01\x00\x00', b'\x01\x01\x00', b'\x00\x00'],
+    minimum_value_length=3,
+    number_explorations=2,
+    trie_changes=[(2, None)],
+    index_nibbles=[],
+    index_nibbles2=[],
+)
+@settings(max_examples=500)
 def test_trie_walk_root_change_with_traverse(
         trie_keys,
         minimum_value_length,
@@ -242,6 +250,7 @@ def test_trie_walk_root_change_with_traverse(
     - Verify that all required database values were replaced (where only the nodes under
         the NEW trie root are required)
     """
+    # Turn on pruning to simulate having peers lose access to old trie nodes over time
     node_db, trie = trie_from_keys(trie_keys, minimum_value_length, prune=True)
 
     number_explorations %= len(node_db)
@@ -340,14 +349,9 @@ def test_trie_walk_root_change_with_traverse(
 
 @given(
     # starting trie keys
-    st.lists(
-        st.binary(min_size=3, max_size=3),
-        unique=True,
-        min_size=1,
-        max_size=1024,
-    ),
+    trie_keys_with_extensions(allow_empty_trie=False),
     # minimum value length (to help force trie nodes to stop embedding)
-    st.integers(min_value=3, max_value=32),
+    st.integers(min_value=1, max_value=32),
     # how many fog expansions to try before modifying the trie
     st.integers(min_value=0, max_value=10000),
     # all trie changes to make before the second trie walk
@@ -381,8 +385,20 @@ def test_trie_walk_root_change_with_traverse(
         max_size=4 * 2,  # one byte (two nibbles) deeper than the longest key above
     ),
 )
-@settings(max_examples=200)
+@example(
+    # Test that covers a TraversedPartialPath exception, and make sure that the sub_segments
+    #   and cached node are generated properly.
+    trie_keys=[b'\x01\x00\x00', b'\x01\x01\x00', b'\x00\x00'],
+    minimum_value_length=3,
+    number_explorations=2,
+    trie_changes=[(2, None)],
+    index_nibbles=[],
+    index_nibbles2=[],
+)
+@settings(max_examples=500)
+@pytest.mark.parametrize('do_cache_reset', (True, False))
 def test_trie_walk_root_change_with_cached_traverse_from(
+        do_cache_reset,
         trie_keys,
         minimum_value_length,
         number_explorations,
@@ -394,6 +410,7 @@ def test_trie_walk_root_change_with_cached_traverse_from(
     Like test_trie_walk_root_change_with_traverse but using HexaryTrie.traverse_from
     when possible.
     """
+    # Turn on pruning to simulate having peers lose access to old trie nodes over time
     node_db, trie = trie_from_keys(trie_keys, minimum_value_length, prune=True)
 
     number_explorations %= len(node_db)
@@ -450,7 +467,7 @@ def test_trie_walk_root_change_with_cached_traverse_from(
                 try:
                     if isinstance(change, bytes):
                         # insert!
-                        trie_batch[change] = change
+                        trie_batch[change] = change.rjust(minimum_value_length, b'3')
                         expected_final_keys.add(change)
                     else:
                         key_index, new_value = change
@@ -469,6 +486,8 @@ def test_trie_walk_root_change_with_cached_traverse_from(
 
     # Second walk
     index_key2 = tuple(index_nibbles2)
+    if do_cache_reset:
+        cache = TrieFrontierCache()
 
     for _ in range(100000):
         try:
@@ -482,19 +501,25 @@ def test_trie_walk_root_change_with_cached_traverse_from(
                 cached_node, uncached_key = cache.get(nearest_prefix)
             except KeyError:
                 node = trie.traverse(nearest_prefix)
+                cached_node = None
             else:
                 node = trie.traverse_from(cached_node, uncached_key)
-            sub_segments = node.sub_segments
         except MissingTraversalNode as exc:
-            # Each missing node should only need to be retrieve (at most) once
-            node_db[exc.missing_node_hash] = missing_nodes.pop(exc.missing_node_hash)
+            node_hash = exc.missing_node_hash
+            if node_hash in missing_nodes:
+                # Each missing node should only need to be retrieve (at most) once
+                node_db[node_hash] = missing_nodes.pop(node_hash)
+            elif cached_node is not None:
+                # But, it could also be missing because of an old cached node
+                # Delete the bad cache and try again
+                cache.delete(nearest_prefix)
+            else:
+                raise AssertionError(f"Bad node hash request: {node_hash}")
             continue
         except TraversedPartialPath as exc:
-            sub_segments = [
-                exc.nibbles_traversed + segment
-                for segment in exc.node.sub_segments
-            ]
+            node = exc.simulated_node
 
+        sub_segments = node.sub_segments
         fog = fog.explore(nearest_prefix, sub_segments)
 
         if sub_segments:
