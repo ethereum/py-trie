@@ -23,13 +23,15 @@ from trie.typing import Nibbles
         unique=True,
         max_size=1024,
     ),
+    # minimum value length (to help force trie nodes to stop embedding)
+    st.integers(min_value=3, max_value=32),
     st.lists(
         st.integers(min_value=0, max_value=0xf),
         max_size=4 * 2,  # one byte (two nibbles) deeper than the longest key above
     ),
 )
 @settings(max_examples=300)
-def test_trie_walk_backfilling(trie_keys, index_nibbles):
+def test_trie_walk_backfilling(trie_keys, minimum_value_length, index_nibbles):
     """
     - Create a random trie of 3-byte keys
     - Drop all node bodies from the trie
@@ -37,7 +39,7 @@ def test_trie_walk_backfilling(trie_keys, index_nibbles):
     - Every time a node is missing from the DB, replace it and retry
     - Repeat until full trie has been explored with the HexaryTrieFog
     """
-    node_db, trie = trie_from_keys(trie_keys, prune=True)
+    node_db, trie = trie_from_keys(trie_keys, minimum_value_length, prune=True)
     index_key = Nibbles(index_nibbles)
 
     # delete all nodes
@@ -84,17 +86,19 @@ def test_trie_walk_backfilling(trie_keys, index_nibbles):
         unique=True,
         max_size=1024,
     ),
+    # minimum value length (to help force trie nodes to stop embedding)
+    st.integers(min_value=3, max_value=32),
     st.lists(
         st.integers(min_value=0, max_value=0xf),
         max_size=4 * 2,  # one byte (two nibbles) deeper than the longest key above
     ),
 )
 @settings(max_examples=200)
-def test_trie_walk_backfilling_with_traverse_from(trie_keys, index_nibbles):
+def test_trie_walk_backfilling_with_traverse_from(trie_keys, minimum_value_length, index_nibbles):
     """
     Like test_trie_walk_backfilling but using the HexaryTrie.traverse_from API
     """
-    node_db, trie = trie_from_keys(trie_keys, prune=True)
+    node_db, trie = trie_from_keys(trie_keys, minimum_value_length, prune=True)
     index_key = Nibbles(index_nibbles)
 
     # delete all nodes
@@ -221,7 +225,7 @@ def test_trie_walk_root_change_with_traverse(
     - Verify that all required database values were replaced (where only the nodes under
         the NEW trie root are required)
     """
-    node_db, trie = trie_from_keys(trie_keys, prune=True)
+    node_db, trie = trie_from_keys(trie_keys, minimum_value_length, prune=True)
 
     number_explorations %= len(node_db)
 
@@ -300,10 +304,7 @@ def test_trie_walk_root_change_with_traverse(
         except TraversedPartialPath as exc:
             # You might only get part-way down a path of nibbles if your fog is based on an old trie
             # Determine the new sub-segments that are accessible from this partial traversal
-            sub_segments = [
-                exc.nibbles_traversed + next_segment
-                for next_segment in exc.node.sub_segments
-            ]
+            sub_segments = exc.simulated_node.sub_segments
 
         # explore the fog if there were no exceptions, or if you traversed a partial path
         fog = fog.explore(nearest_key, sub_segments)
@@ -328,6 +329,8 @@ def test_trie_walk_root_change_with_traverse(
         min_size=1,
         max_size=1024,
     ),
+    # minimum value length (to help force trie nodes to stop embedding)
+    st.integers(min_value=3, max_value=32),
     # how many fog expansions to try before modifying the trie
     st.integers(min_value=0, max_value=10000),
     # all trie changes to make before the second trie walk
@@ -364,6 +367,7 @@ def test_trie_walk_root_change_with_traverse(
 @settings(max_examples=200)
 def test_trie_walk_root_change_with_cached_traverse_from(
         trie_keys,
+        minimum_value_length,
         number_explorations,
         trie_changes,
         index_nibbles,
@@ -373,7 +377,7 @@ def test_trie_walk_root_change_with_cached_traverse_from(
     Like test_trie_walk_root_change_with_traverse but using HexaryTrie.traverse_from
     when possible.
     """
-    node_db, trie = trie_from_keys(trie_keys, prune=True)
+    node_db, trie = trie_from_keys(trie_keys, minimum_value_length, prune=True)
 
     number_explorations %= len(node_db)
     cache = TrieFrontierCache()
