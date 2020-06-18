@@ -18,13 +18,10 @@ from trie.typing import Nibbles
 
 
 @given(
-    st.lists(
-        st.binary(min_size=3, max_size=3),
-        unique=True,
-        max_size=1024,
-    ),
+    # starting trie keys
+    trie_keys_with_extensions(allow_empty_trie=False),
     # minimum value length (to help force trie nodes to stop embedding)
-    st.integers(min_value=3, max_value=32),
+    st.integers(min_value=1, max_value=32),
     st.lists(
         st.integers(min_value=0, max_value=0xf),
         max_size=4 * 2,  # one byte (two nibbles) deeper than the longest key above
@@ -81,13 +78,10 @@ def test_trie_walk_backfilling(trie_keys, minimum_value_length, index_nibbles):
 
 
 @given(
-    st.lists(
-        st.binary(min_size=3, max_size=3),
-        unique=True,
-        max_size=1024,
-    ),
+    # starting trie keys
+    trie_keys_with_extensions(allow_empty_trie=False),
     # minimum value length (to help force trie nodes to stop embedding)
-    st.integers(min_value=3, max_value=32),
+    st.integers(min_value=1, max_value=32),
     st.lists(
         st.integers(min_value=0, max_value=0xf),
         max_size=4 * 2,  # one byte (two nibbles) deeper than the longest key above

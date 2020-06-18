@@ -25,7 +25,7 @@ def random_trie_strategy(draw):
 
 
 @st.composite
-def trie_keys_with_extensions(draw):
+def trie_keys_with_extensions(draw, allow_empty_trie=True):
     """
     Build trie keys that tend to have lots of extension/branch/leaf nodes.
     Anecdotally, this was more likely to produce examples like the one
@@ -34,7 +34,7 @@ def trie_keys_with_extensions(draw):
     # Simplest possible trie: an empty trie
     # Test it about once, on average, per run of 200 tests (the default example count)
     # Also, this will shrink down to the empty trie as you shrink these integers.
-    if draw(st.integers(min_value=0, max_value=200)) == 0:
+    if allow_empty_trie and draw(st.integers(min_value=0, max_value=200)) == 0:
         return ()
 
     def build_up_from_children(children):
