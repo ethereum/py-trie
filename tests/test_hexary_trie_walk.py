@@ -5,7 +5,6 @@ from hypothesis import (
     strategies as st,
 )
 
-from trie import HexaryTrie
 from trie.exceptions import (
     TraversedPartialPath,
     MissingTraversalNode,
@@ -14,22 +13,8 @@ from trie.exceptions import (
 )
 from trie.fog import HexaryTrieFog, TrieFrontierCache
 from trie.iter import NodeIterator
+from trie.tools.builder import trie_from_keys
 from trie.typing import Nibbles
-
-
-def _make_trie(keys):
-    """
-    Make a new HexaryTrie, insert all the given keys, with the value equal to the key.
-    Return the raw database and the HexaryTrie.
-    """
-    # Create trie
-    node_db = {}
-    trie = HexaryTrie(node_db)
-    with trie.squash_changes() as trie_batch:
-        for k in keys:
-            trie_batch[k] = k
-
-    return node_db, trie
 
 
 @given(
@@ -52,7 +37,7 @@ def test_trie_walk_backfilling(trie_keys, index_nibbles):
     - Every time a node is missing from the DB, replace it and retry
     - Repeat until full trie has been explored with the HexaryTrieFog
     """
-    node_db, trie = _make_trie(trie_keys)
+    node_db, trie = trie_from_keys(trie_keys)
     index_key = Nibbles(index_nibbles)
 
     # delete all nodes
@@ -109,7 +94,7 @@ def test_trie_walk_backfilling_with_traverse_from(trie_keys, index_nibbles):
     """
     Like test_trie_walk_backfilling but using the HexaryTrie.traverse_from API
     """
-    node_db, trie = _make_trie(trie_keys)
+    node_db, trie = trie_from_keys(trie_keys)
     index_key = Nibbles(index_nibbles)
 
     # delete all nodes
@@ -226,7 +211,7 @@ def test_trie_walk_root_change_with_traverse(
     - Verify that all required database values were replaced (where only the nodes under
         the NEW trie root are required)
     """
-    node_db, trie = _make_trie(trie_keys)
+    node_db, trie = trie_from_keys(trie_keys)
 
     number_explorations %= len(node_db)
 
@@ -378,7 +363,7 @@ def test_trie_walk_root_change_with_cached_traverse_from(
     Like test_trie_walk_root_change_with_traverse but using HexaryTrie.traverse_from
     when possible.
     """
-    node_db, trie = _make_trie(trie_keys)
+    node_db, trie = trie_from_keys(trie_keys)
 
     number_explorations %= len(node_db)
     cache = TrieFrontierCache()

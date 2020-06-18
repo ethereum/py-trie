@@ -1013,3 +1013,39 @@ def test_traverse_from_partial_path(
     assert exc.nibbles_traversed == path_to_node
     assert exc.node.sub_segments == sub_segments
     assert exc.node.value == node_val
+
+
+def test_squash_a_pruning_trie_keeps_unchanged_short_root_node():
+    db = {}
+    trie = HexaryTrie(db, prune=True)
+    trie[b'any'] = b'short'
+    root_hash = trie.root_hash
+    with trie.squash_changes() as trie_batch:
+        trie_batch[b'any'] = b'short'
+        assert trie.root_hash == root_hash
+        assert root_hash in trie_batch.db
+        assert root_hash in db
+    assert trie.root_hash == root_hash
+    assert root_hash in trie.db
+    assert root_hash in db
+
+
+@pytest.mark.parametrize('prune', (True, False))
+def test_squash_a_trie_handles_setting_new_root(prune):
+    db = {}
+    trie = HexaryTrie(db, prune=prune)
+    with trie.squash_changes() as trie_batch:
+        trie[b'\x00'] = b'33\x00'
+        old_root_hash = trie.root_hash
+
+    # The ref-count doesn't get reset at the end of the batch, but the pending prune count does
+    # Make sure the logic here can handle that
+
+    with trie.squash_changes() as trie_batch:
+        trie_batch[b'\x00\x00\x00'] = b'\x00\x00\x00'
+
+        assert trie_batch.root_hash != old_root_hash
+        assert trie_batch.root_hash != trie.root_hash
+
+    assert trie.root_hash != old_root_hash
+    assert trie[b'\x00\x00\x00'] == b'\x00\x00\x00'

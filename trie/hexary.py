@@ -94,7 +94,7 @@ class HexaryTrie:
     BLANK_NODE_HASH = BLANK_NODE_HASH
     BLANK_NODE = BLANK_NODE
 
-    def __init__(self, db, root_hash=BLANK_NODE_HASH, prune=False):
+    def __init__(self, db, root_hash=BLANK_NODE_HASH, prune=False, ref_count=None):
         """
         Important note about Pruning:
 
@@ -112,10 +112,16 @@ class HexaryTrie:
         validate_is_bytes(root_hash)
         self.root_hash = root_hash
         self.is_pruning = prune
-        if prune:
-            self._ref_count = defaultdict(int)
+        if ref_count is None:
+            if prune:
+                self._ref_count = defaultdict(int)
+            else:
+                self._ref_count = None
         else:
-            self._ref_count = None
+            if prune:
+                self._ref_count = ref_count
+            else:
+                raise ValueError("Cannot pass an existing reference count in to a non-pruning trie")
         self._pending_prune_keys = None
 
     def get(self, key):
@@ -781,15 +787,18 @@ class HexaryTrie:
     def squash_changes(self):
         scratch_db = ScratchDB(self.db)
         with scratch_db.batch_commit(do_deletes=self.is_pruning):
-            memory_trie = type(self)(scratch_db, self.root_hash, prune=True)
+            Trie = type(self)
+            memory_trie = Trie(scratch_db, self.root_hash, prune=True, ref_count=self._ref_count)
             yield memory_trie
 
         if self.root_hash != memory_trie.root_hash:
             try:
-                self._set_root_node(memory_trie.root_node.raw)
-            except MissingTraversalNode:
+                raw_root_node = memory_trie.get_node(memory_trie.root_hash)
+            except KeyError:
                 # if the new root node is missing, then we shouldn't crash here
                 self.root_hash = memory_trie.root_hash
+            else:
+                self.root_hash = self._set_raw_node(raw_root_node)
 
     @contextlib.contextmanager
     def at_root(self, at_root_hash):
