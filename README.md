@@ -203,11 +203,14 @@ HexaryTrieNode(sub_segments=((0xb,), (0xf,)), value=b'', suffix=(), raw=[b'', b'
 >>> fog = fog.explore(prefix, node796f75722d6.sub_segments)
 HexaryTrieFog<SortedSet([(0x6,), (0x7, 0x9, 0x6, 0xf, 0x7, 0x5, 0x7, 0x2, 0x2, 0xd, 0x6, 0xb), (0x7, 0x9, 0x6, 0xf, 0x7, 0x5, 0x7, 0x2, 0x2, 0xd, 0x6, 0xf)])>
 
-# Index keys may not matter for your use case, so you can leave them out, but there's one more
-# feature to consider: we can look directionally to the right of an index for the nearest prefix.
+# Index keys may not matter for some use cases, so we can leave them out
+#   entirely, like nearest_unknown().
+# There's one more feature to consider: we can look directionally to the right
+#   of an index for the nearest prefix.
 >>> prefix = fog.nearest_right((0x7, 0x9, 0x6, 0xf, 0x7, 0x5, 0x7, 0x2, 0x2, 0xd, 0x6, 0xc))
 (0x7, 0x9, 0x6, 0xf, 0x7, 0x5, 0x7, 0x2, 0x2, 0xd, 0x6, 0xf)
 # That same index key would give a closer prefix to the left if direction didn't matter
+#   (See the difference in the very last nibble)
 >>> fog.nearest_unknown((0x7, 0x9, 0x6, 0xf, 0x7, 0x5, 0x7, 0x2, 0x2, 0xd, 0x6, 0xc))
 (0x7, 0x9, 0x6, 0xf, 0x7, 0x5, 0x7, 0x2, 0x2, 0xd, 0x6, 0xb)
 # So we traverse to this last embedded leaf node at `prefix`
@@ -231,13 +234,13 @@ b'"\xc0\xcaQ\xa7X\x08E\xb5"A\xde\xbfY\xeb"XY\xb1O\x034=\x04\x06\xa9li\xd8\x92\xa
 >>> prefix = fog.nearest_unknown((8,))
 (0x7, 0x9, 0x6, 0xf, 0x7, 0x5, 0x7, 0x2, 0x2, 0xd, 0x6, 0xb)
 >>> t.traverse(prefix)
-TraversedPartialPath: Could not traverse through HexaryTrieNode(sub_segments=((0x9, 0x6, 0xf, 0x7, 0x5, 0x7, 0x2, 0x2, 0xd, 0x6, 0xb, 0x6, 0x5, 0x7, 0x9),), value=b'', suffix=(), raw=[b'\x19our-key', b'f\xbe\x88\x8f#\xd5\x15-8\xc0\x1f\xfb\xf7\x8b=\x98\x86 \xec\xdeK\x07\xc8\xbf\xa7\x93\xfa\x9e\xc1\x89@\x00']) at (0x7,)
+TraversedPartialPath: Could not traverse through HexaryTrieNode(sub_segments=((0x9, 0x6, 0xf, 0x7, 0x5, 0x7, 0x2, 0x2, 0xd, 0x6, 0xb, 0x6, 0x5, 0x7, 0x9),), value=b'', suffix=(), raw=[b'\x19our-key', b'f\xbe\x88\x8f#\xd5\x15-8\xc0\x1f\xfb\xf7\x8b=\x98\x86 \xec\xdeK\x07\xc8\xbf\xa7\x93\xfa\x9e\xc1\x89@\x00']) at (0x7,), only partially traversed with: (0x9, 0x6, 0xf, 0x7, 0x5, 0x7, 0x2, 0x2, 0xd, 0x6, 0xb)
 
 # Let's drill into what this means:
 #   - We fully traversed to a node at prefix (7,)
 #   - We tried to traverse into the rest of the prefix
-#   - We only got part-way through the extension node
-#   - That extension node has a sub-segment of (0x9, 0x6, 0xf, 0x7, 0x5, 0x7, 0x2, 0x2, 0xd, 0x6, 0xb, 0x6, 0x5, 0x7, 0x9)
+#   - We only got part-way through the extension node: (0x9, 0x6, 0xf, 0x7, 0x5, 0x7, 0x2, 0x2, 0xd, 0x6, 0xb)
+#   - The extension node full sub-segment is actually: (0x9, 0x6, 0xf, 0x7, 0x5, 0x7, 0x2, 0x2, 0xd, 0x6, 0xb, 0x6, 0x5, 0x7, 0x9)
 
 # So what do we do about it? Catch the exception, and explore with the fog slightly differently
 >>> from trie.exceptions import TraversedPartialPath
@@ -247,19 +250,35 @@ TraversedPartialPath: Could not traverse through HexaryTrieNode(sub_segments=((0
     except TraversedPartialPath as exc:
       last_exception = exc
 
-# We can now drive the exploration of the extension node further, by back-forming sub-segments:
->>> sub_segments = [
-      last_exception.nibbles_traversed + segment
-      for segment in last_exception.node.sub_segments
-]
+# We can now continue exploring the children of the extension node, by using an attribute on the exception:
+>>> sub_segments = last_exception.simulated_node.sub_segments
+((0x6, 0x5, 0x7, 0x9),)
+# Note that this sub-segment now carries us the rest of the way to the child
+#   of the node that we only partially traversed into.
+# This "simulated_node" is created by slicing the extension node in two: the
+#   first extension node having the path that we (partially) traversed, and the second
+#   extension node being the child of that parent, which continues on to point to
+#   the child of the original extension.
+# If the exception is raised on a leaf node, then the leaf node is sliced into
+#   an extension and another shorter leaf node.
 >>> fog = fog.explore(prefix, sub_segments)
-HexaryTrieFog<SortedSet([(0x6,), (0x7, 0x9, 0x6, 0xf, 0x7, 0x5, 0x7, 0x2, 0x2, 0xd, 0x6, 0xb, 0x7, 0x9, 0x6, 0xf, 0x7, 0x5, 0x7, 0x2, 0x2, 0xd, 0x6, 0xb, 0x6, 0x5, 0x7, 0x9)])>
-# So now we can pick up where we left of, traversing to the child of the extension node, and so on.
+HexaryTrieFog<SortedSet([(0x6,), (0x7, 0x9, 0x6, 0xf, 0x7, 0x5, 0x7, 0x2, 0x2, 0xd, 0x6, 0xb, 0x6, 0x5, 0x7, 0x9)])>
+
+# So now we can pick up where we left off, traversing to the child of the extension node, and so on.
+>>> prefix = fog.nearest_unknown((8,))
+(0x7, 0x9, 0x6, 0xf, 0x7, 0x5, 0x7, 0x2, 0x2, 0xd, 0x6, 0xb, 0x6, 0x5, 0x7, 0x9)
+# The following will not raise a TraversedPartialPath exception, because we know that
+#   a node was at the path, and the trie hasn't changed:
+>>> t.traverse(prefix)
+HexaryTrieNode(sub_segments=((0x2,),), value=b'your-value', suffix=(), raw=[b'', b'', [b'=rebranched', b'your-value'], b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'your-value'])
+
+# etc...
 ```
 
-.. NOTE: If you are traversing a large trie, note that traverse() re-navigates from the root at
-    each call. You might consider using TrieFrontierCache and HexaryTrie.traverse_from() to minimize
-    database lookups. See the tests in tests/test_hexary_trie_walk.py for some examples.
+.. NOTE: traverse() will access the database for every node from the root to
+    the target node. If navigating a large trie, consider using TrieFrontierCache
+    and HexaryTrie.traverse_from() to minimize database lookups. See the tests in
+    tests/test_hexary_trie_walk.py for some examples.
 
 ## BinaryTrie
 

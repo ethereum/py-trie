@@ -153,14 +153,32 @@ class TraversedPartialPath(Exception):
     Raised when a traversal key ends in the middle of a partial path. It might be in
     an extension node or a leaf node.
     """
-    def __init__(self, nibbles_traversed: NibblesInput, node: HexaryTrieNode, *args) -> None:
-        super().__init__(Nibbles(nibbles_traversed), node, *args)
+    def __init__(
+            self,
+            nibbles_traversed: NibblesInput,
+            node: HexaryTrieNode,
+            untraversed_tail: NibblesInput,
+            *args) -> None:
+
+        super().__init__(
+            Nibbles(nibbles_traversed),
+            node,
+            Nibbles(untraversed_tail),
+            *args,
+        )
+        self._simulated_node = self._make_simulated_node()
 
     def __repr__(self) -> str:
-        return f"TraversedPartialPath({self.nibbles_traversed}, {self.node})"
+        return (
+            f"TraversedPartialPath({self.nibbles_traversed}, {self.node},"
+            f" {self.untraversed_tail})"
+        )
 
     def __str__(self) -> str:
-        return f"Could not traverse through {self.node} at {self.nibbles_traversed}"
+        return (
+            f"Could not traverse through {self.node} at {self.nibbles_traversed}, only partially"
+            f" traversed with: {self.untraversed_tail}"
+        )
 
     @property
     def nibbles_traversed(self) -> Nibbles:
@@ -176,6 +194,78 @@ class TraversedPartialPath(Exception):
         where traversal went part-way into the path. It must not be a branch node.
         """
         return self.args[1]
+
+    @property
+    def untraversed_tail(self) -> Nibbles:
+        """
+        The nibbles that only reached partially into the extension or leaf node.
+        """
+        return self.args[2]
+
+    @property
+    def simulated_node(self) -> HexaryTrieNode:
+        """
+        For the purposes of walking a trie, we might only be interested in the sub_segments,
+        suffix, etc, of the node -- but assuming we actually had a node immediately at the
+        requested prefix. This returns a node simulated as if that were true.
+
+        See the trie walk tests for an example of how this is used.
+        """
+        return self._simulated_node
+
+    def _make_simulated_node(self) -> HexaryTrieNode:
+        from trie.utils.nodes import (
+            key_starts_with,
+            compute_extension_key,
+            compute_leaf_key,
+        )
+
+        actual_node = self.node
+        key_tail = self.untraversed_tail
+        actual_sub_segments = actual_node.sub_segments
+
+        if len(key_tail) == 0:
+            raise ValueError(
+                "Can only raise a TraversedPartialPath when some series of nibbles was untraversed"
+            )
+
+        if len(actual_sub_segments) == 0:
+            if not key_starts_with(actual_node.suffix, key_tail):
+                raise ValidationError(
+                    f"Internal traverse bug: {actual_node.suffix} does not start with {key_tail}"
+                )
+            else:
+                trimmed_suffix = Nibbles(actual_node.suffix[len(key_tail):])
+
+            return HexaryTrieNode(
+                (),
+                actual_node.value,
+                trimmed_suffix,
+                [compute_leaf_key(trimmed_suffix), actual_node.raw[1]],
+            )
+        elif len(actual_sub_segments) == 1:
+            extension = actual_sub_segments[0]
+            if not key_starts_with(extension, key_tail):
+                raise ValidationError(
+                    f"Internal traverse bug: extension {extension} does not start with {key_tail}"
+                )
+            elif len(key_tail) == len(extension):
+                raise ValidationError(
+                    f"Internal traverse bug: {key_tail} should not equal {extension}"
+                )
+            else:
+                trimmed_extension = Nibbles(extension[len(key_tail):])
+
+            return HexaryTrieNode(
+                (trimmed_extension,),
+                actual_node.value,
+                actual_node.suffix,
+                [compute_extension_key(trimmed_extension), actual_node.raw[1]],
+            )
+        else:
+            raise ValidationError(
+                f"Can only partially traverse into leaf or extension, got {actual_node}"
+            )
 
 
 class PerfectVisibility(Exception):
