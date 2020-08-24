@@ -3,6 +3,17 @@ Unreleased
 
 None
 
+v2.0.0-alpha.3
+---------------
+
+Released 2020-08-24
+
+Bugfixes
+~~~~~~~~
+
+- Relax the version constraint on typing-extensions, which was causing downstream conflicts.
+  https://github.com/ethereum/py-trie/pull/117
+
 v2.0.0-alpha.2
 ---------------
 
