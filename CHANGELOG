@@ -1,7 +1,11 @@
 Unreleased
 ---------------
 
-None
+Breaking Changes
+~~~~~~~~~~~~~~~~
+
+- Dropped pypy support, upgrade to faster py-rlp v2-alpha.1
+  https://github.com/ethereum/py-trie/pull/118
 
 v2.0.0-alpha.3
 ---------------

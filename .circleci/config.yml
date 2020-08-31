@@ -68,12 +68,6 @@ jobs:
       - image: circleci/python:3.8
         environment:
           TOXENV: py38
-  pypy3:
-    <<: *common
-    docker:
-      - image: pypy
-        environment:
-          TOXENV: pypy3
 
 workflows:
   version: 2
@@ -83,4 +77,3 @@ workflows:
       - py36
       - py37
       - py38
-      - pypy3
