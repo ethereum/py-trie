@@ -5,7 +5,12 @@ from eth_typing import (
 )
 from hexbytes import HexBytes
 
+from trie.constants import (
+    NODE_TYPE_EXTENSION,
+    NODE_TYPE_LEAF
+)
 from trie.typing import (
+    NodeType,
     Nibbles,
     NibblesInput,
     HexaryTrieNode,
@@ -242,6 +247,7 @@ class TraversedPartialPath(Exception):
                 actual_node.value,
                 trimmed_suffix,
                 [compute_leaf_key(trimmed_suffix), actual_node.raw[1]],
+                NodeType(NODE_TYPE_LEAF),
             )
         elif len(actual_sub_segments) == 1:
             extension = actual_sub_segments[0]
@@ -261,6 +267,7 @@ class TraversedPartialPath(Exception):
                 actual_node.value,
                 actual_node.suffix,
                 [compute_extension_key(trimmed_extension), actual_node.raw[1]],
+                NodeType(NODE_TYPE_EXTENSION),
             )
         else:
             raise ValidationError(

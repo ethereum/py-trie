@@ -24,6 +24,7 @@ from trie.utils.binaries import (
 from trie.typing import (
     HexaryTrieNode,
     Nibbles,
+    NodeType,
     RawHexaryNode,
 )
 from trie.validation import (
@@ -194,6 +195,7 @@ def annotate_node(node_body: RawHexaryNode) -> HexaryTrieNode:
             value=bytes(node_body[-1]),
             suffix=Nibbles(extract_key(node_body)),
             raw=node_body,
+            node_type=NodeType(node_type),
         )
     elif node_type == NODE_TYPE_BRANCH:
         sub_segments = tuple(
@@ -205,6 +207,7 @@ def annotate_node(node_body: RawHexaryNode) -> HexaryTrieNode:
             value=bytes(node_body[-1]),
             suffix=Nibbles(()),
             raw=node_body,
+            node_type=NodeType(node_type),
         )
     elif node_type == NODE_TYPE_EXTENSION:
         key_extension = extract_key(node_body)
@@ -213,6 +216,7 @@ def annotate_node(node_body: RawHexaryNode) -> HexaryTrieNode:
             value=b'',
             suffix=Nibbles(()),
             raw=node_body,
+            node_type=NodeType(node_type),
         )
     elif node_type == NODE_TYPE_BLANK:
         # empty trie
@@ -221,6 +225,7 @@ def annotate_node(node_body: RawHexaryNode) -> HexaryTrieNode:
             value=b'',
             suffix=Nibbles(()),
             raw=node_body,
+            node_type=NodeType(node_type),
         )
     else:
         raise NotImplementedError()

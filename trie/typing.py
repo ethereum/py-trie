@@ -17,6 +17,12 @@ from eth_utils import (
     is_list_like,
 )
 
+from trie.constants import (
+    NODE_TYPE_BLANK,
+    NODE_TYPE_BRANCH,
+    NODE_TYPE_EXTENSION,
+    NODE_TYPE_LEAF,
+)
 
 # The RLP-decoded node is either blank, or a list, full of bytes or recursive nodes
 # Recursive definitions don't seem supported at the moment, follow:
@@ -87,6 +93,13 @@ class Nibbles(Tuple[Nibble, ...]):
             p.text(super().__repr__())
 
 
+class NodeType(enum.IntEnum):
+    BLANK = NODE_TYPE_BLANK
+    LEAF = NODE_TYPE_LEAF
+    EXTENSION = NODE_TYPE_EXTENSION
+    BRANCH = NODE_TYPE_BRANCH
+
+
 class HexaryTrieNode(NamedTuple):
     """
     Public API for a node of a trie, it is pre-processed a bit for simplicity.
@@ -120,6 +133,12 @@ class HexaryTrieNode(NamedTuple):
     """
     The node body, which is useful for calls to HexaryTrie.traverse_from(...),
     for faster access of sub-nodes.
+    """
+
+    node_type: NodeType
+    """
+    The node type (leaf, branch, extension, blank). Useful for understanding the
+    structure of the trie, but should not be checked often in normal usage.
     """
 
 
