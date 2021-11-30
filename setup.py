@@ -51,7 +51,7 @@ setup(
         "hexbytes>=0.2.0,<0.3.0",
         "rlp>=1,<3",
         "sortedcontainers>=2.1.0,<3",
-        "typing-extensions>=3.7.4,<4",
+        "typing-extensions>=4.0,<5.0",
     ],
     extras_require=extras_require,
     license="MIT",
