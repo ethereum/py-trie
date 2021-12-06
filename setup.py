@@ -49,7 +49,7 @@ setup(
         "eth-hash>=0.1.0,<1.0.0",
         "eth-utils>=2.0.0,<3.0.0",
         "hexbytes>=0.2.0,<0.3.0",
-        "rlp>=1,<3",
+        "rlp>=3,<4",
         "sortedcontainers>=2.1.0,<3",
         "typing-extensions>=4.0.0,<5",
     ],
