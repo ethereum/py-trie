@@ -1,11 +1,24 @@
 Unreleased
 ---------------
 
+Breaking Changes
+~~~~~~~~~~~~~~~~
+
+- Drop python 3.6 support
+- Require rlp dependency to be >=3,<4
+- Require eth-utils dependency to be >=2,<3
+
 Features
 ~~~~~~~~
 
 - Added node_type field to HexaryTrieNode so that users can easily inspect the type
   of a node.
+- Add support for python 3.9 and 3.10
+
+Misc
+~~~~
+
+- Upgrade typing_extensions dependency
 
 v2.0.0-alpha.4
 ---------------

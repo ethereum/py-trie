@@ -47,9 +47,9 @@ setup(
 
     install_requires=[
         "eth-hash>=0.1.0,<1.0.0",
-        "eth-utils>=1.6.1,<2.0.0",
+        "eth-utils>=2.0.0,<3.0.0",
         "hexbytes>=0.2.0,<0.3.0",
-        "rlp>=1,<3",
+        "rlp>=3,<4",
         "sortedcontainers>=2.1.0,<3",
         "typing-extensions>=4.0.0,<5",
     ],
@@ -65,9 +65,10 @@ setup(
         'Natural Language :: English',
         "Operating System :: OS Independent",
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Topic :: Software Development',
         'Topic :: Utilities',
     ],

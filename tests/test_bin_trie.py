@@ -19,7 +19,7 @@ from trie.exceptions import (
 
 @given(k=st.lists(st.binary(min_size=32, max_size=32), min_size=100, max_size=100, unique=True),
        v=st.lists(st.binary(min_size=1), min_size=100, max_size=100),
-       random=st.randoms())
+       random=st.randoms(use_true_random=True))
 @settings(max_examples=10, deadline=1000)
 def test_bin_trie_different_order_insert(k, v, random):
     kv_pairs = list(zip(k, v))

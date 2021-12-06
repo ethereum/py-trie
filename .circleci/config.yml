@@ -50,12 +50,6 @@ jobs:
       - image: circleci/python:3.6
         environment:
           TOXENV: lint
-  py36:
-    <<: *common
-    docker:
-      - image: circleci/python:3.6
-        environment:
-          TOXENV: py36
   py37:
     <<: *common
     docker:
@@ -68,12 +62,25 @@ jobs:
       - image: circleci/python:3.8
         environment:
           TOXENV: py38
+  py39:
+    <<: *common
+    docker:
+      - image: circleci/python:3.9
+        environment:
+          TOXENV: py39
+  py310:
+    <<: *common
+    docker:
+      - image: circleci/python:3.10
+        environment:
+          TOXENV: py310
 
 workflows:
   version: 2
   test:
     jobs:
       - lint
-      - py36
       - py37
       - py38
+      - py39
+      - py310
