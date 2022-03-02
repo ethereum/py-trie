@@ -24,6 +24,18 @@ from trie.constants import (
     NODE_TYPE_LEAF,
 )
 
+try:
+    from typing import (
+        Literal,
+        Protocol,
+    )
+except ImportError:
+    from typing_extensions import (
+        Literal,
+        Protocol,
+    )
+
+
 # The RLP-decoded node is either blank, or a list, full of bytes or recursive nodes
 # Recursive definitions don't seem supported at the moment, follow:
 #   https://github.com/python/mypy/issues/731
