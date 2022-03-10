@@ -54,9 +54,9 @@ def calc_root(key: bytes, value: bytes, branch: Sequence[Hash32]) -> Hash32:
     path = to_int(key)
     target_bit = 1
     # traverse the path in leaf->root order
-    # branch is in root->leaf order (key is in MSB to LSB order)
+    # branch is in leaf->root order (key is in MSB to LSB order)
     node_hash = keccak(value)
-    for sibling_node in reversed(branch):
+    for sibling_node in branch:
         if path & target_bit:
             node_hash = keccak(sibling_node + node_hash)
         else:
@@ -147,7 +147,7 @@ class SparseMerkleProof:
 
         :param key: keypath of the update we are processing
         :param value: value of the update we are processing
-        :param node_updates: sequence of sibling nodes (in root->leaf order)
+        :param node_updates: sequence of sibling nodes (in leaf->root order)
                              must be at least as large as the first diverging
                              key in the keypath
 
@@ -166,10 +166,10 @@ class SparseMerkleProof:
             # Find the first mismatched bit between keypaths. This is
             # where the branch point occurs, and we should update the
             # sibling node in the source branch at the branch point.
-            # NOTE: Keys are in MSB->LSB (root->leaf) order.
-            #       Node lists are in root->leaf order.
+            # NOTE: Keys are in MSB->LSB (leaf->root) order.
+            #       Node lists are in leaf->root order.
             #       Be sure to convert between them effectively.
-            for bit in reversed(range(self._branch_size)):
+            for bit in range(self._branch_size):
                 if path_diff & (1 << bit) > 0:
                     branch_point = (self._branch_size - 1) - bit
                     break
@@ -270,7 +270,7 @@ class SparseMerkleTree:
 
     def _get(self, key: bytes) -> Tuple[bytes, Tuple[Hash32]]:
         """
-        Returns db value and branch in root->leaf order
+        Returns db value and branch in leaf->root order
         """
         validate_is_bytes(key)
         validate_length(key, self._key_size)
@@ -298,7 +298,7 @@ class SparseMerkleTree:
 
     def set(self, key: bytes, value: bytes) -> Tuple[Hash32]:
         """
-        Returns all updated hashes in root->leaf order
+        Returns all updated hashes in leaf->root order
         """
         validate_is_bytes(key)
         validate_length(key, self._key_size)
@@ -310,8 +310,7 @@ class SparseMerkleTree:
         proof_update = []  # Keep track of proof updates
 
         target_bit = 1
-        # branch is in root->leaf order, so flip
-        for sibling_node in reversed(branch):
+        for sibling_node in branch:
             # Set
             node_hash = keccak(node)
             proof_update.append(node_hash)
@@ -329,8 +328,8 @@ class SparseMerkleTree:
         self.root_hash = keccak(node)
         self.db[self.root_hash] = node
 
-        # updates need to be in root->leaf order, so flip back
-        return tuple(reversed(proof_update))
+        # updates need to be in leaf->root order, so flip back
+        return tuple(proof_update)
 
     def exists(self, key: bytes) -> bool:
         validate_is_bytes(key)
@@ -345,7 +344,7 @@ class SparseMerkleTree:
     def delete(self, key: bytes) -> Tuple[Hash32]:
         """
         Equals to setting the value to None
-        Returns all updated hashes in root->leaf order
+        Returns all updated hashes in leaf->root order
         """
         validate_is_bytes(key)
         validate_length(key, self._key_size)
