@@ -336,8 +336,7 @@ class SparseMerkleTree:
         validate_length(key, self._key_size)
 
         try:
-            self.get(key)
-            return True
+            return self.get(key) == self._default
         except KeyError:
             return False
 
