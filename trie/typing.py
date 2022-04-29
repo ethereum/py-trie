@@ -8,7 +8,7 @@ from typing import (
     TypeVar,
     Union,
 )
-from typing_extensions import (
+from trie.utils.compat import (
     Literal,
     Protocol,
 )
@@ -23,6 +23,7 @@ from trie.constants import (
     NODE_TYPE_EXTENSION,
     NODE_TYPE_LEAF,
 )
+
 
 # The RLP-decoded node is either blank, or a list, full of bytes or recursive nodes
 # Recursive definitions don't seem supported at the moment, follow:
