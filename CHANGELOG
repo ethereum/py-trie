@@ -1,5 +1,13 @@
-Unreleased
----------------
+v2.0.1
+------
+
+Misc
+~~~~
+
+- Make typing_extensions an optional dependency
+
+v2.0.0
+------
 
 Breaking Changes
 ~~~~~~~~~~~~~~~~
