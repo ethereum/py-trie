@@ -48,7 +48,7 @@ setup(
     install_requires=[
         "eth-hash>=0.1.0,<1.0.0",
         "eth-utils>=2.0.0,<3.0.0",
-        "hexbytes>=0.2.0,<0.3.0",
+        "hexbytes>=0.2.0",
         "rlp>=3,<4",
         "sortedcontainers>=2.1.0,<3",
         "typing-extensions>=4.0.0,<5; python_version < '3.8'",
