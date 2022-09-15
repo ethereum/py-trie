@@ -58,6 +58,7 @@ chains
 
 # tox/pytest cache
 .cache
+.pytest_cache
 
 # Test output logs
 logs
@@ -109,3 +110,18 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
+
+# VS Code
+.vscode/
+
+# DS Store files
+*.DS_Store
+
+# mypy Cache
+.mypy_cache/
+
+# pip wheel metadata
+pip-wheel-metadata/
+
+# jupyter notebook files
+*.ipynb
