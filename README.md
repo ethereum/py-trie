@@ -275,10 +275,7 @@ HexaryTrieNode(sub_segments=((0x2,),), value=b'your-value', suffix=(), raw=[b'',
 # etc...
 ```
 
-.. NOTE: traverse() will access the database for every node from the root to
-    the target node. If navigating a large trie, consider using TrieFrontierCache
-    and HexaryTrie.traverse_from() to minimize database lookups. See the tests in
-    tests/test_hexary_trie_walk.py for some examples.
+**Note**: `traverse()` will access the database for every node from the root to the target node. If navigating a large trie, consider using `TrieFrontierCache` and `HexaryTrie.traverse_from()` to minimize database lookups. See the tests in `tests/test_hexary_trie_walk.py` for some examples.
 
 ## BinaryTrie
 
