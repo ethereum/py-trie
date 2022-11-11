@@ -7,7 +7,7 @@ extras_require = {
     'test': [
         "pytest-xdist>=1.31.0,<2",
         "tox>=2.6.0,<3",
-        "hypothesis>=5.10.4,<6",
+        "hypothesis>=6.56.4,<7",
         "pycryptodome",
     ],
     'lint': [
