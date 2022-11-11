@@ -11,7 +11,7 @@ extras_require = {
         "pycryptodome",
     ],
     'lint': [
-        "flake8==3.8.1",
+        "flake8==5.0.4",
     ],
     'dev': [
         "bumpversion>=0.5.3,<1",
