@@ -4,10 +4,10 @@ from hypothesis import (
 )
 
 from trie.smt import (
-    SparseMerkleTree,
-    SparseMerkleProof,
-    calc_root,
     BLANK_NODE,
+    SparseMerkleProof,
+    SparseMerkleTree,
+    calc_root,
 )
 
 

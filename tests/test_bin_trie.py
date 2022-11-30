@@ -1,9 +1,8 @@
 import pytest
-
 from hypothesis import (
     given,
-    strategies as st,
     settings,
+    strategies as st,
 )
 
 from trie.binary import (

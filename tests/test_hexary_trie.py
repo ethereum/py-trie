@@ -20,8 +20,12 @@ from hypothesis import (
 import pytest
 import rlp
 
-from trie import HexaryTrie
-from trie.constants import BLANK_NODE_HASH
+from trie import (
+    HexaryTrie,
+)
+from trie.constants import (
+    BLANK_NODE_HASH,
+)
 from trie.exceptions import (
     MissingTraversalNode,
     MissingTrieNode,
@@ -272,12 +276,13 @@ def test_hexary_trie_empty_squash_does_not_read_root():
 @st.composite
 def trie_updates_strategy(draw, max_size=256):
     """
-    Generate a series of key/value inserts, then create a series of (inserts, updates & deletes)
+    Generate a series of key/value inserts, then create a series of
+    (inserts, updates & deletes)
 
-    The idea of this strategy is to make sure that we get updates and deletes by reusing keys that
-    have already been created. This is necessary to create "interesting" use cases for a trie.
-    Additionally, the length of the value changes the shape of the trie, due to
-    node size, so try to vary that length as well.
+    The idea of this strategy is to make sure that we get updates and deletes by
+    reusing keys that have already been created. This is necessary to create
+    "interesting" use cases for a trie. Additionally, the length of the value
+    changes the shape of the trie, due to node size, so try to vary that length as well.
 
     :returns: inserts, updates
 
@@ -286,8 +291,8 @@ def trie_updates_strategy(draw, max_size=256):
         - double-value tuple: (key, None) -- delete key with given value
         - double-value tuple: (key, value) -- update key with given value
 
-    Note that "update" may be b'', so would be effectively a delete. But tests ought to leave this
-    as a trie "set" call, to make sure that code path is tested.
+    Note that "update" may be b'', so would be effectively a delete. But tests ought to
+    leave this as a trie "set" call, to make sure that code path is tested.
     """
     # starting trie keys
     start_keys = draw(
@@ -343,8 +348,8 @@ def trie_updates_strategy(draw, max_size=256):
         if len(next_change) == 1:
             key = next_change[0]
             if key in latest_keys:
-                # Inserting an existing key is not allowed (it would actually be an update), so
-                # treat it as a no-op.
+                # Inserting an existing key is not allowed (it would actually be an
+                # update), so treat it as a no-op.
                 continue
             else:
                 latest_keys.append(key)
@@ -357,7 +362,8 @@ def trie_updates_strategy(draw, max_size=256):
         else:
             raise Exception(f"Invalid code path: next_change = {next_change}")
 
-        # on average, build an update list of length ~100, but "shrinks" down to short lists
+        # on average, build an update list of length ~100,
+        # but "shrinks" down to short lists
         should_continue = draw(st.integers(min_value=0, max_value=99))
         if should_continue == 0:
             break
@@ -367,8 +373,9 @@ def trie_updates_strategy(draw, max_size=256):
 
 @given(trie_updates_strategy())
 @example(
-    # Triggers a case where the delete of a leaf succeeds, but the normalization fails because
-    #   of a missing trie node. The exception was *not* preventing the pruning from happening.
+    # Triggers a case where the delete of a leaf succeeds, but the normalization fails
+    # because of a missing trie node. The exception was *not* preventing the pruning
+    # from happening.
     inserts_and_updates=(
         [
             (b"\x00\x00\x00", b"\x00\x00\x0033333333333333333333333"),
@@ -380,8 +387,8 @@ def trie_updates_strategy(draw, max_size=256):
     )
 )
 @example(
-    # An old implementation treated trie.set(key, b'') and trie.delete(key) differently, and
-    #   this test case exposed the issue.
+    # An old implementation treated trie.set(key, b'') and trie.delete(key) differently,
+    # and this test case exposed the issue.
     inserts_and_updates=(
         [],
         [
@@ -438,31 +445,34 @@ def test_squash_changes_does_not_prune_on_missing_trie_node(inserts_and_updates)
 @example(
     # The root node is special: it always gets turned into a node, even if it's short.
     # The rest of the pruning machinery expects to only prune long nodes.
-    # If you *never* try to prune the root node, then it will leave straggler nodes in the database.
-    #   This is because the "normal" pruning machinery will not mark a short root node for pruning.
-    #   The test will fail in the flagged_usage_db test below, which makes sure
-    #   that all present database keys are used when walking through the trie.
+    # If you *never* try to prune the root node, then it will leave straggler nodes in
+    # the database. This is because the "normal" pruning machinery will not mark a
+    # short root node for pruning. The test will fail in the flagged_usage_db test
+    # below, which makes sure that all present database keys are used when walking
+    # through the trie.
     updates=[(b"", b"\x00"), (b"", b"\x00"), (b"", b"")],
     deleted=[],
 )
 @example(
     # Continuation of special root node handling from above...
     # If you *always* try to prune the root node in _set_root_node,
-    #   then you will *double* mark it (because if the root node is big enough, it will already
-    #   be handled by the "normal" pruning machinery). So this test just makes sure you don't
-    #   accidentally over-prune the root node. If you do, then the test will raise a MissingTrieNode
+    # then you will *double* mark it (because if the root node is big enough, it will
+    # already be handled by the "normal" pruning machinery). So this test just makes
+    # sure you don't accidentally over-prune the root node. If you do, then the test
+    # will raise a MissingTrieNode
     updates=[(b"\xa0", b"\x00\x00\x00\x00\x00\x00"), (b"\xa1", b"\x00\x00")],
     deleted=[b""],
 )
 @example(
     # Hm, the reason for this test case is lost to the sands of time.
-    # It had to do with some intermediate pruning implementation that didn't survive a squash.
+    # It had to do with some intermediate pruning implementation that didn't
+    # survive a squash.
     updates=[(b"", b""), (b"", b"")],
     deleted=[b""],
 )
 @example(
-    # Wow, found a bug where a deleting a missing key could delete a *different, longer* key
-    # Deleting the b'' key here will cause the b'\x01' key to get deleted!
+    # Wow, found a bug where a deleting a missing key could delete a *different, longer*
+    # key. Deleting the b'' key here will cause the b'\x01' key to get deleted!
     updates=[(b"\x01", b"\x00"), (b"\x01\x00", b"\x00")],
     deleted=[b""],
 )
@@ -816,7 +826,8 @@ def verify_ref_count(trie):
     for unenumerated_key in tracked_keys - enumerated_keys:
         assert trie.ref_count[unenumerated_key] == 0
 
-    # all keys that were found in enumeration and tracking should have the same reference count
+    # all keys that were found in enumeration and tracking should have the
+    # same reference count
     for matching_key in tracked_keys & enumerated_keys:
         actual_num = trie.ref_count[matching_key]
         expected_num = enumerated_ref_count[matching_key]
@@ -886,9 +897,8 @@ def test_hexary_trie_traverse(name, updates, expected, deleted, final_root):
         for key in deleted:
             del trie[key]
 
-    # Traverse full trie, starting with the root. Compares traverse() and traverse_from() results
-
-    # values found while traversing
+    # Traverse full trie, starting with the root. Compares traverse() and
+    # traverse_from() result values found while traversing
     found_values = set()
 
     def traverse_via_cache(parent_prefix, parent_node, child_extension):
@@ -921,7 +931,8 @@ def test_hexary_trie_traverse(name, updates, expected, deleted, final_root):
     # start traversal at root
     traverse_via_cache((), None, ())
 
-    # gut check that we have traversed the whole trie by checking all expected values are visited
+    # gut check that we have traversed the whole trie by checking all expected
+    # values are visited
     for _, expected_value in expected.items():
         assert expected_value in found_values
 
@@ -948,7 +959,7 @@ def test_hexary_trie_traverse(name, updates, expected, deleted, final_root):
             (4, 1),  # nibbles for b'A'
             (
                 4,
-            ),  # nibble to extension node (because ZED key breaks the root into a branch)
+            ),  # nibble to extension node (because ZED key breaks the root into a branch)  # noqa: E501
             # nibbles down to branch separating AAB and AAC:
             (
                 (
@@ -966,7 +977,7 @@ def test_hexary_trie_traverse(name, updates, expected, deleted, final_root):
             (4, 1),  # nibbles for b'A'
             (
                 4,
-            ),  # nibble to extension node (because ZED key breaks the root into a branch)
+            ),  # nibble to extension node (because ZED key breaks the root into a branch)  # noqa: E501
             # nibbles down to branch separating AAB and AAC:
             (
                 (
@@ -1008,7 +1019,7 @@ def test_traverse_into_partial_path(
             (4, 1),  # nibbles for b'A'
             (
                 4,
-            ),  # nibble to extension node (because ZED key breaks the root into a branch)
+            ),  # nibble to extension node (because ZED key breaks the root into a branch)  # noqa: E501
             # nibbles down to branch separating AAB and AAC:
             (
                 (
@@ -1026,7 +1037,7 @@ def test_traverse_into_partial_path(
             (4, 1),  # nibbles for b'A'
             (
                 4,
-            ),  # nibble to extension node (because ZED key breaks the root into a branch)
+            ),  # nibble to extension node (because ZED key breaks the root into a branch)  # noqa: E501
             # nibbles down to branch separating AAB and AAC:
             (
                 (
@@ -1076,11 +1087,11 @@ def test_traverse_non_matching_leaf():
         trie.traverse_from(final_root, (0xF,))
 
     # But traversing to any *non*-matching nibble should return a blank node, because no
-    #   children reside underneath that nibble. Returning the leaf with a mismatched nibble
-    #   would be a bug.
+    # children reside underneath that nibble. Returning the leaf with a mismatched
+    # nibble would be a bug.
     for nibble in range(0xF):
-        # Note that we do not want to look at the 0xf nibble, because that's the one that
-        #   should raise the exception above
+        # Note that we do not want to look at the 0xf nibble, because that's the one
+        # that should raise the exception above
         assert trie.traverse((nibble,)) == EMPTY_NODE
         assert trie.traverse_from(final_root, (nibble,)) == EMPTY_NODE
 
@@ -1108,8 +1119,8 @@ def test_squash_a_trie_handles_setting_new_root(prune):
         trie[b"\x00"] = b"33\x00"
         old_root_hash = trie.root_hash
 
-    # The ref-count doesn't get reset at the end of the batch, but the pending prune count does
-    # Make sure the logic here can handle that
+    # The ref-count doesn't get reset at the end of the batch, but the pending prune
+    # count does make sure the logic here can handle that
 
     with trie.squash_changes() as trie_batch:
         trie_batch[b"\x00\x00\x00"] = b"\x00\x00\x00"

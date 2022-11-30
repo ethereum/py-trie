@@ -5,12 +5,11 @@ from eth_utils.toolz import (
     partition_all,
 )
 
-
 from trie.constants import (
     EXP,
-    TWO_BITS,
     PREFIX_00,
     PREFIX_100000,
+    TWO_BITS,
 )
 
 

@@ -3,16 +3,15 @@ import pytest
 from trie.binary import (
     BinaryTrie,
 )
-from trie.exceptions import (
-    InvalidKeyError,
-)
-
 from trie.branches import (
     check_if_branch_exist,
     get_branch,
-    if_branch_valid,
     get_trie_nodes,
     get_witness_for_key_prefix,
+    if_branch_valid,
+)
+from trie.exceptions import (
+    InvalidKeyError,
 )
 
 
@@ -67,9 +66,9 @@ def test_branch(test_trie, key, key_valid):
     "root,nodes",
     (
         (
-            b"#\xf037,w\xb9()\x0e4\x92\xdf\x11\xca\xea\xa5\x13/\x10\x1bJ\xa7\x16\x07\x07G\xb1\x01_\x16\xca",
+            b"#\xf037,w\xb9()\x0e4\x92\xdf\x11\xca\xea\xa5\x13/\x10\x1bJ\xa7\x16\x07\x07G\xb1\x01_\x16\xca",  # noqa: E501
             [b"\x029a"],
-        ),  # noqa: E501
+        ),
         (
             b"\x84\x97\xc1\xf7S\xf5\xa2\xbb>\xbd\xe9\xc3t\x0f\xac/\xad\xa8\x01\xff\x9aE\t\xc1\xab\x9e\xa3|\xc7Z\xb0v",  # noqa: E501
             [
@@ -101,9 +100,9 @@ def test_branch(test_trie, key, key_valid):
             ],
         ),
         (
-            b"\xc5\xd2F\x01\x86\xf7#<\x92~}\xb2\xdc\xc7\x03\xc0\xe5\x00\xb6S\xca\x82';{\xfa\xd8\x04]\x85\xa4p",
+            b"\xc5\xd2F\x01\x86\xf7#<\x92~}\xb2\xdc\xc7\x03\xc0\xe5\x00\xb6S\xca\x82';{\xfa\xd8\x04]\x85\xa4p",  # noqa: E501
             [],
-        ),  # noqa: E501
+        ),
         (32 * b"\x00", []),
     ),
 )

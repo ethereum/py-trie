@@ -4,23 +4,20 @@ from typing import (
     Tuple,
 )
 
+from eth_typing import (
+    Hash32,
+)
 from eth_utils import (
     keccak,
     to_int,
 )
 
-from eth_typing import (
-    Hash32,
-)
-
 from trie.constants import (
     BLANK_NODE,
 )
-
 from trie.exceptions import (
     ValidationError,
 )
-
 from trie.validation import (
     validate_is_bytes,
     validate_length,
@@ -34,7 +31,8 @@ def calc_root(key: bytes, value: bytes, branch: Sequence[Hash32]) -> Hash32:
 
     :param key: the keypath to decide the ordering of the sibling nodes in the branch
     :param value: the value (or leaf) that starts the merkle proof computation
-    :param branch: the sequence of sibling nodes used to recursively perform the computation
+    :param branch: the sequence of sibling nodes used to recursively perform the
+        computation
 
     :return: the root hash of the merkle proof computation
 
@@ -44,7 +42,7 @@ def calc_root(key: bytes, value: bytes, branch: Sequence[Hash32]) -> Hash32:
         >>> value = b''  # Value (or leaf)
         >>> branch = tuple([b'\x00'] * 8)  # Any list of hashes
         >>> calc_root(key, value, branch)
-        b'.+4IKt[\xd2\x14\xe4).\xf5\xc6\n\x11=\x01\xe89\xa1Z\x07#\xfd~(;\xfb\xb8\x8a\x0e'
+        b'.+4IKt[\xd2\x14\xe4).\xf5\xc6\n\x11=\x01\xe89\xa1Z\x07#\xfd~(;\xfb\xb8\x8a\x0e'  # noqa: E501
 
     """
     validate_is_bytes(key)
@@ -193,15 +191,16 @@ class SparseMerkleTree:
         Maintain a a binary trie with a particular depth (defined by key size)
         All values are stored at that depth, and the tree has a default value that it is
         reset to when a key is cleared. If this default is anything other than a blank
-        node, then all keys "exist" in the database, which mimics the behavior of Ethereum
-        on-chain datastores.
+        node, then all keys "exist" in the database, which mimics the behavior of
+        Ethereum on-chain datastores.
 
-        :param key_size: The size (in # of bytes) of the key. All keys must be this size.
-                         Note that the size should be between 1 and 32 bytes. For performance,
-                         it is not advisible to have a key larger than 32 bytes (and you should
-                         optimize to much less than that) but if the data structure you seek
-                         to use as a key is larger, the suggestion would be to hash that
-                         structure in a serialized format to obtain the key, or add a unique
+        :param key_size: The size (in # of bytes) of the key. All keys must be this
+                         size. Note that the size should be between 1 and 32 bytes.
+                         For performance, it is not advisible to have a key larger than
+                         32 bytes (and you should optimize to much less than that)
+                         but if the data structure you seek to use as a key is larger,
+                         the suggestion would be to hash that structure in a
+                         serialized format to obtain the key, or add a unique
                          identifier to the structure.
         :param default: The default value used for the database. Initializes the root.
         """

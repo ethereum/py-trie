@@ -80,8 +80,9 @@ def trie_from_keys(keys, min_value_length=1):
     contents = {}
     with trie.squash_changes() as batch:
         for key in keys:
-            # flood 3's at the end of the value to make it longer. b'3' is encoded to 0x33,
-            #   so the bytes and HexBytes representation look the same. Just a convenience.
+            # flood 3's at the end of the value to make it longer. b'3' is
+            # encoded to 0x33, so the bytes and HexBytes representation
+            # look the same. Just a convenience.
             value = (b"v" + key).ljust(min_value_length, b"3")
             batch[key] = value
             contents[key] = value

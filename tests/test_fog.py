@@ -1,15 +1,19 @@
-from eth_utils import ValidationError
+import pytest
+from eth_utils import (
+    ValidationError,
+)
 from hypothesis import (
     given,
     strategies as st,
 )
-import pytest
 
 from trie.exceptions import (
     FullDirectionalVisibility,
     PerfectVisibility,
 )
-from trie.fog import HexaryTrieFog
+from trie.fog import (
+    HexaryTrieFog,
+)
 
 
 def test_trie_fog_completion():

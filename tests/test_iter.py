@@ -1,17 +1,23 @@
 import json
 import os
 
+import pytest
+import rlp
 from hypothesis import (
     example,
     given,
     strategies as st,
 )
-import pytest
-import rlp
 
-from trie import HexaryTrie
-from trie.exceptions import MissingTraversalNode
-from trie.iter import NodeIterator
+from trie import (
+    HexaryTrie,
+)
+from trie.exceptions import (
+    MissingTraversalNode,
+)
+from trie.iter import (
+    NodeIterator,
+)
 from trie.tools.strategies import (
     random_trie_strategy,
     trie_from_keys,
@@ -20,8 +26,9 @@ from trie.tools.strategies import (
 from trie.utils.nibbles import (
     nibbles_to_bytes,
 )
-from trie.utils.nodes import is_extension_node
-
+from trie.utils.nodes import (
+    is_extension_node,
+)
 
 ROOT_PROJECT_DIR = os.path.dirname(os.path.dirname(__file__))
 NEXT_PREV_FIXTURE_PATH = os.path.join(
@@ -99,8 +106,7 @@ def test_iter_values(trie_keys, min_value_length):
     for value in node_iterator.values():
         visited.append(value)
     values_sorted_by_key = [
-        val
-        for _, val in sorted(contents.items())  # only look at value  # but sort by key
+        val for _, val in sorted(contents.items())  # only look at value but sort by key
     ]
     assert visited == values_sorted_by_key
 
@@ -122,7 +128,8 @@ def test_iter_nodes(trie_keys, min_value_length):
     for prefix, node in NodeIterator(trie).nodes():
         # Save a copy of the encoded node to check against the database
         visited.add(rlp.encode(node.raw))
-        # Verify that navigating to the node directly returns the same node as this iterator
+        # Verify that navigating to the node directly
+        # returns the same node as this iterator
         assert node == trie.traverse(prefix)
         # Double-check that if the node stores a value, then the implied key matches
         if node.value:
@@ -131,8 +138,9 @@ def test_iter_nodes(trie_keys, min_value_length):
 
     # All nodes should be visited
     # Note that because of node embedding, the node iterator will return more nodes
-    #   than actually exist in the underlying DB (it returns embedded nodes as if they
-    #   were not embedded). So we can't simply test that trie.db.values() equals visited here.
+    # than actually exist in the underlying DB (it returns embedded nodes as if they
+    # were not embedded). So we can't simply test that trie.db.values()
+    # equals visited here.
     assert set(trie.db.values()) - visited == set()
 
 

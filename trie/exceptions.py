@@ -1,16 +1,23 @@
-from typing import Optional
+from typing import (
+    Optional,
+)
 
 from eth_typing import (
     Hash32,
 )
-from hexbytes import HexBytes
+from hexbytes import (
+    HexBytes,
+)
 
-from trie.constants import NODE_TYPE_EXTENSION, NODE_TYPE_LEAF
+from trie.constants import (
+    NODE_TYPE_EXTENSION,
+    NODE_TYPE_LEAF,
+)
 from trie.typing import (
-    NodeType,
+    HexaryTrieNode,
     Nibbles,
     NibblesInput,
-    HexaryTrieNode,
+    NodeType,
 )
 
 
@@ -90,9 +97,9 @@ class MissingTrieNode(Exception):
 
     def __str__(self) -> str:
         return (
-            f"Trie database is missing hash {self.missing_node_hash!r} needed to look up node at"
-            f" prefix {self.prefix}, when searching for key {self.requested_key!r} at root"
-            f" hash {self.root_hash!r}"
+            f"Trie database is missing hash {self.missing_node_hash!r} needed to look "
+            f"up node at prefix {self.prefix}, when searching for key "
+            f"{self.requested_key!r} at root hash {self.root_hash!r}"
         )
 
     @property
@@ -125,7 +132,8 @@ class MissingTraversalNode(Exception):
     This is triggered in the same situation as MissingTrieNode, but with less
     information available, because traversal can start from the middle of a trie.
         - traverse_from() ignore's the trie's root, so the root hash is unknown
-        - the requested_key and prefix are unavailable because only the suffix of the key is known
+        - the requested_key and prefix are unavailable because only the suffix of
+          the key is known
     """
 
     def __init__(
@@ -139,12 +147,15 @@ class MissingTraversalNode(Exception):
         super().__init__(HexBytes(missing_node_hash), Nibbles(nibbles_traversed), *args)
 
     def __repr__(self) -> str:
-        return f"MissingTraversalNode({self.missing_node_hash!r}, {self.nibbles_traversed!r})"
+        return (
+            f"MissingTraversalNode({self.missing_node_hash!r}, "
+            f"{self.nibbles_traversed!r})"
+        )
 
     def __str__(self) -> str:
         return (
-            f"Trie database is missing hash {self.missing_node_hash!r}, found when traversing "
-            f"down {self.nibbles_traversed}."
+            f"Trie database is missing hash {self.missing_node_hash!r}, found when "
+            f"traversing down {self.nibbles_traversed}."
         )
 
     @property
@@ -189,22 +200,22 @@ class TraversedPartialPath(Exception):
 
     def __str__(self) -> str:
         return (
-            f"Could not traverse through {self.node} at {self.nibbles_traversed}, only partially"
-            f" traversed with: {self.untraversed_tail}"
+            f"Could not traverse through {self.node} at {self.nibbles_traversed}, only "
+            f"partially traversed with: {self.untraversed_tail}"
         )
 
     @property
     def nibbles_traversed(self) -> Nibbles:
         """
-        The nibbles traversed until the attached node, which could not be traversed into.
+        The nibbles traversed until the attached node, which could not be traversed into
         """
         return self.args[0]
 
     @property
     def node(self) -> HexaryTrieNode:
         """
-        The node which could not be traversed into. This is any leaf, or an extension node
-        where traversal went part-way into the path. It must not be a branch node.
+        The node which could not be traversed into. This is any leaf, or an extension
+        node where traversal went part-way into the path. It must not be a branch node.
         """
         return self.args[1]
 
@@ -218,9 +229,10 @@ class TraversedPartialPath(Exception):
     @property
     def simulated_node(self) -> HexaryTrieNode:
         """
-        For the purposes of walking a trie, we might only be interested in the sub_segments,
-        suffix, etc, of the node -- but assuming we actually had a node immediately at the
-        requested prefix. This returns a node simulated as if that were true.
+        For the purposes of walking a trie, we might only be interested in the
+        sub_segments, suffix, etc, of the node -- but assuming we actually had a node
+        immediately at the requested prefix. This returns a node simulated as if that
+        were true.
 
         See the trie walk tests for an example of how this is used.
         """
@@ -228,9 +240,9 @@ class TraversedPartialPath(Exception):
 
     def _make_simulated_node(self) -> HexaryTrieNode:
         from trie.utils.nodes import (
-            key_starts_with,
             compute_extension_key,
             compute_leaf_key,
+            key_starts_with,
         )
 
         actual_node = self.node
@@ -239,13 +251,15 @@ class TraversedPartialPath(Exception):
 
         if len(key_tail) == 0:
             raise ValueError(
-                "Can only raise a TraversedPartialPath when some series of nibbles was untraversed"
+                "Can only raise a TraversedPartialPath when some series "
+                "of nibbles was untraversed"
             )
 
         if len(actual_sub_segments) == 0:
             if not key_starts_with(actual_node.suffix, key_tail):
                 raise ValidationError(
-                    f"Internal traverse bug: {actual_node.suffix} does not start with {key_tail}"
+                    f"Internal traverse bug: {actual_node.suffix} "
+                    f"does not start with {key_tail}"
                 )
             else:
                 trimmed_suffix = Nibbles(actual_node.suffix[len(key_tail) :])
@@ -261,7 +275,8 @@ class TraversedPartialPath(Exception):
             extension = actual_sub_segments[0]
             if not key_starts_with(extension, key_tail):
                 raise ValidationError(
-                    f"Internal traverse bug: extension {extension} does not start with {key_tail}"
+                    f"Internal traverse bug: extension {extension} does not start "
+                    f"with {key_tail}"
                 )
             elif len(key_tail) == len(extension):
                 raise ValidationError(
@@ -285,9 +300,10 @@ class TraversedPartialPath(Exception):
 
 class PerfectVisibility(Exception):
     """
-    Raised when calling :class:`trie.fog.HexaryTrieFog` methods that look for unknown prefixes,
-    like :meth:`~trie.fog.HexaryTrieFog.nearest_unknown`, and there are no unknown parts of
-    the trie. (in other words the fog reports :meth:`~trie.fog.HexaryTrieFog.is_complete` as True.
+    Raised when calling :class:`trie.fog.HexaryTrieFog` methods that look for unknown
+    prefixes, like :meth:`~trie.fog.HexaryTrieFog.nearest_unknown`, and there are no
+    unknown parts of the trie. (in other words the fog reports
+    :meth:`~trie.fog.HexaryTrieFog.is_complete` as True.
     """
 
     pass
@@ -295,9 +311,10 @@ class PerfectVisibility(Exception):
 
 class FullDirectionalVisibility(Exception):
     """
-    Raised when calling :meth:`trie.fog.HexaryTrieFog.nearest_right`, and there are no unknown
-    prefixes *in that direction* of the trie. (The fog may not report
-    :meth:`~trie.fog.HexaryTrieFog.is_complete` as True, because more may be available to the left).
+    Raised when calling :meth:`trie.fog.HexaryTrieFog.nearest_right`, and there are no
+    unknown prefixes *in that direction* of the trie. (The fog may not report
+    :meth:`~trie.fog.HexaryTrieFog.is_complete` as True, because more may be
+    available to the left).
     """
 
     pass

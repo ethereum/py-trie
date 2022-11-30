@@ -1,6 +1,6 @@
 trie
-<PYPI_NAME>
-<REPO_NAME>
+trie
+py-trie
 <RTD_NAME>
-<PROJECT_NAME>
-<SHORT_DESCRIPTION>
+trie
+Python implementation of the Ethereum trie structure

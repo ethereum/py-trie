@@ -8,14 +8,13 @@ from eth_utils.toolz import (
 )
 
 from trie.constants import (
-    NIBBLE_TERMINATOR,
-    HP_FLAG_2,
     HP_FLAG_0,
+    HP_FLAG_2,
+    NIBBLE_TERMINATOR,
 )
 from trie.exceptions import (
     InvalidNibbles,
 )
-
 
 NIBBLES_LOOKUPS = {byte: (byte >> 4, byte & 15) for byte in range(256)}
 

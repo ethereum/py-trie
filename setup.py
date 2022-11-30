@@ -9,13 +9,12 @@ extras_require = {
         "pycryptodome",
         "pytest-xdist>=2.4.0,<3",
         "tox==3.14.6",
-        # "pytest>=6.2.5",
+        "pytest>=6.2.5",
     ],
     "lint": [
         "black>=22",
         "flake8==5.0.4",
         "isort>=5.10.1",
-        "pydocstyle>=5.0.0",
     ],
     "dev": [
         "bumpversion>=0.5.3,<1",
@@ -45,7 +44,7 @@ setup(
     url="https://github.com/ethereum/py-trie",
     include_package_data=True,
     py_modules=["trie"],
-    python_requires=">=3.6,<4",
+    python_requires=">=3.7,<4",
     install_requires=[
         "eth-hash>=0.1.0,<1.0.0",
         "eth-utils>=2.0.0,<3.0.0",

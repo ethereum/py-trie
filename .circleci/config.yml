@@ -7,6 +7,9 @@ common: &common
   steps:
     - checkout
     - run:
+        name: checkout fixtures submodule
+        command: git submodule update --init --recursive
+    - run:
         name: merge pull request base
         command: ./.circleci/merge_pr.sh
     - run:

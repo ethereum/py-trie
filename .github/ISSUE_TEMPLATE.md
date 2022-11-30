@@ -1,19 +1,3 @@
-<<<<<<< HEAD
-* Version: x.x.x
-* Python: 2.7/3.4/3.5
-* OS: osx/linux/win
-
-
-### What was wrong?
-
-
-
-### What did you expect it to do?
-
-
-
-#### Code to reproduce the error
-=======
  _If this is a bug report, please fill in the following sections.
 If this is a feature request, delete and describe what you would like with examples._
 
@@ -22,13 +6,13 @@ If this is a feature request, delete and describe what you would like with examp
 ### Code that produced the error
 
 ```py
-CODE_TO_REPRODUCE 
+CODE_TO_REPRODUCE
 ```
 
-### Full error output 
+### Full error output
 
 ```sh
-ERROR_HERE 
+ERROR_HERE
 ```
 
 ### Expected Result
@@ -37,7 +21,7 @@ _This section may be deleted if the expectation is "don't crash"._
 
 ```sh
 EXPECTED_RESULT
-``` 
+```
 
 ### Environment
 
@@ -47,9 +31,8 @@ $ python -m eth_utils
 
 # then copy the output here:
 OUTPUT_HERE
-``` 
+```
 
 ## How can it be fixed?
 
 Fill this section in if you know how this could or should be fixed.
->>>>>>> template

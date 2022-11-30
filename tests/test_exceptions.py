@@ -7,11 +7,7 @@ from trie.exceptions import (
     ValidationError,
 )
 from trie.typing import Nibbles
-from trie.utils.nodes import (
-    annotate_node,
-    compute_extension_key,
-    compute_leaf_key,
-)
+from trie.utils.nodes import annotate_node, compute_extension_key, compute_leaf_key
 
 
 @pytest.mark.parametrize(
@@ -126,8 +122,8 @@ def test_invalid_TraversedPartialPath_traversed_nibbles(invalid_nibbles, excepti
 )
 @pytest.mark.parametrize("key_encoding", (compute_extension_key, compute_leaf_key))
 def test_valid_TraversedPartialPath_untraversed_nibbles(valid_nibbles, key_encoding):
-    # This exception means that the actual node key should have more than the untraversed amount
-    # So we simulate some longer key for the given node
+    # This exception means that the actual node key should have more than the
+    # untraversed amount. So we simulate some longer key for the given node
     longer_key = valid_nibbles + (0,)
     node = annotate_node([key_encoding(longer_key), b"random-value"])
     exception = TraversedPartialPath((), node, valid_nibbles)
@@ -189,7 +185,8 @@ def test_invalid_TraversedPartialPath_untraversed_nibbles(
     else:
         node = annotate_node([key_encoding(node_key), b"some-val"])
 
-    # Handle special case: leaf nodes are permitted to have the untraversed tail equal the suffix
+    # Handle special case: leaf nodes are permitted to have the
+    # untraversed tail equal the suffix
     if len(node.suffix) > 0 and node.suffix == invalid_nibbles:
         # So in this one case, make sure we don't raise an exception
         TraversedPartialPath((), node, invalid_nibbles)

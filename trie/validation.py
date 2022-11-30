@@ -1,4 +1,8 @@
-from trie.constants import BLANK_NODE, BLANK_HASH, BINARY_TRIE_NODE_TYPES
+from trie.constants import (
+    BINARY_TRIE_NODE_TYPES,
+    BLANK_HASH,
+    BLANK_NODE,
+)
 from trie.exceptions import (
     ValidationError,
 )

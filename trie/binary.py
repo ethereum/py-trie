@@ -4,11 +4,11 @@ from eth_hash.auto import (
 
 from trie.constants import (
     BLANK_HASH,
-    KV_TYPE,
     BRANCH_TYPE,
-    LEAF_TYPE,
     BYTE_0,
     BYTE_1,
+    KV_TYPE,
+    LEAF_TYPE,
 )
 from trie.exceptions import (
     NodeOverrideError,
@@ -17,15 +17,15 @@ from trie.utils.binaries import (
     encode_to_bin,
 )
 from trie.utils.nodes import (
-    parse_node,
-    encode_kv_node,
     encode_branch_node,
+    encode_kv_node,
     encode_leaf_node,
     get_common_prefix_length,
+    parse_node,
 )
 from trie.validation import (
-    validate_is_bytes,
     validate_is_bin_node,
+    validate_is_bytes,
 )
 
 
@@ -89,8 +89,9 @@ class BinaryTrie(object):
 
     def _set(self, node_hash, keypath, value, if_delete_subtrie=False):
         """
-        If if_delete_subtrie is set to True, what it will do is that it take in a keypath
-        and traverse til the end of keypath, then delete the whole subtrie of that node.
+        If if_delete_subtrie is set to True, what it will do is that it take in a
+        keypath and traverse til the end of keypath, then delete the whole subtrie
+        of that node.
 
         Note: keypath should be in binary array format, i.e., encoded by encode_to_bin()
         """
@@ -207,7 +208,8 @@ class BinaryTrie(object):
             if not value or if_delete_subtrie:
                 return node_hash
             # valnode: the child node that has the new value we are adding
-            # Case 1: keypath prefixes almost match, so we are in case (1), (2), (5), (6)
+            # Case 1: keypath prefixes almost match,
+            # so we are in case (1), (2), (5), (6)
             if len(keypath) == common_prefix_len + 1:
                 valnode = self._hash_and_save(encode_leaf_node(value))
             # Case 2: keypath prefixes mismatch in the middle, so we need to break

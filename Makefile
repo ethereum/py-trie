@@ -8,8 +8,6 @@ help:
 	@echo "test - run tests quickly with the default Python"
 	@echo "lint-roll - automatically fix problems with isort, flake8, etc"
 	@echo "testall - run tests on every Python version with tox"
-	@echo "coverage - check code coverage quickly with the default Python"
-	@echo "docs - generate docs and open in browser (linux-docs for version on linux)"
 	@echo "release - package and upload a release (does not run notes target)"
 	@echo "dist - package"
 
@@ -27,11 +25,11 @@ clean-pyc:
 	find . -name '__pycache__' -exec rm -rf {} +
 
 lint:
-	tox -elint
+	tox -e lint
 
 lint-roll:
-	isort <MODULE_NAME> tests
-	black <MODULE_NAME> tests setup.py
+	isort trie tests
+	black trie tests setup.py
 	$(MAKE) lint
 
 test:
@@ -39,20 +37,6 @@ test:
 
 testall:
 	tox
-
-coverage:
-	coverage run --source trie
-	coverage report -m
-	coverage html
-	open htmlcov/index.html
-
-docs:
-	rm -f docs/trie.rst
-	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ -d 2 trie/
-	$(MAKE) -C docs clean
-	$(MAKE) -C docs html
-	open docs/_build/html/index.html
 
 check-bump:
 ifndef bump

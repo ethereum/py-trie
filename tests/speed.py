@@ -1,9 +1,8 @@
 import cProfile
+import itertools
 import pstats
 import random
 import time
-
-import itertools
 
 from trie import HexaryTrie
 

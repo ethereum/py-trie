@@ -1,25 +1,21 @@
 import rlp
 
 from trie.constants import (
-    NODE_TYPE_BLANK,
-    NODE_TYPE_LEAF,
-    NODE_TYPE_EXTENSION,
-    NODE_TYPE_BRANCH,
     BLANK_NODE,
-    KV_TYPE,
     BRANCH_TYPE,
-    LEAF_TYPE,
-    KV_TYPE_PREFIX,
     BRANCH_TYPE_PREFIX,
+    KV_TYPE,
+    KV_TYPE_PREFIX,
+    LEAF_TYPE,
     LEAF_TYPE_PREFIX,
+    NODE_TYPE_BLANK,
+    NODE_TYPE_BRANCH,
+    NODE_TYPE_EXTENSION,
+    NODE_TYPE_LEAF,
 )
 from trie.exceptions import (
     InvalidNode,
     ValidationError,
-)
-from trie.utils.binaries import (
-    encode_from_bin_keypath,
-    decode_to_bin_keypath,
 )
 from trie.typing import (
     HexaryTrieNode,
@@ -27,15 +23,20 @@ from trie.typing import (
     NodeType,
     RawHexaryNode,
 )
-from trie.validation import (
-    validate_length,
-    validate_is_bytes,
+from trie.utils.binaries import (
+    decode_to_bin_keypath,
+    encode_from_bin_keypath,
 )
+from trie.validation import (
+    validate_is_bytes,
+    validate_length,
+)
+
 from .nibbles import (
+    add_nibbles_terminator,
     decode_nibbles,
     encode_nibbles,
     is_nibbles_terminated,
-    add_nibbles_terminator,
     remove_nibbles_terminator,
 )
 

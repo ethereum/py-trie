@@ -1,9 +1,10 @@
+import pytest
 from hypothesis import (
     example,
     given,
     strategies as st,
 )
-import pytest
+
 
 from trie.typing import (
     Nibbles,
