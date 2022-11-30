@@ -17,11 +17,7 @@ from trie.exceptions import (
 )
 
 
-NIBBLES_LOOKUPS = {
-    byte: (byte >> 4, byte & 15)
-    for byte
-    in range(256)
-}
+NIBBLES_LOOKUPS = {byte: (byte >> 4, byte & 15) for byte in range(256)}
 
 
 def _bytes_to_nibbles(value):
@@ -37,11 +33,7 @@ def bytes_to_nibbles(value):
 
 
 VALID_NIBBLES = set(range(16))
-REVERSE_NIBBLES_LOOKUP = {
-    value: key
-    for key, value
-    in NIBBLES_LOOKUPS.items()
-}
+REVERSE_NIBBLES_LOOKUP = {value: key for key, value in NIBBLES_LOOKUPS.items()}
 
 
 def nibbles_to_bytes(nibbles):
@@ -89,15 +81,19 @@ def encode_nibbles(nibbles):
     is_odd = len(raw_nibbles) % 2
 
     if is_odd:
-        flagged_nibbles = tuple(itertools.chain(
-            (flag + 1,),
-            raw_nibbles,
-        ))
+        flagged_nibbles = tuple(
+            itertools.chain(
+                (flag + 1,),
+                raw_nibbles,
+            )
+        )
     else:
-        flagged_nibbles = tuple(itertools.chain(
-            (flag, 0),
-            raw_nibbles,
-        ))
+        flagged_nibbles = tuple(
+            itertools.chain(
+                (flag, 0),
+                raw_nibbles,
+            )
+        )
 
     prefixed_value = nibbles_to_bytes(flagged_nibbles)
 

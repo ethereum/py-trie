@@ -25,7 +25,8 @@ from trie.utils.nodes import is_extension_node
 
 ROOT_PROJECT_DIR = os.path.dirname(os.path.dirname(__file__))
 NEXT_PREV_FIXTURE_PATH = os.path.join(
-    ROOT_PROJECT_DIR, 'fixtures', 'TrieTests', 'trietestnextprev.json')
+    ROOT_PROJECT_DIR, "fixtures", "TrieTests", "trietestnextprev.json"
+)
 RAW_NEXT_PREV_FIXTURES = [
     (os.path.basename(NEXT_PREV_FIXTURE_PATH), json.load(open(NEXT_PREV_FIXTURE_PATH)))
 ]
@@ -37,19 +38,20 @@ NEXT_PREV_FIXTURES = [
 
 
 @pytest.mark.parametrize(
-    'fixture_name,fixture', NEXT_PREV_FIXTURES,
+    "fixture_name,fixture",
+    NEXT_PREV_FIXTURES,
 )
 def test_trie_next_prev_using_fixtures(fixture_name, fixture):
     trie = HexaryTrie(db={})
-    for k in fixture['in']:
-        k = k.encode('utf-8')
+    for k in fixture["in"]:
+        k = k.encode("utf-8")
         trie[k] = k
 
     iterator = NodeIterator(trie)
-    for point, _, nxt in fixture['tests']:
-        point = point.encode('utf-8')
-        nxt = nxt.encode('utf-8')
-        if nxt == b'':
+    for point, _, nxt in fixture["tests"]:
+        point = point.encode("utf-8")
+        nxt = nxt.encode("utf-8")
+        if nxt == b"":
             nxt = None
         assert nxt == iterator.next(point)
 
@@ -87,7 +89,7 @@ def test_iter_keys(trie_keys, min_value_length):
 @example(
     # Test when the values are in reversed order (so that a larger value appears
     #   earlier in a trie). Test that values sorted in key order, not value order.
-    trie_keys=(b'\x01\x00', b'\x01\x00\x00'),
+    trie_keys=(b"\x01\x00", b"\x01\x00\x00"),
     min_value_length=6,
 )
 def test_iter_values(trie_keys, min_value_length):
@@ -97,8 +99,8 @@ def test_iter_values(trie_keys, min_value_length):
     for value in node_iterator.values():
         visited.append(value)
     values_sorted_by_key = [
-        val for _, val  # only look at value
-        in sorted(contents.items())  # but sort by key
+        val
+        for _, val in sorted(contents.items())  # only look at value  # but sort by key
     ]
     assert visited == values_sorted_by_key
 
@@ -136,15 +138,15 @@ def test_iter_nodes(trie_keys, min_value_length):
 
 def test_iter_error():
     trie = HexaryTrie({})
-    trie[b'cat'] = b'cat'
-    trie[b'dog'] = b'dog'
-    trie[b'bird'] = b'bird'
+    trie[b"cat"] = b"cat"
+    trie[b"dog"] = b"dog"
+    trie[b"bird"] = b"bird"
     raw_root_node = trie.root_node.raw
     assert is_extension_node(raw_root_node)
     node_to_remove = raw_root_node[1]
     trie.db.pop(node_to_remove)
     iterator = NodeIterator(trie)
-    key = b''
+    key = b""
     with pytest.raises(MissingTraversalNode):
         while key is not None:
             key = iterator.next(key)

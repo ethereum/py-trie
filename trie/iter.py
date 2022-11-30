@@ -60,10 +60,8 @@ class NodeIterator:
             return nibbles_to_bytes(next_key)
 
     def _get_key_after(
-            self,
-            node: HexaryTrieNode,
-            key: Nibbles,
-            traversed: Nibbles) -> Optional[Nibbles]:
+        self, node: HexaryTrieNode, key: Nibbles, traversed: Nibbles
+    ) -> Optional[Nibbles]:
         """
         Find the next key in the trie after key
 
@@ -75,7 +73,7 @@ class NodeIterator:
             if no key is immediately to the right (under `node`)
         """
         for next_segment in node.sub_segments:
-            if key[:len(next_segment)] > next_segment:
+            if key[: len(next_segment)] > next_segment:
                 # This segment is to the left of the key, keep looking...
                 continue
             else:
@@ -83,7 +81,9 @@ class NodeIterator:
                 # Either way, we'll want to take a look
                 next_node = self._trie.traverse_from(node, next_segment)
 
-                common, key_remaining, segment_remaining = consume_common_prefix(key, next_segment)
+                common, key_remaining, segment_remaining = consume_common_prefix(
+                    key, next_segment
+                )
                 if len(segment_remaining) == 0:
                     # Found a perfect match! Keep looking for keys to the right of the target
                     next_key = self._get_key_after(
@@ -110,7 +110,9 @@ class NodeIterator:
             # Nothing found in any sub-segments
             return None
 
-    def _get_next_key(self, node: HexaryTrieNode, traversed: Nibbles) -> Optional[Nibbles]:
+    def _get_next_key(
+        self, node: HexaryTrieNode, traversed: Nibbles
+    ) -> Optional[Nibbles]:
         """
         Find the next possible key within the given node
 

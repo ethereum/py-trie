@@ -49,7 +49,7 @@ def calc_root(key: bytes, value: bytes, branch: Sequence[Hash32]) -> Hash32:
     """
     validate_is_bytes(key)
     validate_is_bytes(value)
-    validate_length(branch, len(key)*8)
+    validate_length(branch, len(key) * 8)
 
     path = to_int(key)
     target_bit = 1
@@ -117,7 +117,7 @@ class SparseMerkleProof:
     def __init__(self, key: bytes, value: bytes, branch: Sequence[Hash32]):
         validate_is_bytes(key)
         validate_is_bytes(value)
-        validate_length(branch, len(key)*8)
+        validate_length(branch, len(key) * 8)
 
         self._key = key
         self._key_size = len(key)
@@ -156,7 +156,7 @@ class SparseMerkleProof:
         validate_length(key, self._key_size)
 
         # Path diff is the logical XOR of the updated key and this account
-        path_diff = (to_int(self.key) ^ to_int(key))
+        path_diff = to_int(self.key) ^ to_int(key)
 
         # Same key (diff of 0), update the tracked value
         if path_diff == 0:
@@ -188,10 +188,7 @@ class SparseMerkleProof:
 
 
 class SparseMerkleTree:
-
-    def __init__(self,
-                 key_size: int = 32,
-                 default: bytes = BLANK_NODE):
+    def __init__(self, key_size: int = 32, default: bytes = BLANK_NODE):
         """
         Maintain a a binary trie with a particular depth (defined by key size)
         All values are stored at that depth, and the tree has a default value that it is
@@ -231,11 +228,12 @@ class SparseMerkleTree:
 
     @classmethod
     def from_db(
-            cls,
-            db: Dict[bytes, bytes],
-            root_hash: Hash32,
-            key_size: int = 32,
-            default: bytes = BLANK_NODE):
+        cls,
+        db: Dict[bytes, bytes],
+        root_hash: Hash32,
+        key_size: int = 32,
+        default: bytes = BLANK_NODE,
+    ):
         smt = cls(key_size=key_size, default=default)
 
         # If db is provided, and is not consistent,
@@ -318,7 +316,7 @@ class SparseMerkleTree:
             self.db[node_hash] = node
 
             # Update
-            if (path & target_bit):
+            if path & target_bit:
                 node = sibling_node + node_hash
             else:
                 node = node_hash + sibling_node

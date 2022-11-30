@@ -17,9 +17,13 @@ from trie.exceptions import (
 )
 
 
-@given(k=st.lists(st.binary(min_size=32, max_size=32), min_size=100, max_size=100, unique=True),
-       v=st.lists(st.binary(min_size=1), min_size=100, max_size=100),
-       random=st.randoms(use_true_random=True))
+@given(
+    k=st.lists(
+        st.binary(min_size=32, max_size=32), min_size=100, max_size=100, unique=True
+    ),
+    v=st.lists(st.binary(min_size=1), min_size=100, max_size=100),
+    random=st.randoms(use_true_random=True),
+)
 @settings(max_examples=10, deadline=1000)
 def test_bin_trie_different_order_insert(k, v, random):
     kv_pairs = list(zip(k, v))
@@ -44,15 +48,41 @@ def test_bin_trie_different_order_insert(k, v, random):
 
 
 @pytest.mark.parametrize(
-    'kv1,kv2,key_to_be_deleted,will_delete,will_rasie_error',
+    "kv1,kv2,key_to_be_deleted,will_delete,will_rasie_error",
     (
-        ((b'\x12\x34\x56\x78', b'78'), (b'\x12\x34\x56\x79', b'79'), b'\x12\x34\x56', True, False),
-        ((b'\x12\x34\x56\x78', b'78'), (b'\x12\x34\x56\xff', b'ff'), b'\x12\x34\x56', True, False),
-        ((b'\x12\x34\x56\x78', b'78'), (b'\x12\x34\x56\x79', b'79'), b'\x12\x34\x57', False, False),
-        ((b'\x12\x34\x56\x78', b'78'), (b'\x12\x34\x56\x79', b'79'), b'\x12\x34\x56\x78\x9a', False, True),  # noqa: E501
+        (
+            (b"\x12\x34\x56\x78", b"78"),
+            (b"\x12\x34\x56\x79", b"79"),
+            b"\x12\x34\x56",
+            True,
+            False,
+        ),
+        (
+            (b"\x12\x34\x56\x78", b"78"),
+            (b"\x12\x34\x56\xff", b"ff"),
+            b"\x12\x34\x56",
+            True,
+            False,
+        ),
+        (
+            (b"\x12\x34\x56\x78", b"78"),
+            (b"\x12\x34\x56\x79", b"79"),
+            b"\x12\x34\x57",
+            False,
+            False,
+        ),
+        (
+            (b"\x12\x34\x56\x78", b"78"),
+            (b"\x12\x34\x56\x79", b"79"),
+            b"\x12\x34\x56\x78\x9a",
+            False,
+            True,
+        ),  # noqa: E501
     ),
 )
-def test_bin_trie_delete_subtrie(kv1, kv2, key_to_be_deleted, will_delete, will_rasie_error):
+def test_bin_trie_delete_subtrie(
+    kv1, kv2, key_to_be_deleted, will_delete, will_rasie_error
+):
     trie = BinaryTrie(db={})
     # First test case, delete subtrie of a kv node
     trie.set(kv1[0], kv1[1])
@@ -78,19 +108,19 @@ def test_bin_trie_delete_subtrie(kv1, kv2, key_to_be_deleted, will_delete, will_
 
 
 @pytest.mark.parametrize(
-    'invalide_key,if_error',
+    "invalide_key,if_error",
     (
-        (b'\x12\x34\x56', False),
-        (b'\x12\x34\x56\x77', False),
-        (b'\x12\x34\x56\x78\x9a', True),
-        (b'\x12\x34\x56\x79\xab', True),
-        (b'\xab\xcd\xef', False),
+        (b"\x12\x34\x56", False),
+        (b"\x12\x34\x56\x77", False),
+        (b"\x12\x34\x56\x78\x9a", True),
+        (b"\x12\x34\x56\x79\xab", True),
+        (b"\xab\xcd\xef", False),
     ),
 )
 def test_bin_trie_invalid_key(invalide_key, if_error):
     trie = BinaryTrie(db={})
-    trie.set(b'\x12\x34\x56\x78', b'78')
-    trie.set(b'\x12\x34\x56\x79', b'79')
+    trie.set(b"\x12\x34\x56\x78", b"78")
+    trie.set(b"\x12\x34\x56\x79", b"79")
 
     assert trie.get(invalide_key) is None
     if if_error:
@@ -102,13 +132,14 @@ def test_bin_trie_invalid_key(invalide_key, if_error):
         assert previous_root_hash == trie.root_hash
 
 
-@given(keys=st.lists(st.binary(min_size=32, max_size=32), min_size=100, max_size=100, unique=True),
-       chosen_numbers=st.lists(
-           st.integers(min_value=0, max_value=99),
-           min_size=50,
-           max_size=50,
-           unique=True)
-       )
+@given(
+    keys=st.lists(
+        st.binary(min_size=32, max_size=32), min_size=100, max_size=100, unique=True
+    ),
+    chosen_numbers=st.lists(
+        st.integers(min_value=0, max_value=99), min_size=50, max_size=50, unique=True
+    ),
+)
 @settings(max_examples=10)
 def test_bin_trie_update_value(keys, chosen_numbers):
     """
@@ -116,13 +147,13 @@ def test_bin_trie_update_value(keys, chosen_numbers):
     """
     trie = BinaryTrie(db={})
     for key in keys:
-        trie.set(key, b'old')
+        trie.set(key, b"old")
 
     current_root = trie.root_hash
     for i in chosen_numbers:
-        trie.set(keys[i], b'old')
+        trie.set(keys[i], b"old")
         assert current_root == trie.root_hash
-        trie.set(keys[i], b'new')
+        trie.set(keys[i], b"new")
         assert current_root != trie.root_hash
-        assert trie.get(keys[i]) == b'new'
+        assert trie.get(keys[i]) == b"new"
         current_root = trie.root_hash

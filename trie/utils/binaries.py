@@ -20,11 +20,7 @@ def decode_from_bin(input_bin):
     0100000101010111010000110100100101001001 -> ASCII
     """
     for chunk in partition_all(8, input_bin):
-        yield sum(
-            2**exp * bit
-            for exp, bit
-            in enumerate(reversed(chunk))
-        )
+        yield sum(2**exp * bit for exp, bit in enumerate(reversed(chunk)))
 
 
 @apply_to_return_value(bytes)
@@ -63,4 +59,4 @@ def decode_to_bin_keypath(path):
         path = path[4:]
     assert path[0:2] == PREFIX_00
     padded_len = TWO_BITS.index(path[2:4])
-    return path[4+((4 - padded_len) % 4):]
+    return path[4 + ((4 - padded_len) % 4) :]

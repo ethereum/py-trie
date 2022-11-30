@@ -3,7 +3,7 @@
 [![PyPI](https://img.shields.io/pypi/v/trie.svg)](https://pypi.org/project/trie/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/trie.svg)
 
-> This library and repository was previously located at [pipermerriam/py-trie](https://github.com/pipermerriam/py-trie). It was transferred to the Ethereum foundation GitHub in 
+> This library and repository was previously located at [pipermerriam/py-trie](https://github.com/pipermerriam/py-trie). It was transferred to the Ethereum foundation GitHub in
 > November 2017 and renamed to `py-trie`.
 
 ## Installation
@@ -48,9 +48,7 @@ brew install pandoc
 To release a new version:
 
 ```sh
-bumpversion $$VERSION_PART_TO_BUMP$$
-git push && git push --tags
-make release
+make release bump=$$VERSION_PART_TO_BUMP$$
 ```
 
 #### How to bumpversion
@@ -123,7 +121,7 @@ HexaryTrieNode(sub_segments=((0x6, 0xd, 0x7, 0x9, 0x2, 0xd, 0x6),), value=b'', s
 
 # the root node is an extension down, because the first 7 nibbles are the same between the two keys
 
-# Let's walk down to the child of that extension 
+# Let's walk down to the child of that extension
 >>> prefix6d792d6 = t.traverse(root_node.sub_segments[0])
 >>> prefix6d792d6
 HexaryTrieNode(sub_segments=((0xb,), (0xf,)), value=b'', suffix=(), raw=[b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', [b' ey', b'some-value'], b'', b'', b'', [b' ther-key', b'another-value'], b''])

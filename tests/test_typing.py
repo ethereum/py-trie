@@ -11,12 +11,14 @@ from trie.typing import (
 
 
 @pytest.mark.parametrize(
-    'valid_nibbles',
+    "valid_nibbles",
     (
         (),
         (0, 0, 0),
-        (0xf, ) * 128,  # no length limit on the nibbles
-        [0],  # list is an acceptable input to nibbles, though will be converted to tuple
+        (0xF,) * 128,  # no length limit on the nibbles
+        [
+            0
+        ],  # list is an acceptable input to nibbles, though will be converted to tuple
     ),
 )
 def test_valid_nibbles(valid_nibbles):
@@ -25,16 +27,16 @@ def test_valid_nibbles(valid_nibbles):
 
 
 @pytest.mark.parametrize(
-    'invalid_nibbles, exception',
+    "invalid_nibbles, exception",
     (
         (None, TypeError),
         ({0}, TypeError),  # unordered set is not valid input
-        ((b'F', ), ValueError),
-        (b'F', TypeError),
-        ((b'\x00', ), ValueError),
-        ((b'\x0F', ), ValueError),
+        ((b"F",), ValueError),
+        (b"F", TypeError),
+        ((b"\x00",), ValueError),
+        ((b"\x0F",), ValueError),
         (0, TypeError),
-        (0xf, TypeError),
+        (0xF, TypeError),
         ((0, 0x10), ValueError),
         ((0, -1), ValueError),
     ),
@@ -44,7 +46,7 @@ def test_invalid_nibbles(invalid_nibbles, exception):
         Nibbles(invalid_nibbles)
 
 
-@given(st.lists(st.integers(min_value=0, max_value=0xf)), st.booleans())
+@given(st.lists(st.integers(min_value=0, max_value=0xF)), st.booleans())
 @example([0], True)
 def test_nibbles_repr(nibbles_input, as_ipython):
     nibbles = Nibbles(nibbles_input)
@@ -52,7 +54,7 @@ def test_nibbles_repr(nibbles_input, as_ipython):
     if as_ipython:
 
         class FakePrinter:
-            str_buffer = ''
+            str_buffer = ""
 
             def text(self, new_text):
                 self.str_buffer += new_text

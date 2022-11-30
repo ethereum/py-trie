@@ -13,6 +13,6 @@ def trie_from_keys(keys, minimum_value_length=0, prune=False):
         for k in keys:
             # Flood 3's at the end of the value to make it longer. b'3' is encoded to 0x33,
             #   so the bytes and HexBytes representation look the same. Just a convenience.
-            trie_batch[k] = k.ljust(minimum_value_length, b'3')
+            trie_batch[k] = k.ljust(minimum_value_length, b"3")
 
     return node_db, trie

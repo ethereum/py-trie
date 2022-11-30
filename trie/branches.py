@@ -50,12 +50,14 @@ def _check_if_branch_exist(db, node_hash, key_prefix):
         if not key_prefix:
             return True
         if len(key_prefix) < len(left_child):
-            if key_prefix == left_child[:len(key_prefix)]:
+            if key_prefix == left_child[: len(key_prefix)]:
                 return True
             return False
         else:
-            if key_prefix[:len(left_child)] == left_child:
-                return _check_if_branch_exist(db, right_child, key_prefix[len(left_child):])
+            if key_prefix[: len(left_child)] == left_child:
+                return _check_if_branch_exist(
+                    db, right_child, key_prefix[len(left_child) :]
+                )
             return False
     elif nodetype == BRANCH_TYPE:
         if not key_prefix:
@@ -90,13 +92,9 @@ def _get_branch(db, node_hash, keypath):
     elif nodetype == KV_TYPE:
         if not keypath:
             raise InvalidKeyError("Key too short")
-        if keypath[:len(left_child)] == left_child:
+        if keypath[: len(left_child)] == left_child:
             yield node
-            yield from _get_branch(
-                db,
-                right_child,
-                keypath[len(left_child):]
-            )
+            yield from _get_branch(db, right_child, keypath[len(left_child) :])
         else:
             yield node
     elif nodetype == BRANCH_TYPE:
@@ -177,12 +175,14 @@ def _get_witness_for_key_prefix(db, node_hash, keypath):
         if keypath:
             raise InvalidKeyError("Key too long")
     elif nodetype == KV_TYPE:
-        if len(keypath) < len(left_child) and left_child[:len(keypath)] == keypath:
+        if len(keypath) < len(left_child) and left_child[: len(keypath)] == keypath:
             yield node
             yield from get_trie_nodes(db, right_child)
-        elif keypath[:len(left_child)] == left_child:
+        elif keypath[: len(left_child)] == left_child:
             yield node
-            yield from _get_witness_for_key_prefix(db, right_child, keypath[len(left_child):])
+            yield from _get_witness_for_key_prefix(
+                db, right_child, keypath[len(left_child) :]
+            )
         else:
             yield node
     elif nodetype == BRANCH_TYPE:

@@ -5,10 +5,7 @@ from eth_typing import (
 )
 from hexbytes import HexBytes
 
-from trie.constants import (
-    NODE_TYPE_EXTENSION,
-    NODE_TYPE_LEAF
-)
+from trie.constants import NODE_TYPE_EXTENSION, NODE_TYPE_LEAF
 from trie.typing import (
     NodeType,
     Nibbles,
@@ -53,16 +50,20 @@ class MissingTrieNode(Exception):
     This may happen when trying to read out the value of a key, or when simply
     traversing the trie.
     """
+
     def __init__(
-            self,
-            missing_node_hash: Hash32,
-            root_hash: Hash32,
-            requested_key: bytes,
-            prefix: Nibbles = None,
-            *args):
+        self,
+        missing_node_hash: Hash32,
+        root_hash: Hash32,
+        requested_key: bytes,
+        prefix: Nibbles = None,
+        *args,
+    ):
 
         if not isinstance(missing_node_hash, bytes):
-            raise TypeError("Missing node hash must be bytes, was: %r" % missing_node_hash)
+            raise TypeError(
+                "Missing node hash must be bytes, was: %r" % missing_node_hash
+            )
         elif not isinstance(root_hash, bytes):
             raise TypeError("Root hash must be bytes, was: %r" % root_hash)
         elif not isinstance(requested_key, bytes):
@@ -126,9 +127,14 @@ class MissingTraversalNode(Exception):
         - traverse_from() ignore's the trie's root, so the root hash is unknown
         - the requested_key and prefix are unavailable because only the suffix of the key is known
     """
-    def __init__(self, missing_node_hash: Hash32, nibbles_traversed: NibblesInput, *args) -> None:
+
+    def __init__(
+        self, missing_node_hash: Hash32, nibbles_traversed: NibblesInput, *args
+    ) -> None:
         if not isinstance(missing_node_hash, bytes):
-            raise TypeError("Missing node hash must be bytes, was: %r" % missing_node_hash)
+            raise TypeError(
+                "Missing node hash must be bytes, was: %r" % missing_node_hash
+            )
 
         super().__init__(HexBytes(missing_node_hash), Nibbles(nibbles_traversed), *args)
 
@@ -158,12 +164,14 @@ class TraversedPartialPath(Exception):
     Raised when a traversal key ends in the middle of a partial path. It might be in
     an extension node or a leaf node.
     """
+
     def __init__(
-            self,
-            nibbles_traversed: NibblesInput,
-            node: HexaryTrieNode,
-            untraversed_tail: NibblesInput,
-            *args) -> None:
+        self,
+        nibbles_traversed: NibblesInput,
+        node: HexaryTrieNode,
+        untraversed_tail: NibblesInput,
+        *args,
+    ) -> None:
 
         super().__init__(
             Nibbles(nibbles_traversed),
@@ -240,7 +248,7 @@ class TraversedPartialPath(Exception):
                     f"Internal traverse bug: {actual_node.suffix} does not start with {key_tail}"
                 )
             else:
-                trimmed_suffix = Nibbles(actual_node.suffix[len(key_tail):])
+                trimmed_suffix = Nibbles(actual_node.suffix[len(key_tail) :])
 
             return HexaryTrieNode(
                 (),
@@ -260,7 +268,7 @@ class TraversedPartialPath(Exception):
                     f"Internal traverse bug: {key_tail} should not equal {extension}"
                 )
             else:
-                trimmed_extension = Nibbles(extension[len(key_tail):])
+                trimmed_extension = Nibbles(extension[len(key_tail) :])
 
             return HexaryTrieNode(
                 (trimmed_extension,),
@@ -281,6 +289,7 @@ class PerfectVisibility(Exception):
     like :meth:`~trie.fog.HexaryTrieFog.nearest_unknown`, and there are no unknown parts of
     the trie. (in other words the fog reports :meth:`~trie.fog.HexaryTrieFog.is_complete` as True.
     """
+
     pass
 
 
@@ -290,4 +299,5 @@ class FullDirectionalVisibility(Exception):
     prefixes *in that direction* of the trie. (The fog may not report
     :meth:`~trie.fog.HexaryTrieFog.is_complete` as True, because more may be available to the left).
     """
+
     pass
