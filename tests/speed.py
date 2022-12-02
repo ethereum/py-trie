@@ -4,7 +4,9 @@ import pstats
 import random
 import time
 
-from trie import HexaryTrie
+from trie import (
+    HexaryTrie,
+)
 
 
 def mk_random_bytes(n):

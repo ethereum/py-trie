@@ -2,7 +2,9 @@ from hypothesis import (
     strategies as st,
 )
 
-from trie import HexaryTrie
+from trie import (
+    HexaryTrie,
+)
 
 
 @st.composite

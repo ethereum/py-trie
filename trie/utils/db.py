@@ -1,6 +1,8 @@
 import contextlib
 
-from eth_utils import to_dict
+from eth_utils import (
+    to_dict,
+)
 from eth_utils.toolz import (
     merge,
     valfilter,

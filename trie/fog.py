@@ -1,5 +1,7 @@
 import ast
-from itertools import zip_longest
+from itertools import (
+    zip_longest,
+)
 from typing import (
     Any,
     Dict,
@@ -12,7 +14,9 @@ from eth_utils import (
     ValidationError,
     to_tuple,
 )
-from sortedcontainers import SortedSet
+from sortedcontainers import (
+    SortedSet,
+)
 
 from trie.exceptions import (
     FullDirectionalVisibility,

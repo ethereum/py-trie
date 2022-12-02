@@ -7,10 +7,10 @@ from trie.binary import (
 )
 from trie.constants import (
     BLANK_HASH,
-    KV_TYPE,
     BRANCH_TYPE,
-    LEAF_TYPE,
     BYTE_0,
+    KV_TYPE,
+    LEAF_TYPE,
 )
 from trie.exceptions import (
     InvalidKeyError,
@@ -22,8 +22,8 @@ from trie.utils.nodes import (
     parse_node,
 )
 from trie.validation import (
-    validate_is_bytes,
     validate_is_bin_node,
+    validate_is_bytes,
 )
 
 

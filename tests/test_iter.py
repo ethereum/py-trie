@@ -1,13 +1,13 @@
 import json
 import os
 
-import pytest
-import rlp
 from hypothesis import (
     example,
     given,
     strategies as st,
 )
+import pytest
+import rlp
 
 from trie import (
     HexaryTrie,

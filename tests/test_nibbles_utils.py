@@ -2,9 +2,10 @@ from hypothesis import (
     given,
     strategies as st,
 )
+
 from trie.utils.nibbles import (
-    nibbles_to_bytes,
     bytes_to_nibbles,
+    nibbles_to_bytes,
 )
 
 

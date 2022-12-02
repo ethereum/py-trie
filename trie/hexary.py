@@ -1,9 +1,9 @@
-import contextlib
-import functools
-import itertools
 from collections import (
     defaultdict,
 )
+import contextlib
+import functools
+import itertools
 from typing import (
     Callable,
     Tuple,

@@ -3,16 +3,18 @@ import collections
 from eth_utils import (
     keccak,
 )
-
-from rlp.codec import encode_raw
-
-from trie.constants import (
-    BLANK_NODE,
-    BLANK_HASH,
-    BLANK_NODE_HASH,
+from rlp.codec import (
+    encode_raw,
 )
 
-from trie.smt import SparseMerkleTree as SMT
+from trie.constants import (
+    BLANK_HASH,
+    BLANK_NODE,
+    BLANK_NODE_HASH,
+)
+from trie.smt import (
+    SparseMerkleTree as SMT,
+)
 
 
 def test_hash_constants():

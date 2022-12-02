@@ -1,7 +1,7 @@
-import pytest
 from eth_hash.auto import (
     keccak,
 )
+import pytest
 
 from trie.exceptions import (
     BadTrieProof,
@@ -12,13 +12,21 @@ from trie.hexary import (
 
 
 def test_get_from_proof_key_exists():
-    from .sample_proof_key_exists import key, proof, state_root
+    from .sample_proof_key_exists import (
+        key,
+        proof,
+        state_root,
+    )
 
     assert HexaryTrie.get_from_proof(state_root, key, proof) != b""
 
 
 def test_get_from_proof_key_does_not_exist():
-    from .sample_proof_key_does_not_exist import key, proof, state_root
+    from .sample_proof_key_does_not_exist import (
+        key,
+        proof,
+        state_root,
+    )
 
     assert HexaryTrie.get_from_proof(state_root, key, proof) == b""
 
@@ -34,7 +42,11 @@ def test_get_proof_key_does_not_exist():
 
 
 def test_get_from_proof_invalid():
-    from .sample_proof_key_exists import key, proof, state_root
+    from .sample_proof_key_exists import (
+        key,
+        proof,
+        state_root,
+    )
 
     proof[5][3] = b""
     with pytest.raises(BadTrieProof):

@@ -1,4 +1,6 @@
-from trie import HexaryTrie
+from trie import (
+    HexaryTrie,
+)
 
 
 def trie_from_keys(keys, minimum_value_length=0, prune=False):

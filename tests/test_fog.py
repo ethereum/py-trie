@@ -1,4 +1,3 @@
-import pytest
 from eth_utils import (
     ValidationError,
 )
@@ -6,6 +5,7 @@ from hypothesis import (
     given,
     strategies as st,
 )
+import pytest
 
 from trie.exceptions import (
     FullDirectionalVisibility,

@@ -1,10 +1,10 @@
-import pytest
 from hypothesis import (
     example,
     given,
     settings,
     strategies as st,
 )
+import pytest
 
 from trie.exceptions import (
     MissingTraversalNode,
@@ -12,11 +12,22 @@ from trie.exceptions import (
     PerfectVisibility,
     TraversedPartialPath,
 )
-from trie.fog import HexaryTrieFog, TrieFrontierCache
-from trie.iter import NodeIterator
-from trie.tools.builder import trie_from_keys
-from trie.tools.strategies import trie_keys_with_extensions
-from trie.typing import Nibbles
+from trie.fog import (
+    HexaryTrieFog,
+    TrieFrontierCache,
+)
+from trie.iter import (
+    NodeIterator,
+)
+from trie.tools.builder import (
+    trie_from_keys,
+)
+from trie.tools.strategies import (
+    trie_keys_with_extensions,
+)
+from trie.typing import (
+    Nibbles,
+)
 
 
 @given(

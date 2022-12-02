@@ -6,8 +6,14 @@ from trie.exceptions import (
     TraversedPartialPath,
     ValidationError,
 )
-from trie.typing import Nibbles
-from trie.utils.nodes import annotate_node, compute_extension_key, compute_leaf_key
+from trie.typing import (
+    Nibbles,
+)
+from trie.utils.nodes import (
+    annotate_node,
+    compute_extension_key,
+    compute_leaf_key,
+)
 
 
 @pytest.mark.parametrize(

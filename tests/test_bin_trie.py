@@ -1,9 +1,9 @@
-import pytest
 from hypothesis import (
     given,
     settings,
     strategies as st,
 )
+import pytest
 
 from trie.binary import (
     BinaryTrie,
