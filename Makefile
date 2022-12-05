@@ -28,7 +28,7 @@ lint:
 	tox -e lint
 
 lint-roll:
-	isort trie tests
+	isort --multi-line=VERTICAL_HANGING_INDENT --fgw=1 --ca trie tests
 	black trie tests setup.py
 	$(MAKE) lint
 
