@@ -2,7 +2,7 @@ version: 2.0
 
 # heavily inspired by https://raw.githubusercontent.com/pinax/pinax-wiki/6bd2a99ab6f702e300d708532a6d1d9aa638b9f8/.circleci/config.yml
 
-common: &common
+core: &core
   working_directory: ~/repo
   steps:
     - checkout
@@ -38,64 +38,86 @@ common: &common
           - ./eggs
         key: cache-v1-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
 
+lint: &lint
+  working_directory: ~/repo
+  steps:
+    - checkout
+    - restore_cache:
+        keys:
+          - cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
+    - run:
+        name: install dependencies
+        command: pip install --user tox
+    - run:
+        name: run tox
+        command: python -m tox -r
+    - save_cache:
+        paths:
+          - .hypothesis
+          - .tox
+          - ~/.cache/pip
+          - ~/.local
+          - ./eggs
+        key: cache-v1-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
+
 jobs:
   py37-lint:
-    <<: *common
+    <<: *lint
     docker:
       - image: cimg/python:3.7
         environment:
           TOXENV: lint
   py38-lint:
-    <<: *common
+    <<: *lint
     docker:
       - image: cimg/python:3.8
         environment:
           TOXENV: lint
   py39-lint:
-    <<: *common
+    <<: *lint
     docker:
       - image: cimg/python:3.9
         environment:
           TOXENV: lint
   py310-lint:
-    <<: *common
+    <<: *lint
     docker:
       - image: cimg/python:3.10
         environment:
           TOXENV: lint
   py311-lint:
-    <<: *common
+    <<: *lint
     docker:
       - image: cimg/python:3.11
         environment:
           TOXENV: lint
 
   py37-core:
-    <<: *common
+    <<: *core
     docker:
       - image: cimg/python:3.7
         environment:
           TOXENV: py37-core
   py38-core:
-    <<: *common
+    <<: *core
     docker:
       - image: cimg/python:3.8
         environment:
           TOXENV: py38-core
   py39-core:
-    <<: *common
+    <<: *core
     docker:
       - image: cimg/python:3.9
         environment:
           TOXENV: py39-core
   py310-core:
-    <<: *common
+    <<: *core
     docker:
       - image: cimg/python:3.10
         environment:
           TOXENV: py310-core
   py311-core:
-    <<: *common
+    <<: *core
     docker:
       - image: cimg/python:3.11
         environment:
