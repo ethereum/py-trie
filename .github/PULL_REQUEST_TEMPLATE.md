@@ -11,8 +11,7 @@ Summary of approach.
 [//]: # (Stay ahead of things, add list items here!)
 - [ ] Clean up commit history
 
-[//]: # (See: https://<RTD_NAME>.readthedocs.io/en/latest/contributing.html#pull-requests)
-- [ ] Add entry to the [release notes](https://github.com/ethereum/<REPO_NAME>/blob/master/newsfragments/README.md)
+- [ ] Add description of changes to CHANGELOG
 
 #### Cute Animal Picture
 
