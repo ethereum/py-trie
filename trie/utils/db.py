@@ -1,6 +1,8 @@
 import contextlib
 
-from eth_utils import to_dict
+from eth_utils import (
+    to_dict,
+)
 from eth_utils.toolz import (
     merge,
     valfilter,
@@ -20,6 +22,7 @@ class ScratchDB:
     the underlying database. It optionally pushes deletes to the underlying databes.
     If any exception occurrs before committing phase, no changes are applied.
     """
+
     def __init__(self, wrapped_db):
         self.wrapped_db = wrapped_db
         self.cache = {}
@@ -57,9 +60,9 @@ class ScratchDB:
 
     @contextlib.contextmanager
     def batch_commit(self, *, do_deletes=False):
-        '''
+        """
         Batch and commit and end of context
-        '''
+        """
         try:
             yield
         except Exception as exc:

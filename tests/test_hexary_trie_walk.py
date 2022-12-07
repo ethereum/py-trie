@@ -7,16 +7,27 @@ from hypothesis import (
 import pytest
 
 from trie.exceptions import (
-    TraversedPartialPath,
     MissingTraversalNode,
     MissingTrieNode,
     PerfectVisibility,
+    TraversedPartialPath,
 )
-from trie.fog import HexaryTrieFog, TrieFrontierCache
-from trie.iter import NodeIterator
-from trie.tools.builder import trie_from_keys
-from trie.tools.strategies import trie_keys_with_extensions
-from trie.typing import Nibbles
+from trie.fog import (
+    HexaryTrieFog,
+    TrieFrontierCache,
+)
+from trie.iter import (
+    NodeIterator,
+)
+from trie.tools.builder import (
+    trie_from_keys,
+)
+from trie.tools.strategies import (
+    trie_keys_with_extensions,
+)
+from trie.typing import (
+    Nibbles,
+)
 
 
 @given(
@@ -25,7 +36,7 @@ from trie.typing import Nibbles
     # minimum value length (to help force trie nodes to stop embedding)
     st.integers(min_value=1, max_value=32),
     st.lists(
-        st.integers(min_value=0, max_value=0xf),
+        st.integers(min_value=0, max_value=0xF),
         max_size=4 * 2,  # one byte (two nibbles) deeper than the longest key above
     ),
 )
@@ -45,7 +56,8 @@ def test_trie_walk_backfilling(trie_keys, minimum_value_length, index_nibbles):
     dropped_nodes = dict(node_db)
     node_db.clear()
 
-    # Core of the test: use the fog to convince yourself that you've traversed the entire trie
+    # Core of the test: use the fog to convince yourself that you've
+    # traversed the entire trie
     fog = HexaryTrieFog()
     for _ in range(100000):
         # Look up the next prefix to explore
@@ -55,7 +67,8 @@ def test_trie_walk_backfilling(trie_keys, minimum_value_length, index_nibbles):
             # Test Complete!
             break
 
-        # Try to navigate to the prefix, catching any errors about nodes missing from the DB
+        # Try to navigate to the prefix, catching any errors about
+        # nodes missing from the DB
         try:
             node = trie.traverse(nearest_key)
         except MissingTraversalNode as exc:
@@ -63,7 +76,8 @@ def test_trie_walk_backfilling(trie_keys, minimum_value_length, index_nibbles):
             node_db[exc.missing_node_hash] = dropped_nodes.pop(exc.missing_node_hash)
             continue
         else:
-            # Node was found, use the found node to "lift the fog" down to its longer prefixes
+            # Node was found, use the found node to "lift the fog" down
+            # to its longer prefixes
             fog = fog.explore(nearest_key, node.sub_segments)
     else:
         assert False, "Must finish iterating the trie within ~100k runs"
@@ -85,12 +99,14 @@ def test_trie_walk_backfilling(trie_keys, minimum_value_length, index_nibbles):
     # minimum value length (to help force trie nodes to stop embedding)
     st.integers(min_value=1, max_value=32),
     st.lists(
-        st.integers(min_value=0, max_value=0xf),
+        st.integers(min_value=0, max_value=0xF),
         max_size=4 * 2,  # one byte (two nibbles) deeper than the longest key above
     ),
 )
 @settings(max_examples=200)
-def test_trie_walk_backfilling_with_traverse_from(trie_keys, minimum_value_length, index_nibbles):
+def test_trie_walk_backfilling_with_traverse_from(
+    trie_keys, minimum_value_length, index_nibbles
+):
     """
     Like test_trie_walk_backfilling but using the HexaryTrie.traverse_from API
     """
@@ -108,7 +124,8 @@ def test_trie_walk_backfilling_with_traverse_from(trie_keys, minimum_value_lengt
         node_db[exc.missing_node_hash] = dropped_nodes.pop(exc.missing_node_hash)
         root = trie.root_node
 
-    # Core of the test: use the fog to convince yourself that you've traversed the entire trie
+    # Core of the test: use the fog to convince yourself that you've
+    # traversed the entire trie
     fog = HexaryTrieFog()
     for _ in range(100000):
         # Look up the next prefix to explore
@@ -118,7 +135,8 @@ def test_trie_walk_backfilling_with_traverse_from(trie_keys, minimum_value_lengt
             # Test Complete!
             break
 
-        # Try to navigate to the prefix, catching any errors about nodes missing from the DB
+        # Try to navigate to the prefix, catching any errors about nodes
+        # missing from the DB
         try:
             node = trie.traverse_from(root, nearest_key)
         except MissingTraversalNode as exc:
@@ -126,7 +144,8 @@ def test_trie_walk_backfilling_with_traverse_from(trie_keys, minimum_value_lengt
             node_db[exc.missing_node_hash] = dropped_nodes.pop(exc.missing_node_hash)
             continue
         else:
-            # Node was found, use the found node to "lift the fog" down to its longer prefixes
+            # Node was found, use the found node to "lift the fog" down
+            # to its longer prefixes
             fog = fog.explore(nearest_key, node.sub_segments)
     else:
         assert False, "Must finish iterating the trie within ~100k runs"
@@ -171,19 +190,19 @@ def test_trie_walk_backfilling_with_traverse_from(trie_keys, minimum_value_lengt
     ),
     # where to look for missing nodes in the first trie walk
     st.lists(
-        st.integers(min_value=0, max_value=0xf),
+        st.integers(min_value=0, max_value=0xF),
         max_size=4 * 2,  # one byte (two nibbles) deeper than the longest key above
     ),
     # where to look for missing nodes in the second trie walk
     st.lists(
-        st.integers(min_value=0, max_value=0xf),
+        st.integers(min_value=0, max_value=0xF),
         max_size=4 * 2,  # one byte (two nibbles) deeper than the longest key above
     ),
 )
 @example(
     # Catch bug where TraversedPartialPath is raised when traversing into a leaf,
-    #   even though the leaf suffix doesn't match the prefix that was being traversed to.
-    trie_keys=[b'\x00\x00\x00', b'\x10\x00\x00'],
+    # even though the leaf suffix doesn't match the prefix that was being traversed to.
+    trie_keys=[b"\x00\x00\x00", b"\x10\x00\x00"],
     minimum_value_length=26,
     number_explorations=86,
     trie_changes=[(1, None)],
@@ -191,12 +210,13 @@ def test_trie_walk_backfilling_with_traverse_from(trie_keys, minimum_value_lengt
     index_nibbles2=[],
 )
 @example(
-    # This is the example that inspired test_squash_a_pruning_trie_keeps_unchanged_short_root_node
+    # This is the example that inspired
+    # test_squash_a_pruning_trie_keeps_unchanged_short_root_node
     # Leave it in as a backup regression test, and to test in a broader context.
-    trie_keys=[b'\x00\x00\x01'],
+    trie_keys=[b"\x00\x00\x01"],
     minimum_value_length=0,
     number_explorations=0,
-    trie_changes=[b'\x00\x00\x01'],
+    trie_changes=[b"\x00\x00\x01"],
     index_nibbles=[],
     index_nibbles2=[],
 )
@@ -206,7 +226,7 @@ def test_trie_walk_backfilling_with_traverse_from(trie_keys, minimum_value_lengt
     #   - *after* pruning, a MissingTrieNode is raised during a normalize step
     #   - this exception ought to revert the delete, but it's too late
     #   - a subsequent attempt to delete the key fails because the leaf node is missing
-    trie_keys=[b'\x00\x01\x00', b'\x00\x01\x01', b'\x00\x00\x00'],
+    trie_keys=[b"\x00\x01\x00", b"\x00\x01\x01", b"\x00\x00\x00"],
     minimum_value_length=27,
     number_explorations=0,
     trie_changes=[(1, None), (3, None)],
@@ -215,8 +235,8 @@ def test_trie_walk_backfilling_with_traverse_from(trie_keys, minimum_value_lengt
 )
 @example(
     # Catch bug where TraversedPartialPath is raised when traversing into a leaf,
-    #   even though the leaf suffix doesn't match the prefix that was being traversed to.
-    trie_keys=[b'\x00\x00\x00', b'\x10\x00\x00'],
+    # even though the leaf suffix doesn't match the prefix that was being traversed to.
+    trie_keys=[b"\x00\x00\x00", b"\x10\x00\x00"],
     minimum_value_length=26,
     number_explorations=86,
     trie_changes=[(1, None)],
@@ -226,7 +246,7 @@ def test_trie_walk_backfilling_with_traverse_from(trie_keys, minimum_value_lengt
 @example(
     # Test that covers a TraversedPartialPath exception, to make sure the sub_segments
     #   are correctly generated on the simulated node of the exception
-    trie_keys=[b'\x01\x00\x00', b'\x01\x01\x00', b'\x00\x00'],
+    trie_keys=[b"\x01\x00\x00", b"\x01\x01\x00", b"\x00\x00"],
     minimum_value_length=3,
     number_explorations=2,
     trie_changes=[(2, None)],
@@ -235,12 +255,12 @@ def test_trie_walk_backfilling_with_traverse_from(trie_keys, minimum_value_lengt
 )
 @settings(max_examples=500)
 def test_trie_walk_root_change_with_traverse(
-        trie_keys,
-        minimum_value_length,
-        number_explorations,
-        trie_changes,
-        index_nibbles,
-        index_nibbles2,
+    trie_keys,
+    minimum_value_length,
+    number_explorations,
+    trie_changes,
+    index_nibbles,
+    index_nibbles2,
 ):
     """
     Like test_trie_walk_backfilling, but:
@@ -267,19 +287,23 @@ def test_trie_walk_root_change_with_traverse(
         try:
             nearest_key = fog.nearest_unknown(index_key)
         except PerfectVisibility:
-            assert False, "Number explorations should be lower than database size, shouldn't finish"
+            assert (
+                False
+            ), "Number explorations should be lower than database size, shouldn't finish"  # noqa: E501
 
-        # Try to navigate to the prefix, catching any errors about nodes missing from the DB
+        # Try to navigate to the prefix, catching any errors about
+        # nodes missing from the DB
         try:
             node = trie.traverse(nearest_key)
-            # Note that a TraversedPartialPath should not happen here, because no trie changes
-            #   have happened, so we should have a perfect picture of the trie
+            # Note that a TraversedPartialPath should not happen here, because no trie
+            # changes have happened, so we should have a perfect picture of the trie
         except MissingTraversalNode as exc:
             # Node was missing, so fill in the node and try again
             node_db[exc.missing_node_hash] = missing_nodes.pop(exc.missing_node_hash)
             continue
         else:
-            # Node was found, use the found node to "lift the fog" down to its longer prefixes
+            # Node was found, use the found node to "lift the fog"
+            # down to its longer prefixes
             fog = fog.explore(nearest_key, node.sub_segments)
 
     # Modify Trie mid-walk, keeping track of the expected list of final keys
@@ -303,11 +327,14 @@ def test_trie_walk_root_change_with_traverse(
                             del trie_batch[key]
                             expected_final_keys.discard(key)
                         else:
-                            # update (though may be an insert, if there was a previous delete)
+                            # update (though may be an insert,
+                            # if there was a previous delete)
                             trie_batch[key] = new_value
                             expected_final_keys.add(key)
                 except MissingTrieNode as exc:
-                    node_db[exc.missing_node_hash] = missing_nodes.pop(exc.missing_node_hash)
+                    node_db[exc.missing_node_hash] = missing_nodes.pop(
+                        exc.missing_node_hash
+                    )
                 else:
                     change_complete = True
 
@@ -328,18 +355,21 @@ def test_trie_walk_root_change_with_traverse(
             node_db[exc.missing_node_hash] = missing_nodes.pop(exc.missing_node_hash)
             continue
         except TraversedPartialPath as exc:
-            # You might only get part-way down a path of nibbles if your fog is based on an old trie
-            # Determine the new sub-segments that are accessible from this partial traversal
+            # You might only get part-way down a path of nibbles if your
+            # fog is based on an old trie. Determine the new sub-segments
+            # that are accessible from this partial traversal
             sub_segments = exc.simulated_node.sub_segments
 
-        # explore the fog if there were no exceptions, or if you traversed a partial path
+        # explore the fog if there were no exceptions,
+        # or if you traversed a partial path
         fog = fog.explore(nearest_key, sub_segments)
     else:
         assert False, "Must finish iterating the trie within ~100k runs"
 
     # Final assertions
     assert fog.is_complete
-    # We do *not* know that we have replaced all the missing_nodes, because of the trie changes
+    # We do *not* know that we have replaced all the missing_nodes,
+    # because of the trie changes
 
     # Make sure we can walk the whole trie without any missing nodes
     iterator = NodeIterator(trie)
@@ -376,19 +406,19 @@ def test_trie_walk_root_change_with_traverse(
     ),
     # where to look for missing nodes in the first trie walk
     st.lists(
-        st.integers(min_value=0, max_value=0xf),
+        st.integers(min_value=0, max_value=0xF),
         max_size=4 * 2,  # one byte (two nibbles) deeper than the longest key above
     ),
     # where to look for missing nodes in the second trie walk
     st.lists(
-        st.integers(min_value=0, max_value=0xf),
+        st.integers(min_value=0, max_value=0xF),
         max_size=4 * 2,  # one byte (two nibbles) deeper than the longest key above
     ),
 )
 @example(
-    # Test that covers a TraversedPartialPath exception, and make sure that the sub_segments
-    #   and cached node are generated properly.
-    trie_keys=[b'\x01\x00\x00', b'\x01\x01\x00', b'\x00\x00'],
+    # Test that covers a TraversedPartialPath exception, and make sure that the
+    # sub_segments and cached node are generated properly.
+    trie_keys=[b"\x01\x00\x00", b"\x01\x01\x00", b"\x00\x00"],
     minimum_value_length=3,
     number_explorations=2,
     trie_changes=[(2, None)],
@@ -396,15 +426,15 @@ def test_trie_walk_root_change_with_traverse(
     index_nibbles2=[],
 )
 @settings(max_examples=500)
-@pytest.mark.parametrize('do_cache_reset', (True, False))
+@pytest.mark.parametrize("do_cache_reset", (True, False))
 def test_trie_walk_root_change_with_cached_traverse_from(
-        do_cache_reset,
-        trie_keys,
-        minimum_value_length,
-        number_explorations,
-        trie_changes,
-        index_nibbles,
-        index_nibbles2,
+    do_cache_reset,
+    trie_keys,
+    minimum_value_length,
+    number_explorations,
+    trie_changes,
+    index_nibbles,
+    index_nibbles2,
 ):
     """
     Like test_trie_walk_root_change_with_traverse but using HexaryTrie.traverse_from
@@ -427,22 +457,25 @@ def test_trie_walk_root_change_with_cached_traverse_from(
         try:
             nearest_prefix = fog.nearest_unknown(index_key)
         except PerfectVisibility:
-            assert False, "Number explorations should be lower than database size, shouldn't finish"
+            assert (
+                False
+            ), "Number explorations should be lower than database size, shouldn't finish"  # noqa: E501
 
         try:
             # Use the cache, if possible, to look up the parent node of nearest_prefix
             try:
                 cached_node, uncached_key = cache.get(nearest_prefix)
             except KeyError:
-                # Must navigate from the root. In this 1st walk, only the root should not be cached
+                # Must navigate from the root. In this 1st walk,
+                # only the root should not be cached
                 assert nearest_prefix == ()
                 node = trie.traverse(nearest_prefix)
             else:
                 # Only one database lookup required
                 node = trie.traverse_from(cached_node, uncached_key)
 
-            # Note that a TraversedPartialPath should not happen here, because no trie changes
-            #   have happened, so we should have a perfect picture of the trie
+            # Note that a TraversedPartialPath should not happen here, because no trie
+            # changes have happened, so we should have a perfect picture of the trie
         except MissingTraversalNode as exc:
             # Each missing node should only need to be retrieve (at most) once
             node_db[exc.missing_node_hash] = missing_nodes.pop(exc.missing_node_hash)
@@ -467,7 +500,7 @@ def test_trie_walk_root_change_with_cached_traverse_from(
                 try:
                     if isinstance(change, bytes):
                         # insert!
-                        trie_batch[change] = change.rjust(minimum_value_length, b'3')
+                        trie_batch[change] = change.rjust(minimum_value_length, b"3")
                         expected_final_keys.add(change)
                     else:
                         key_index, new_value = change
@@ -476,11 +509,14 @@ def test_trie_walk_root_change_with_cached_traverse_from(
                             del trie_batch[key]
                             expected_final_keys.discard(key)
                         else:
-                            # update (though may be an insert, if there was a previous delete)
+                            # update (though may be an insert,
+                            # if there was a previous delete)
                             trie_batch[key] = new_value
                             expected_final_keys.add(key)
                 except MissingTrieNode as exc:
-                    node_db[exc.missing_node_hash] = missing_nodes.pop(exc.missing_node_hash)
+                    node_db[exc.missing_node_hash] = missing_nodes.pop(
+                        exc.missing_node_hash
+                    )
                 else:
                     change_complete = True
 
@@ -531,7 +567,8 @@ def test_trie_walk_root_change_with_cached_traverse_from(
 
     # Final assertions
     assert fog.is_complete
-    # We do *not* know that we have replaced all the missing_nodes, because of the trie changes
+    # We do *not* know that we have replaced all the missing_nodes,
+    # because of the trie changes
 
     # Make sure we can walk the whole trie without any missing nodes
     iterator = NodeIterator(trie)

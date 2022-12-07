@@ -1,25 +1,21 @@
 import rlp
 
 from trie.constants import (
-    NODE_TYPE_BLANK,
-    NODE_TYPE_LEAF,
-    NODE_TYPE_EXTENSION,
-    NODE_TYPE_BRANCH,
     BLANK_NODE,
-    KV_TYPE,
     BRANCH_TYPE,
-    LEAF_TYPE,
-    KV_TYPE_PREFIX,
     BRANCH_TYPE_PREFIX,
+    KV_TYPE,
+    KV_TYPE_PREFIX,
+    LEAF_TYPE,
     LEAF_TYPE_PREFIX,
+    NODE_TYPE_BLANK,
+    NODE_TYPE_BRANCH,
+    NODE_TYPE_EXTENSION,
+    NODE_TYPE_LEAF,
 )
 from trie.exceptions import (
     InvalidNode,
     ValidationError,
-)
-from trie.utils.binaries import (
-    encode_from_bin_keypath,
-    decode_to_bin_keypath,
 )
 from trie.typing import (
     HexaryTrieNode,
@@ -27,15 +23,20 @@ from trie.typing import (
     NodeType,
     RawHexaryNode,
 )
-from trie.validation import (
-    validate_length,
-    validate_is_bytes,
+from trie.utils.binaries import (
+    decode_to_bin_keypath,
+    encode_from_bin_keypath,
 )
+from trie.validation import (
+    validate_is_bytes,
+    validate_length,
+)
+
 from .nibbles import (
+    add_nibbles_terminator,
     decode_nibbles,
     encode_nibbles,
     is_nibbles_terminated,
-    add_nibbles_terminator,
     remove_nibbles_terminator,
 )
 
@@ -130,11 +131,13 @@ def parse_node(node):
     """
     Input: a serialized node
     """
-    if node is None or node == b'':
+    if node is None or node == b"":
         raise InvalidNode("Blank node is not a valid node type in Binary Trie")
     elif node[0] == BRANCH_TYPE:
         if len(node) != 65:
-            raise InvalidNode("Invalid branch node, both child node should be 32 bytes long each")
+            raise InvalidNode(
+                "Invalid branch node, both child node should be 32 bytes long each"
+            )
         # Output: node type, left child, right child
         return BRANCH_TYPE, node[1:33], node[33:]
     elif node[0] == KV_TYPE:
@@ -155,7 +158,7 @@ def encode_kv_node(keypath, child_node_hash):
     """
     Serializes a key/value node
     """
-    if keypath is None or keypath == b'':
+    if keypath is None or keypath == b"":
         raise ValidationError("Key path can not be empty")
     validate_is_bytes(keypath)
     validate_is_bytes(child_node_hash)
@@ -179,7 +182,7 @@ def encode_leaf_node(value):
     Serializes a leaf node
     """
     validate_is_bytes(value)
-    if value is None or value == b'':
+    if value is None or value == b"":
         raise ValidationError("Value of leaf node can not be empty")
     return LEAF_TYPE_PREFIX + value
 
@@ -199,8 +202,7 @@ def annotate_node(node_body: RawHexaryNode) -> HexaryTrieNode:
         )
     elif node_type == NODE_TYPE_BRANCH:
         sub_segments = tuple(
-           Nibbles((nibble,))
-           for nibble in range(16) if bool(node_body[nibble])
+            Nibbles((nibble,)) for nibble in range(16) if bool(node_body[nibble])
         )
         return HexaryTrieNode(
             sub_segments=sub_segments,
@@ -212,8 +214,8 @@ def annotate_node(node_body: RawHexaryNode) -> HexaryTrieNode:
     elif node_type == NODE_TYPE_EXTENSION:
         key_extension = extract_key(node_body)
         return HexaryTrieNode(
-            sub_segments=(Nibbles(key_extension), ),
-            value=b'',
+            sub_segments=(Nibbles(key_extension),),
+            value=b"",
             suffix=Nibbles(()),
             raw=node_body,
             node_type=NodeType(node_type),
@@ -222,7 +224,7 @@ def annotate_node(node_body: RawHexaryNode) -> HexaryTrieNode:
         # empty trie
         return HexaryTrieNode(
             sub_segments=(),
-            value=b'',
+            value=b"",
             suffix=Nibbles(()),
             raw=node_body,
             node_type=NodeType(node_type),

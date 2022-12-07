@@ -1,13 +1,13 @@
 from hypothesis import (
-        given,
-        strategies as st,
-    )
+    given,
+    strategies as st,
+)
 
 from trie.smt import (
-    SparseMerkleTree,
-    SparseMerkleProof,
-    calc_root,
     BLANK_NODE,
+    SparseMerkleProof,
+    SparseMerkleTree,
+    calc_root,
 )
 
 
@@ -37,12 +37,14 @@ def test_simple_kv(k, v):
 @given(
     key_size=st.shared(st.integers(min_value=1, max_value=32), key="key_size"),
     # Do this so that the size of the keys (in bytes) matches the key_size for the test
-    keys=st.shared(st.integers(), key="key_size").flatmap(lambda key_size: st.lists(
-        elements=st.binary(min_size=key_size, max_size=key_size),
-        min_size=3,
-        max_size=3,
-        unique=True,
-    )),
+    keys=st.shared(st.integers(), key="key_size").flatmap(
+        lambda key_size: st.lists(
+            elements=st.binary(min_size=key_size, max_size=key_size),
+            min_size=3,
+            max_size=3,
+            unique=True,
+        )
+    ),
     vals=st.lists(
         elements=st.binary(min_size=1, max_size=32),
         min_size=3,
@@ -59,7 +61,9 @@ def test_branch_updates(key_size, keys, vals):
     EMPTY_NODE_HASHES = list(smt._get(keys[0])[1])
 
     # Objects to track proof data
-    proofs = dict([(k, SparseMerkleProof(k, BLANK_NODE, EMPTY_NODE_HASHES)) for k in keys])
+    proofs = dict(
+        [(k, SparseMerkleProof(k, BLANK_NODE, EMPTY_NODE_HASHES)) for k in keys]
+    )
 
     # Track the big list of all updates
     proof_updates = []

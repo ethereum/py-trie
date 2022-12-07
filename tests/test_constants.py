@@ -1,23 +1,25 @@
 import collections
 
 from eth_utils import (
-        keccak,
-    )
-
-from rlp.codec import encode_raw
+    keccak,
+)
+from rlp.codec import (
+    encode_raw,
+)
 
 from trie.constants import (
-        BLANK_NODE,
-        BLANK_HASH,
-        BLANK_NODE_HASH,
-    )
-
-from trie.smt import SparseMerkleTree as SMT
+    BLANK_HASH,
+    BLANK_NODE,
+    BLANK_NODE_HASH,
+)
+from trie.smt import (
+    SparseMerkleTree as SMT,
+)
 
 
 def test_hash_constants():
     assert BLANK_HASH == keccak(BLANK_NODE)
-    assert BLANK_NODE_HASH == keccak(encode_raw(b''))
+    assert BLANK_NODE_HASH == keccak(encode_raw(b""))
 
 
 def test_smt256_empty_hashes():
@@ -30,7 +32,9 @@ def test_smt256_empty_hashes():
     # More hashes the lower you go down the tree (to the root)
     # NOTE: Did this with different code as a sanity check
     for _ in range(DEPTH - 1):
-        EMPTY_NODE_HASHES.appendleft(keccak(EMPTY_NODE_HASHES[0] + EMPTY_NODE_HASHES[0]))
+        EMPTY_NODE_HASHES.appendleft(
+            keccak(EMPTY_NODE_HASHES[0] + EMPTY_NODE_HASHES[0])
+        )
     EMPTY_ROOT_HASH = keccak(EMPTY_NODE_HASHES[0] + EMPTY_NODE_HASHES[0])
 
     smt = SMT()

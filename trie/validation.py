@@ -1,7 +1,7 @@
 from trie.constants import (
-    BLANK_NODE,
+    BINARY_TRIE_NODE_TYPES,
     BLANK_HASH,
-    BINARY_TRIE_NODE_TYPES
+    BLANK_NODE,
 )
 from trie.exceptions import (
     ValidationError,
@@ -10,12 +10,16 @@ from trie.exceptions import (
 
 def validate_is_bytes(value):
     if not isinstance(value, bytes):
-        raise ValidationError("Value is not of type `bytes`: got '{0}'".format(type(value)))
+        raise ValidationError(
+            "Value is not of type `bytes`: got '{0}'".format(type(value))
+        )
 
 
 def validate_length(value, length):
     if len(value) != length:
-        raise ValidationError("Value is of length {0}.  Must be {1}".format(len(value), length))
+        raise ValidationError(
+            "Value is of length {0}.  Must be {1}".format(len(value), length)
+        )
 
 
 def validate_is_node(node):

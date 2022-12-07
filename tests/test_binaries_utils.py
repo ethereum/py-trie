@@ -2,11 +2,12 @@ from hypothesis import (
     given,
     strategies as st,
 )
+
 from trie.utils.binaries import (
-    encode_to_bin,
     decode_from_bin,
-    encode_from_bin_keypath,
     decode_to_bin_keypath,
+    encode_from_bin_keypath,
+    encode_to_bin,
 )
 
 

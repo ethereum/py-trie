@@ -4,16 +4,19 @@ from setuptools import setup, find_packages
 
 
 extras_require = {
-    'test': [
-        "pytest-xdist>=1.31.0,<2",
-        "tox>=2.6.0,<3",
+    "test": [
         "hypothesis>=6.56.4,<7",
         "pycryptodome",
+        "pytest-xdist>=2.4.0,<3",
+        "tox==3.14.6",
+        "pytest>=6.2.5",
     ],
-    'lint': [
+    "lint": [
+        "black>=22",
         "flake8==5.0.4",
+        "isort>=5.10.1",
     ],
-    'dev': [
+    "dev": [
         "bumpversion>=0.5.3,<1",
         "wheel",
         "twine",
@@ -21,30 +24,27 @@ extras_require = {
     ],
 }
 
-extras_require['dev'] = (
-    extras_require['dev'] +
-    extras_require['test'] +
-    extras_require['lint']
+extras_require["dev"] = (
+    extras_require["dev"] + extras_require["test"] + extras_require["lint"]
 )
 
-with open('README.md') as readme_file:
+with open("README.md") as readme_file:
     long_description = readme_file.read()
 
 setup(
-    name='trie',
+    name="trie",
     # *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
-    version='2.0.2',
+    version="2.0.2",
     description="""Python implementation of the Ethereum Trie structure""",
-    long_description_markdown_filename='README.md',
+    long_description_markdown_filename="README.md",
     long_description=long_description,
-    long_description_content_type='text/markdown',
-    author='The Ethereum Foundation',
-    author_email='snakecharmers@ethereum.org',
-    url='https://github.com/ethereum/py-trie',
+    long_description_content_type="text/markdown",
+    author="The Ethereum Foundation",
+    author_email="snakecharmers@ethereum.org",
+    url="https://github.com/ethereum/py-trie",
     include_package_data=True,
-    py_modules=['trie'],
-    python_requires='>=3.6,<4',
-
+    py_modules=["trie"],
+    python_requires=">=3.7,<4",
     install_requires=[
         "eth-hash>=0.1.0,<1.0.0",
         "eth-utils>=2.0.0,<3.0.0",
@@ -56,20 +56,21 @@ setup(
     extras_require=extras_require,
     license="MIT",
     zip_safe=False,
-    keywords='ethereum blockchain evm trie merkle',
+    keywords="ethereum blockchain evm trie merkle",
     packages=find_packages(exclude=["tests", "tests.*"]),
     classifiers=[
-        'Development Status :: 5 - Production/Stable',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
-        'Natural Language :: English',
+        "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: MIT License",
+        "Natural Language :: English",
         "Operating System :: OS Independent",
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
-        'Topic :: Software Development',
-        'Topic :: Utilities',
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Topic :: Software Development",
+        "Topic :: Utilities",
     ],
 )

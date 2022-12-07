@@ -1,4 +1,6 @@
-from collections import defaultdict
+from collections import (
+    defaultdict,
+)
 import contextlib
 import functools
 import itertools
@@ -9,24 +11,24 @@ from typing import (
     cast,
 )
 
-from rlp.codec import encode_raw
-
 from eth_hash.auto import (
     keccak,
 )
-
 from eth_utils import (
     to_list,
     to_tuple,
+)
+from rlp.codec import (
+    encode_raw,
 )
 
 from trie.constants import (
     BLANK_NODE,
     BLANK_NODE_HASH,
     NODE_TYPE_BLANK,
-    NODE_TYPE_LEAF,
-    NODE_TYPE_EXTENSION,
     NODE_TYPE_BRANCH,
+    NODE_TYPE_EXTENSION,
+    NODE_TYPE_LEAF,
 )
 from trie.exceptions import (
     BadTrieProof,
@@ -36,9 +38,9 @@ from trie.exceptions import (
     ValidationError,
 )
 from trie.typing import (
+    HexaryTrieNode,
     Nibbles,
     NibblesInput,
-    HexaryTrieNode,
     RawHexaryNode,
 )
 from trie.utils.db import (
@@ -51,23 +53,23 @@ from trie.utils.nibbles import (
 )
 from trie.utils.nodes import (
     annotate_node,
-    decode_node,
-    get_node_type,
-    extract_key,
-    compute_leaf_key,
     compute_extension_key,
+    compute_leaf_key,
+    consume_common_prefix,
+    decode_node,
+    extract_key,
+    get_node_type,
     is_blank_node,
     is_extension_node,
     is_leaf_node,
-    consume_common_prefix,
     key_starts_with,
 )
 from trie.validation import (
-    validate_is_node,
     validate_is_bytes,
+    validate_is_node,
 )
 
-WrappedFunc = TypeVar('WrappedFunc', bound=Callable[..., None])
+WrappedFunc = TypeVar("WrappedFunc", bound=Callable[..., None])
 
 
 class _PartialTraversal(Exception):
@@ -76,6 +78,7 @@ class _PartialTraversal(Exception):
 
     An internal exception that should never escape the Trie.
     """
+
     pass
 
 
@@ -84,11 +87,12 @@ def prune_pending(fn: WrappedFunc) -> WrappedFunc:
     def wrapped(trie_self, *args) -> None:
         with trie_self._prune_on_success():
             fn(trie_self, *args)
+
     return cast(WrappedFunc, wrapped)
 
 
 class HexaryTrie:
-    __slots__ = ('db', 'root_hash', 'is_pruning', '_ref_count', '_pending_prune_keys')
+    __slots__ = ("db", "root_hash", "is_pruning", "_ref_count", "_pending_prune_keys")
 
     # Shortcuts
     BLANK_NODE_HASH = BLANK_NODE_HASH
@@ -121,7 +125,9 @@ class HexaryTrie:
             if prune:
                 self._ref_count = ref_count
             else:
-                raise ValueError("Cannot pass an existing reference count in to a non-pruning trie")
+                raise ValueError(
+                    "Cannot pass an existing reference count in to a non-pruning trie"
+                )
         self._pending_prune_keys = None
 
     def get(self, key):
@@ -155,20 +161,24 @@ class HexaryTrie:
                 return BLANK_NODE
         elif node_type == NODE_TYPE_EXTENSION:
             if len(remaining_key) > 0:
-                # Any remaining key should have traversed down into the extension's child.
-                #   (or returned a blank node if the key didn't match the extension)
+                # Any remaining key should have traversed down into the extension's
+                # child. (or returned a blank node if the key didn't
+                # match the extension)
                 raise ValidationError(
-                    "Traverse should never return an extension node with remaining key, "
+                    "Traverse should never return an extension node "
+                    "with remaining key, "
                     f"but returned node {node!r} with remaining key {remaining_key}."
                 )
             else:
                 return BLANK_NODE
         elif node_type == NODE_TYPE_BRANCH:
             if len(remaining_key) > 0:
-                # Any remaining key should have traversed down into the branch's child, even
-                #   if the branch had an empty child, which would then return a BLANK_NODE.
+                # Any remaining key should have traversed down into the branch's child,
+                # even if the branch had an empty child, which would then return
+                # a BLANK_NODE.
                 raise ValidationError(
-                    "Traverse should never return a non-empty branch node with remaining key, "
+                    "Traverse should never return a non-empty branch "
+                    "node with remaining key, "
                     f"but returned node {node!r} with remaining key {remaining_key}."
                 )
             else:
@@ -181,10 +191,12 @@ class HexaryTrie:
         Find the node at the path of nibbles provided. The most trivial example is
         to get the root node, using ``traverse(())``.
 
-        :param trie_key_input: the series of nibbles to traverse to arrive at the node of interest
+        :param trie_key_input: the series of nibbles to traverse
+            to arrive at the node of interest
         :return: annotated node at the given path
         :raises MissingTraversalNode: if a node body is missing from the database
-        :raises TraversedPartialPath: if trie key extends part-way down an extension or leaf node
+        :raises TraversedPartialPath: if trie key extends part-way down an
+            extension or leaf node
         """
         trie_key = Nibbles(trie_key_input)
 
@@ -193,7 +205,7 @@ class HexaryTrie:
         annotated_node = annotate_node(node)
 
         if remaining_key:
-            path_to_node = trie_key[:len(trie_key) - len(remaining_key)]
+            path_to_node = trie_key[: len(trie_key) - len(remaining_key)]
             raise TraversedPartialPath(path_to_node, annotated_node, remaining_key)
         else:
             return annotated_node
@@ -206,16 +218,21 @@ class HexaryTrie:
 
         return self._traverse_from(root_node, trie_key)
 
-    def traverse_from(self, parent_node: HexaryTrieNode, trie_key_input: Nibbles) -> HexaryTrieNode:
+    def traverse_from(
+        self, parent_node: HexaryTrieNode, trie_key_input: Nibbles
+    ) -> HexaryTrieNode:
         """
-        Find the node at the path of nibbles provided. You cannot navigate to the root node
-        this way (without already having the root node body, to supply as the argument).
+        Find the node at the path of nibbles provided. You cannot navigate to the root
+        node this way (without already having the root node body, to supply
+        as the argument).
 
         The trie does *not* re-verify the path/hashes from the node prefix to the node.
 
-        :param trie_key_input: the sub-key used to traverse from the given node to the returned node
+        :param trie_key_input: the sub-key used to traverse from the given node to the
+            returned node
         :raises MissingTraversalNode: if a node body is missing from the database
-        :raises TraversedPartialPath: if trie key extends part-way down an extension or leaf node
+        :raises TraversedPartialPath: if trie key extends part-way down an extension
+            or leaf node
         """
         trie_key = Nibbles(trie_key_input)
 
@@ -224,17 +241,19 @@ class HexaryTrie:
         annotated_node = annotate_node(node)
 
         if remaining_key:
-            path_to_node = trie_key[:len(trie_key) - len(remaining_key)]
+            path_to_node = trie_key[: len(trie_key) - len(remaining_key)]
             raise TraversedPartialPath(path_to_node, annotated_node, remaining_key)
         else:
             return annotated_node
 
-    def _traverse_from(self, node: RawHexaryNode, trie_key) -> Tuple[RawHexaryNode, Nibbles]:
+    def _traverse_from(
+        self, node: RawHexaryNode, trie_key
+    ) -> Tuple[RawHexaryNode, Nibbles]:
         """
         Traverse down the trie from the given node, using the trie_key to navigate.
 
-        At each node, consume a prefix from the key, and navigate to its child. Repeat with that
-        child node and so on, until:
+        At each node, consume a prefix from the key, and navigate to its child. Repeat
+        with that child node and so on, until:
         - there is no key remaining, or
         - the child node is a blank node, or
         - the child node is a leaf node
@@ -253,12 +272,14 @@ class HexaryTrie:
                 if key_starts_with(leaf_key, remaining_key):
                     return node, remaining_key
                 else:
-                    # The trie key and leaf node key branch away from each other, so there
-                    # is no node at the specified key.
-                    return BLANK_NODE, ()  # type: ignore # mypy thinks BLANK_NODE != b''
+                    # The trie key and leaf node key branch away from each other, so
+                    # there is no node at the specified key.
+                    return BLANK_NODE, ()  # type: ignore # mypy thinks BLANK_NODE != b'' # noqa: E501
             elif node_type == NODE_TYPE_EXTENSION:
                 try:
-                    next_node_pointer, remaining_key = self._traverse_extension(node, remaining_key)
+                    next_node_pointer, remaining_key = self._traverse_extension(
+                        node, remaining_key
+                    )
                 except _PartialTraversal:
                     # could only descend part-way into an extension node
                     return node, remaining_key
@@ -271,7 +292,7 @@ class HexaryTrie:
             try:
                 node = self.get_node(next_node_pointer)
             except KeyError as exc:
-                used_key = trie_key[:len(trie_key) - len(remaining_key)]
+                used_key = trie_key[: len(trie_key) - len(remaining_key)]
 
                 raise MissingTraversalNode(exc.args[0], used_key)
 
@@ -281,7 +302,11 @@ class HexaryTrie:
     def _traverse_extension(self, node, trie_key):
         current_key = extract_key(node)
 
-        common_prefix, current_key_remainder, trie_key_remainder = consume_common_prefix(
+        (
+            common_prefix,
+            current_key_remainder,
+            trie_key_remainder,
+        ) = consume_common_prefix(
             current_key,
             trie_key,
         )
@@ -290,7 +315,8 @@ class HexaryTrie:
             # The full extension node's key was consumed
             return node[1], trie_key_remainder
         elif len(trie_key_remainder) == 0:
-            # The trie key was consumed before reaching the end of the extension node's key
+            # The trie key was consumed before reaching the end of the
+            # extension node's key
             raise _PartialTraversal
         else:
             # The trie key and extension node key branch away from each other, so there
@@ -298,8 +324,11 @@ class HexaryTrie:
             return BLANK_NODE, ()
 
     def _raise_missing_node(self, exception, key):
-        # Indicate more information about which key was requested, which node was missing, etc
-        raise MissingTrieNode(exception.args[0], self.root_hash, key, prefix=None) from exception
+        # Indicate more information about which key was requested, which node was
+        # missing, etc
+        raise MissingTrieNode(
+            exception.args[0], self.root_hash, key, prefix=None
+        ) from exception
 
     @prune_pending
     def set(self, key, value):
@@ -311,7 +340,7 @@ class HexaryTrie:
         try:
             root_node = self.get_node(self.root_hash)
 
-            if value == b'':
+            if value == b"":
                 new_node = self._delete(root_node, trie_key)
             else:
                 new_node = self._set(root_node, trie_key, value)
@@ -393,7 +422,9 @@ class HexaryTrie:
             try:
                 return proven_snapshot.get(key)
             except MissingTrieNode as e:
-                raise BadTrieProof("Missing proof node with hash {}".format(e.missing_node_hash))
+                raise BadTrieProof(
+                    "Missing proof node with hash {}".format(e.missing_node_hash)
+                )
 
     def get_proof(self, key):
         validate_is_bytes(key)
@@ -404,7 +435,7 @@ class HexaryTrie:
         return self._get_proof(node, trie_key)
 
     def _get_proof(self, node, trie_key, proven_len=0, last_proof=tuple()):
-        updated_proof = last_proof + (node, )
+        updated_proof = last_proof + (node,)
         unproven_key = trie_key[proven_len:]
 
         node_type = get_node_type(node)
@@ -417,7 +448,9 @@ class HexaryTrie:
             if key_starts_with(unproven_key, current_key):
                 next_node = self.get_node(node[1])
                 new_proven_len = proven_len + len(current_key)
-                return self._get_proof(next_node, trie_key, new_proven_len, updated_proof)
+                return self._get_proof(
+                    next_node, trie_key, new_proven_len, updated_proof
+                )
             else:
                 return updated_proof
         elif node_type == NODE_TYPE_BRANCH:
@@ -451,7 +484,9 @@ class HexaryTrie:
             if self._pending_prune_keys is None:
                 self._pending_prune_keys = defaultdict(int)
             else:
-                raise ValidationError("Cannot set/delete simultaneously, run them in serial")
+                raise ValidationError(
+                    "Cannot set/delete simultaneously, run them in serial"
+                )
         try:
             yield
             if self.is_pruning:
@@ -474,14 +509,18 @@ class HexaryTrie:
             new_count = self._ref_count[key] - number_prunes
 
             if new_count <= 0:
-                # Ref count doesn't track keys that are already in the starting database,
-                #   so ref count can go negative. Then, detect if key is in underlying:
+                # Ref count doesn't track keys that are already in the starting,
+                # database so ref count can go negative.
+                # Then, detect if key is in underlying:
                 #   - If so, delete it and set the refcount down to 0
-                #   - If not, raise an exception about trying to prune a node that doesn't exist
+                #   - If not, raise an exception about trying to prune a node
+                #     that doesn't exist
                 try:
                     del self.db[key]
                 except KeyError as exc:
-                    raise ValidationError("Tried to prune key %r that doesn't exist" % key) from exc
+                    raise ValidationError(
+                        "Tried to prune key %r that doesn't exist" % key
+                    ) from exc
                 else:
                     new_count = 0
 
@@ -497,7 +536,7 @@ class HexaryTrie:
         keys_to_count = [self.root_hash]
         while keys_to_count:
             key = keys_to_count.pop()
-            if key == b'' or isinstance(key, list) or key == BLANK_NODE_HASH:
+            if key == b"" or isinstance(key, list) or key == BLANK_NODE_HASH:
                 continue
             new_ref_count[key] += 1
 
@@ -520,8 +559,8 @@ class HexaryTrie:
             return BLANK_NODE_HASH
 
         if value is None:
-            # Some nodes are so small that they are not encoded during _node_to_db_mapping,
-            # so we manually encode and hash it here:
+            # Some nodes are so small that they are not encoded during
+            # _node_to_db_mapping, so we manually encode and hash it here:
             encoded_node = encode_raw(key)
             node_hash = keccak(encoded_node)
         else:
@@ -540,8 +579,9 @@ class HexaryTrie:
         validate_is_node(root_node)
 
         if self.is_pruning:
-            # Root nodes are special: they are always hashed, which is a surprise to the rest of
-            #   the pruning logic. We have to catch if the root node is small and prune it here.
+            # Root nodes are special: they are always hashed, which is a surprise to
+            # the rest of the pruning logic. We have to catch if the root node is
+            # small and prune it here.
             old_root_hash = self.root_hash
             if old_root_hash != BLANK_NODE_HASH:
                 try:
@@ -574,10 +614,10 @@ class HexaryTrie:
 
     def _node_to_db_mapping(self, node):
         if self.is_pruning and isinstance(node, list):
-            # When self.is_pruning is True, we'll often prune nodes that have been inserted
-            # recently, so this hack allows us to use an LRU-cached implementation of
-            # _node_to_db_mapping(), which improves the performance of _prune_node()
-            # significantly.
+            # When self.is_pruning is True, we'll often prune nodes that have been
+            # inserted recently, so this hack allows us to use an LRU-cached
+            # implementation of _node_to_db_mapping(), which improves the performance of
+            # _prune_node() significantly.
             return self._cached_create_node_to_db_mapping(tuplify(node))
         else:
             return self._create_node_to_db_mapping(node)
@@ -620,10 +660,7 @@ class HexaryTrie:
             return [compute_leaf_key([]), node[-1]]
 
         sub_node_idx, sub_node_hash = next(
-            (idx, v)
-            for idx, v
-            in enumerate(node[:16])
-            if v
+            (idx, v) for idx, v in enumerate(node[:16]) if v
         )
         sub_node = self.get_node(sub_node_hash)
         sub_node_type = get_node_type(sub_node)
@@ -631,10 +668,14 @@ class HexaryTrie:
         if sub_node_type in {NODE_TYPE_LEAF, NODE_TYPE_EXTENSION}:
             self._prune_node(sub_node)
 
-            new_subnode_key = encode_nibbles(tuple(itertools.chain(
-                [sub_node_idx],
-                decode_nibbles(sub_node[0]),
-            )))
+            new_subnode_key = encode_nibbles(
+                tuple(
+                    itertools.chain(
+                        [sub_node_idx],
+                        decode_nibbles(sub_node[0]),
+                    )
+                )
+            )
             return [new_subnode_key, sub_node[1]]
         elif sub_node_type == NODE_TYPE_BRANCH:
             return [encode_nibbles([sub_node_idx]), sub_node_hash]
@@ -658,7 +699,7 @@ class HexaryTrie:
         encoded_sub_node = self._persist_node(sub_node)
 
         if encoded_sub_node == node[trie_key[0]]:
-            # If no change, (value already empty), short-circuit and skip any other work.
+            # If no change, (value already empty), short-circuit and skip any other work
             return node
 
         node[trie_key[0]] = encoded_sub_node
@@ -682,7 +723,7 @@ class HexaryTrie:
             else:
                 return node
 
-        sub_node_key = trie_key[len(current_key):]
+        sub_node_key = trie_key[len(current_key) :]
         sub_node = self.get_node(node[1])
 
         new_sub_node = self._delete(sub_node, sub_node_key)
@@ -718,7 +759,11 @@ class HexaryTrie:
 
     def _set_kv_node(self, node, trie_key, value):
         current_key = extract_key(node)
-        common_prefix, current_key_remainder, trie_key_remainder = consume_common_prefix(
+        (
+            common_prefix,
+            current_key_remainder,
+            trie_key_remainder,
+        ) = consume_common_prefix(
             current_key,
             trie_key,
         )
@@ -752,16 +797,20 @@ class HexaryTrie:
                 else:
                     compute_key_fn = compute_leaf_key
 
-                new_node[current_key_remainder[0]] = self._persist_node([
-                    compute_key_fn(current_key_remainder[1:]),
-                    node[1],
-                ])
+                new_node[current_key_remainder[0]] = self._persist_node(
+                    [
+                        compute_key_fn(current_key_remainder[1:]),
+                        node[1],
+                    ]
+                )
 
             if trie_key_remainder:
-                new_node[trie_key_remainder[0]] = self._persist_node([
-                    compute_leaf_key(trie_key_remainder[1:]),
-                    value,
-                ])
+                new_node[trie_key_remainder[0]] = self._persist_node(
+                    [
+                        compute_leaf_key(trie_key_remainder[1:]),
+                        value,
+                    ]
+                )
             else:
                 new_node[-1] = value
 
@@ -794,7 +843,9 @@ class HexaryTrie:
         scratch_db = ScratchDB(self.db)
         with scratch_db.batch_commit(do_deletes=self.is_pruning):
             Trie = type(self)
-            memory_trie = Trie(scratch_db, self.root_hash, prune=True, ref_count=self._ref_count)
+            memory_trie = Trie(
+                scratch_db, self.root_hash, prune=True, ref_count=self._ref_count
+            )
             yield memory_trie
 
         if self.root_hash != memory_trie.root_hash:
@@ -815,7 +866,10 @@ class HexaryTrie:
         yield snapshot
 
     def __repr__(self) -> str:
-        return f"HexaryTrie({self.db!r}, root_hash={self.root_hash}, prune={self.is_pruning})"
+        return (
+            f"HexaryTrie({self.db!r}, root_hash={self.root_hash}, "
+            f"prune={self.is_pruning})"
+        )
 
 
 @to_tuple

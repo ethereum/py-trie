@@ -1,15 +1,16 @@
+CURRENT_SIGN_SETTING := $(shell git config commit.gpgSign)
+
 .PHONY: clean-pyc clean-build docs
 
 help:
 	@echo "clean-build - remove build artifacts"
 	@echo "clean-pyc - remove Python file artifacts"
+	@echo "dist - package"
 	@echo "lint - check style with flake8"
+	@echo "lint-roll - automatically fix problems with isort, flake8, etc"
+	@echo "release - package and upload a release (does not run notes target)"
 	@echo "test - run tests quickly with the default Python"
 	@echo "testall - run tests on every Python version with tox"
-	@echo "coverage - check code coverage quickly with the default Python"
-	@echo "docs - generate Sphinx HTML documentation, including API docs"
-	@echo "release - package and upload a release"
-	@echo "sdist - package"
 
 clean: clean-build clean-pyc
 
@@ -22,32 +23,30 @@ clean-pyc:
 	find . -name '*.pyc' -exec rm -f {} +
 	find . -name '*.pyo' -exec rm -f {} +
 	find . -name '*~' -exec rm -f {} +
+	find . -name '__pycache__' -exec rm -rf {} +
 
 lint:
-	flake8 trie
-	flake8 tests --exclude=""
+	tox -e lint
+
+lint-roll:
+	isort --multi-line=VERTICAL_HANGING_INDENT --fgw=1 --ca trie tests
+	black trie tests setup.py
+	$(MAKE) lint
 
 test:
-	py.test --tb native tests
+	pytest --tb native tests
 
-test-all:
+testall:
 	tox
 
-coverage:
-	coverage run --source trie
-	coverage report -m
-	coverage html
-	open htmlcov/index.html
+check-bump:
+ifndef bump
+	$(error bump must be set, typically: major, minor, patch, or devnum)
+endif
 
-docs:
-	rm -f docs/trie.rst
-	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ -d 2 trie/
-	$(MAKE) -C docs clean
-	$(MAKE) -C docs html
-	open docs/_build/html/index.html
-
-release: clean
+release: check-bump clean
+	# require that you be on a branch that's linked to upstream/master
+	git status -s -b | head -1 | grep "\.\.upstream/master"
 	CURRENT_SIGN_SETTING=$(git config commit.gpgSign)
 	git config commit.gpgSign true
 	bumpversion $(bump)
@@ -56,6 +55,6 @@ release: clean
 	twine upload dist/*
 	git config commit.gpgSign "$(CURRENT_SIGN_SETTING)"
 
-sdist: clean
+dist: clean
 	python setup.py sdist bdist_wheel
 	ls -l dist

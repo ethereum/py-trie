@@ -2,21 +2,25 @@ from hypothesis import (
     strategies as st,
 )
 
-from trie import HexaryTrie
+from trie import (
+    HexaryTrie,
+)
 
 
 @st.composite
 def random_trie_strategy(draw):
-    trie_items = draw(st.lists(
-        st.tuples(
-            # key
-            st.binary(max_size=32),
-            # value
-            st.binary(min_size=1, max_size=64),
-        ),
-        unique=True,
-        max_size=512,
-    ))
+    trie_items = draw(
+        st.lists(
+            st.tuples(
+                # key
+                st.binary(max_size=32),
+                # value
+                st.binary(min_size=1, max_size=64),
+            ),
+            unique=True,
+            max_size=512,
+        )
+    )
 
     trie = HexaryTrie({})
     for key, value in trie_items:
@@ -47,14 +51,16 @@ def trie_keys_with_extensions(draw, allow_empty_trie=True):
         )
 
     # build tree
-    tree = draw(st.recursive(
-        # key suffix
-        st.tuples(
-            st.binary(min_size=0, max_size=3),
-        ),
-        # branches/extensions
-        build_up_from_children,
-    ))
+    tree = draw(
+        st.recursive(
+            # key suffix
+            st.tuples(
+                st.binary(min_size=0, max_size=3),
+            ),
+            # branches/extensions
+            build_up_from_children,
+        )
+    )
 
     def unroll_keys(node):
         if len(node) == 1:
@@ -76,9 +82,10 @@ def trie_from_keys(keys, min_value_length=1):
     contents = {}
     with trie.squash_changes() as batch:
         for key in keys:
-            # flood 3's at the end of the value to make it longer. b'3' is encoded to 0x33,
-            #   so the bytes and HexBytes representation look the same. Just a convenience.
-            value = (b'v' + key).ljust(min_value_length, b'3')
+            # flood 3's at the end of the value to make it longer. b'3' is
+            # encoded to 0x33, so the bytes and HexBytes representation
+            # look the same. Just a convenience.
+            value = (b"v" + key).ljust(min_value_length, b"3")
             batch[key] = value
             contents[key] = value
 

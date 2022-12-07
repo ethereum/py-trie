@@ -8,10 +8,6 @@ from typing import (
     TypeVar,
     Union,
 )
-from trie.utils.compat import (
-    Literal,
-    Protocol,
-)
 
 from eth_utils import (
     is_list_like,
@@ -23,26 +19,30 @@ from trie.constants import (
     NODE_TYPE_EXTENSION,
     NODE_TYPE_LEAF,
 )
-
+from trie.utils.compat import (
+    Literal,
+    Protocol,
+)
 
 # The RLP-decoded node is either blank, or a list, full of bytes or recursive nodes
 # Recursive definitions don't seem supported at the moment, follow:
 #   https://github.com/python/mypy/issues/731
 # Another option is to manually declare a few levels of the type. It should be possible
-#   to determine the maximum number of embeds with single-nibble keys and single byte values.
+#   to determine the maximum number of embeds with single-nibble keys and single byte
+#   values.
 RawHexaryNode = Union[
     # Blank node
-    Literal[b''],
-
+    Literal[b""],
     # Leaf or extension node are length 2
     # Branch node is length 17
-    List[Union[
-        # keys, hashes to next nodes, and values
-        bytes,
-
-        # embedded subnodes
-        "RawHexaryNode",
-    ]],
+    List[
+        Union[
+            # keys, hashes to next nodes, and values
+            bytes,
+            # embedded subnodes
+            "RawHexaryNode",
+        ]
+    ],
 ]
 
 
@@ -73,23 +73,26 @@ NibblesInput = Sequence[int]
 
 
 class Nibbles(Tuple[Nibble, ...]):
-    def __new__(cls, nibbles: NibblesInput) -> 'Nibbles':
+    def __new__(cls, nibbles: NibblesInput) -> "Nibbles":
         if type(nibbles) is Nibbles:
             # instanceof thinks that a Tuple[Nibble, ...] *is* a Nibbles, so we use
             #   a stricter type check here
-            return nibbles  # type: ignore  # mypy doesn't recognize that this is now a Nibbles
+            return nibbles  # type: ignore  # mypy doesn't recognize that this is now a Nibbles # noqa: E501
         elif not is_list_like(nibbles):
             raise TypeError(f"Must pass in a tuple of nibbles, but got {nibbles!r}")
         else:
-            return tuple.__new__(cls, (Nibble(maybe_nibble) for maybe_nibble in nibbles))
+            return tuple.__new__(
+                cls, (Nibble(maybe_nibble) for maybe_nibble in nibbles)
+            )
 
-    def __add__(self, other: Tuple[Nibble, ...]) -> 'Nibbles':
+    def __add__(self, other: Tuple[Nibble, ...]) -> "Nibbles":
         return Nibbles(super().__add__(other))
 
     def _repr_pretty_(self, p, cycle: bool) -> None:
-        # Weird, ipython seems to drop the trailing comma in the pretty repr they do. Fixing...
+        # Weird, ipython seems to drop the trailing comma in the pretty repr
+        # they do. Fixing...
         if cycle:
-            p.text('(...)')
+            p.text("(...)")
         else:
             p.text(super().__repr__())
 
@@ -127,7 +130,8 @@ class HexaryTrieNode(NamedTuple):
     suffix: Nibbles
     """
     In a leaf node, there is a suffix of a key remaining before the value is reached.
-    This is that series of nibbles. On a branch node with a value, the suffix will be ().
+    This is that series of nibbles. On a branch node with a value,
+    the suffix will be ().
     """
 
     raw: RawHexaryNode
@@ -143,7 +147,7 @@ class HexaryTrieNode(NamedTuple):
     """
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class GenericSortedSet(Protocol[T]):
@@ -151,6 +155,7 @@ class GenericSortedSet(Protocol[T]):
     A protocol definining the minimal subset of features used from
     sortedcontainers.SortedSet. Feel free to add more as needed.
     """
+
     def __contains__(self, search_value: T) -> bool:
         ...
 
@@ -160,7 +165,7 @@ class GenericSortedSet(Protocol[T]):
     def __len__(self) -> int:
         ...
 
-    def __iter__(self) -> 'GenericSortedSet[T]':
+    def __iter__(self) -> "GenericSortedSet[T]":
         ...
 
     def __next__(self) -> T:
@@ -169,7 +174,7 @@ class GenericSortedSet(Protocol[T]):
     def bisect(self, search_value: T) -> int:
         ...
 
-    def copy(self) -> 'GenericSortedSet[T]':
+    def copy(self) -> "GenericSortedSet[T]":
         ...
 
     def remove(self, to_remove: T) -> None:

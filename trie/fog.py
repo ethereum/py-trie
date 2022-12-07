@@ -1,5 +1,7 @@
 import ast
-from itertools import zip_longest
+from itertools import (
+    zip_longest,
+)
 from typing import (
     Any,
     Dict,
@@ -9,10 +11,12 @@ from typing import (
 )
 
 from eth_utils import (
-    to_tuple,
     ValidationError,
+    to_tuple,
 )
-from sortedcontainers import SortedSet
+from sortedcontainers import (
+    SortedSet,
+)
 
 from trie.exceptions import (
     FullDirectionalVisibility,
@@ -42,6 +46,7 @@ class HexaryTrieFog:
     Object is immutable. Any changes, like marking a key prefix as complete, will
     return a new HexaryTrieFog object.
     """
+
     _unexplored_prefixes: GenericSortedSet[Nibbles]
 
     # INVARIANT: No unexplored prefix may start with another unexplored prefix
@@ -60,19 +65,20 @@ class HexaryTrieFog:
         return len(self._unexplored_prefixes) == 0
 
     def explore(
-            self,
-            old_prefix_input: NibblesInput,
-            foggy_sub_segments: Sequence[NibblesInput]) -> 'HexaryTrieFog':
+        self, old_prefix_input: NibblesInput, foggy_sub_segments: Sequence[NibblesInput]
+    ) -> "HexaryTrieFog":
         """
-        The fog lifts from the old prefix. This call returns a HexaryTrieFog that narrows
-        down the unexplored key prefixes. from the old prefix to the indicated children.
+        The fog lifts from the old prefix. This call returns a HexaryTrieFog that
+        narrows down the unexplored key prefixes. from the old prefix to the indicated
+        children.
 
         For example, if only the key prefix 0x12 is unexplored, then calling
-        explore((1, 2), ((3,), (0xe, 0xf))) would mark large swaths of 0x12 explored, leaving only
-        two prefixes as unknown: 0x123 and 0x12ef. To continue exploring those prefixes, navigate
-        to them using traverse() or traverse_from().
+        explore((1, 2), ((3,), (0xe, 0xf))) would mark large swaths of 0x12 explored,
+        leaving only two prefixes as unknown: 0x123 and 0x12ef. To continue exploring
+        those prefixes, navigate to them using traverse() or traverse_from().
 
-        The sub_segments_input may be empty, which means the old prefix has been fully explored.
+        The sub_segments_input may be empty, which means the old prefix has been fully
+        explored.
         """
         old_prefix = Nibbles(old_prefix_input)
         sub_segments = [Nibbles(segment) for segment in foggy_sub_segments]
@@ -81,34 +87,43 @@ class HexaryTrieFog:
         try:
             new_fog_prefixes.remove(old_prefix)
         except KeyError:
-            raise ValidationError(f"Old parent {old_prefix} not found in {new_fog_prefixes!r}")
+            raise ValidationError(
+                f"Old parent {old_prefix} not found in {new_fog_prefixes!r}"
+            )
 
         if len(set(sub_segments)) != len(sub_segments):
             raise ValidationError(
-                f"Got duplicate sub_segments in {sub_segments} to HexaryTrieFog.explore()"
+                f"Got duplicate sub_segments in {sub_segments} "
+                f"to HexaryTrieFog.explore()"
             )
 
         # Further validation that no segment is a prefix of another
         all_lengths = set(len(segment) for segment in sub_segments)
         if len(all_lengths) > 1:
-            # The known use case of exploring nodes one at a time will never arrive in this
-            #   validation check which might be slow. Leaf nodes have no sub segments,
-            #   extension nodes have exactly one, and branch nodes have all sub_segments
-            #   of length 1. If a new use case hits this verification, and speed becomes an issue,
-            #   see https://github.com/ethereum/py-trie/issues/107
+            # The known use case of exploring nodes one at a time will never arrive in
+            # this validation check which might be slow. Leaf nodes have no sub
+            # segments, extension nodes have exactly one, and branch nodes have all
+            # sub_segments of length 1. If a new use case hits this verification,
+            # and speed becomes an issue,
+            # see https://github.com/ethereum/py-trie/issues/107
             for segment in sub_segments:
-                shorter_lengths = [length for length in all_lengths if length < len(segment)]
+                shorter_lengths = [
+                    length for length in all_lengths if length < len(segment)
+                ]
                 for check_length in shorter_lengths:
                     trimmed_segment = segment[:check_length]
                     if trimmed_segment in sub_segments:
                         raise ValidationError(
-                            f"Cannot add {segment} which is a child of segment {trimmed_segment}"
+                            f"Cannot add {segment} which is a child "
+                            f"of segment {trimmed_segment}"
                         )
 
         new_fog_prefixes.update([old_prefix + segment for segment in sub_segments])
         return self._new_trie_fog(new_fog_prefixes)
 
-    def mark_all_complete(self, prefix_inputs: Sequence[NibblesInput]) -> 'HexaryTrieFog':
+    def mark_all_complete(
+        self, prefix_inputs: Sequence[NibblesInput]
+    ) -> "HexaryTrieFog":
         """
         These might be leaves, or prefixes with 0 unknown keys within the range.
 
@@ -122,7 +137,8 @@ class HexaryTrieFog:
         for prefix in map(Nibbles, prefix_inputs):
             if prefix not in new_unexplored_prefixes:
                 raise ValidationError(
-                    f"When marking {prefix} complete, could not find in {new_unexplored_prefixes!r}"
+                    f"When marking {prefix} complete, could not "
+                    f"find in {new_unexplored_prefixes!r}"
                 )
 
             new_unexplored_prefixes.remove(prefix)
@@ -143,11 +159,14 @@ class HexaryTrieFog:
 
         if index == 0:
             # If sorted set is empty, bisect will return 0
-            # But it might also return 0 if the search value is lower than the lowest existing
+            # But it might also return 0 if the search value is lower than the lowest
+            # existing
             try:
                 return self._unexplored_prefixes[0]
             except IndexError as exc:
-                raise PerfectVisibility("There are no more unexplored prefixes") from exc
+                raise PerfectVisibility(
+                    "There are no more unexplored prefixes"
+                ) from exc
         elif index == len(self._unexplored_prefixes):
             return self._unexplored_prefixes[-1]
         else:
@@ -174,11 +193,14 @@ class HexaryTrieFog:
 
         if index == 0:
             # If sorted set is empty, bisect will return 0
-            # But it might also return 0 if the search value is lower than the lowest existing
+            # But it might also return 0 if the search value is lower than the lowest
+            # existing
             try:
                 return self._unexplored_prefixes[0]
             except IndexError as exc:
-                raise PerfectVisibility("There are no more unexplored prefixes") from exc
+                raise PerfectVisibility(
+                    "There are no more unexplored prefixes"
+                ) from exc
         else:
             nearest_left = self._unexplored_prefixes[index - 1]
 
@@ -200,7 +222,8 @@ class HexaryTrieFog:
         """
         How far are the two keys from each other, as a sequence of differences.
         The first non-zero distance must be positive, but the remaining distances may
-        be negative. Distances are designed to be simply compared, like distance1 < distance2.
+        be negative. Distances are designed to be simply compared,
+        like distance1 < distance2.
 
         The high_key must be higher than the low key, or the output distances are not
         guaranteed to be accurate.
@@ -225,7 +248,7 @@ class HexaryTrieFog:
             yield final_high_nibble - final_low_nibble
 
     @classmethod
-    def _new_trie_fog(cls, unexplored_prefixes: SortedSet) -> 'HexaryTrieFog':
+    def _new_trie_fog(cls, unexplored_prefixes: SortedSet) -> "HexaryTrieFog":
         """
         Convert a set of unexplored prefixes to a proper HexaryTrieFog object.
         """
@@ -235,22 +258,22 @@ class HexaryTrieFog:
 
     def serialize(self) -> bytes:
         # encode nibbles to a bytes value, to compress this down a bit
-        prefixes = [
-            encode_nibbles(nibbles)
-            for nibbles in self._unexplored_prefixes
-        ]
+        prefixes = [encode_nibbles(nibbles) for nibbles in self._unexplored_prefixes]
         return f"HexaryTrieFog:{prefixes!r}".encode()
 
     @classmethod
-    def deserialize(cls, encoded: bytes) -> 'HexaryTrieFog':
-        serial_prefix = b'HexaryTrieFog:'
+    def deserialize(cls, encoded: bytes) -> "HexaryTrieFog":
+        serial_prefix = b"HexaryTrieFog:"
         if not encoded.startswith(serial_prefix):
-            raise ValueError(f"Cannot deserialize this into HexaryTrieFog object: {encoded!r}")
+            raise ValueError(
+                f"Cannot deserialize this into HexaryTrieFog object: {encoded!r}"
+            )
         else:
-            encoded_list = encoded[len(serial_prefix):]
+            encoded_list = encoded[len(serial_prefix) :]
             prefix_list = ast.literal_eval(encoded_list.decode())
             deserialized_prefixes = SortedSet(
-                # decode nibbles from compressed bytes value, and validate each value in range(16)
+                # decode nibbles from compressed bytes value,
+                # and validate each value in range(16)
                 Nibbles(decode_nibbles(prefix))
                 for prefix in prefix_list
             )
@@ -270,6 +293,7 @@ class TrieFrontierCache:
     of unexplored nodes, so that every expansion into a new unexplored node requires
     only one database lookup instead of log(n).
     """
+
     def __init__(self) -> None:
         self._cache: Dict[Nibbles, Tuple[HexaryTrieNode, Nibbles]] = {}
 
@@ -284,10 +308,11 @@ class TrieFrontierCache:
         return self._cache[Nibbles(prefix)]
 
     def add(
-            self,
-            node_prefix_input: NibblesInput,
-            trie_node: HexaryTrieNode,
-            sub_segments: Sequence[NibblesInput]) -> None:
+        self,
+        node_prefix_input: NibblesInput,
+        trie_node: HexaryTrieNode,
+        sub_segments: Sequence[NibblesInput],
+    ) -> None:
 
         """
         Add a new cached node body for each of the sub segments supplied. Later cache
@@ -295,7 +320,8 @@ class TrieFrontierCache:
 
         :param node_prefix: the path from the root to the cached node
         :param trie_node: the body to cache
-        :param sub_segments: all of the children of the parent which should be made indexable
+        :param sub_segments: all of the children of the parent which should be made
+            indexable
         """
         node_prefix = Nibbles(node_prefix_input)
 
@@ -312,7 +338,8 @@ class TrieFrontierCache:
     def delete(self, prefix: NibblesInput) -> None:
         """
         Delete the cache of the parent node for the given prefix. This only deletes
-        this prefix's reference to the parent node, not all references to the parent node.
+        this prefix's reference to the parent node, not all references to the parent
+        node.
         """
         # If the cache entry doesn't exist, we can just ignore its absence
         self._cache.pop(Nibbles(prefix), None)
