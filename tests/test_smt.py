@@ -52,7 +52,6 @@ def test_simple_kv(k, v):
     ),
 )
 def test_branch_updates(key_size, keys, vals):
-
     # Empty tree
     smt = SparseMerkleTree(key_size=key_size)
 

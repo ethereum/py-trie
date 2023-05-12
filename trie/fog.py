@@ -313,7 +313,6 @@ class TrieFrontierCache:
         trie_node: HexaryTrieNode,
         sub_segments: Sequence[NibblesInput],
     ) -> None:
-
         """
         Add a new cached node body for each of the sub segments supplied. Later cache
         lookups will be in the form of get(node_prefix + sub_segments[0]).

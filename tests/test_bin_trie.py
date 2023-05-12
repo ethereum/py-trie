@@ -31,7 +31,7 @@ def test_bin_trie_different_order_insert(k, v, random):
     for _ in range(3):
         trie = BinaryTrie(db={})
         random.shuffle(kv_pairs)
-        for i, (k, v) in enumerate(kv_pairs):
+        for _i, (k, v) in enumerate(kv_pairs):
             trie.set(k, v)
             assert trie.get(k) == v
         assert result is BLANK_HASH or trie.root_hash == result
@@ -41,7 +41,7 @@ def test_bin_trie_different_order_insert(k, v, random):
         assert trie.root_hash == result
         # Delete all key/value
         random.shuffle(kv_pairs)
-        for k, v in kv_pairs:
+        for k, _v in kv_pairs:
             trie.delete(k)
         assert trie.root_hash == BLANK_HASH
 

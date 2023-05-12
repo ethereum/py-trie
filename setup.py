@@ -14,7 +14,6 @@ extras_require = {
         "flake8==6.0.0",  # flake8 claims semver but adds new warnings at minor releases, leave it pinned.
         "flake8-bugbear==23.3.23",  # flake8-bugbear does not follow semver, leave it pinned.
         "isort>=5.10.1",
-        "pydocstyle>=6.0.0",
         "black>=23",
     ],
     "docs": [

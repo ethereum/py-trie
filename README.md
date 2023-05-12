@@ -37,6 +37,15 @@ virtualenv -p python3 venv
 python -m pip install -e ".[dev]"
 ```
 
+## Running the tests
+
+You can run the tests with:
+
+```sh
+git submodule update --init --recursive
+pytest tests
+```
+
 ### Release setup
 
 To release a new version:
