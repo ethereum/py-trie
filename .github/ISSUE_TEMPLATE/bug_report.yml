@@ -41,8 +41,8 @@ body:
   - type: input
     id: lib-version
     attributes:
-      label: trie Version
-      description: Which version of trie are you using?
+      label: py-trie Version
+      description: Which version of py-trie are you using?
       placeholder: x.x.x
     validations:
       required: false

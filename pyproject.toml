@@ -1,7 +1,7 @@
 [tool.towncrier]
-# Read https://github.com/ethereum/py-trie/blob/main/newsfragments/README.md for instructions
+# Read https://github.com/ethereum/py-trie/blob/master/newsfragments/README.md for instructions
 package = "trie"
-filename = "docs/release_notes.rst"
+filename = "CHANGELOG"
 directory = "newsfragments"
 underlines = ["-", "~", "^"]
 title_format = "py-trie v{version} ({project_date})"
