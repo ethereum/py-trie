@@ -10,7 +10,10 @@ help:
 	@echo "lint-roll - automatically fix problems with isort, flake8, etc"
 	@echo "release - package and upload a release (does not run notes target)"
 	@echo "test - run tests quickly with the default Python"
-	@echo "testall - run tests on every Python version with tox"
+	@echo "docs - generate docs and open in browser (linux-docs for version on linux)"
+	@echo "notes - consume towncrier newsfragments/ and update release notes in docs/"
+	@echo "release - package and upload a release (does not run notes target)"
+	@echo "dist - package"
 
 clean: clean-build clean-pyc
 
@@ -26,7 +29,7 @@ clean-pyc:
 	find . -name '__pycache__' -exec rm -rf {} +
 
 lint:
-	tox -e lint
+	tox run -e lint
 
 lint-roll:
 	isort --multi-line=VERTICAL_HANGING_INDENT --fgw=1 --ca trie tests
@@ -36,8 +39,23 @@ lint-roll:
 test:
 	pytest --tb native tests
 
-testall:
-	tox
+build-docs:
+	sphinx-apidoc -o docs/ . setup.py "*conftest*"
+	$(MAKE) -C docs clean
+	$(MAKE) -C docs html
+	$(MAKE) -C docs doctest
+
+validate-docs:
+	python ./newsfragments/validate_files.py
+	towncrier build --draft --version preview
+
+check-docs: build-docs validate-docs
+
+docs: check-docs
+	open docs/_build/html/index.html
+
+linux-docs: check-docs
+	xdg-open docs/_build/html/index.html
 
 check-bump:
 ifndef bump
@@ -47,14 +65,17 @@ endif
 release: check-bump clean
 	# require that you be on a branch that's linked to upstream/master
 	git status -s -b | head -1 | grep "\.\.upstream/master"
+	# verify that docs build correctly
+	./newsfragments/validate_files.py is-empty
+	make build-docs
 	CURRENT_SIGN_SETTING=$(git config commit.gpgSign)
 	git config commit.gpgSign true
 	bumpversion $(bump)
 	git push upstream && git push upstream --tags
-	python setup.py sdist bdist_wheel
+	python -m build
 	twine upload dist/*
 	git config commit.gpgSign "$(CURRENT_SIGN_SETTING)"
 
 dist: clean
-	python setup.py sdist bdist_wheel
+	python -m build
 	ls -l dist

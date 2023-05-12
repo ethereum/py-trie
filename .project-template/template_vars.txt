@@ -1,6 +1,6 @@
 trie
 trie
 py-trie
-<RTD_NAME>
+py-trie
 trie
 Python implementation of the Ethereum trie structure

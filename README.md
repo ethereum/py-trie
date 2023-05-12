@@ -1,7 +1,9 @@
 # Python Implementation of the Ethereum Trie structure
 
-[![PyPI](https://img.shields.io/pypi/v/trie.svg)](https://pypi.org/project/trie/)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/trie.svg)
+[![Join the conversation on Discord](https://img.shields.io/discord/809793915578089484?color=blue&label=chat&logo=discord&logoColor=white)](https://discord.gg/GHryRvPB84)
+[![Build Status](https://circleci.com/gh/ethereum/py-trie.svg?style=shield)](https://circleci.com/gh/ethereum/py-trie)
+[![PyPI version](https://badge.fury.io/py/trie.svg)](https://badge.fury.io/py/trie)
+[![Python versions](https://img.shields.io/pypi/pyversions/trie.svg)](https://pypi.python.org/pypi/trie)
 
 > This library and repository was previously located at [pipermerriam/py-trie](https://github.com/pipermerriam/py-trie). It was transferred to the Ethereum foundation GitHub in
 > November 2017 and renamed to `py-trie`.
@@ -9,41 +11,33 @@
 ## Installation
 
 ```sh
-pip install trie
+python -m pip install trie
 ```
 
-## Development
+## Developer Setup
+
+If you would like to hack on py-trie, please check out the [Snake Charmers
+Tactical Manual](https://github.com/ethereum/snake-charmers-tactical-manual)
+for information on how we do:
+
+- Testing
+- Pull Requests
+- Code Style
+- Documentation
+
+### Development Environment Setup
+
+You can set up your dev environment with:
 
 ```sh
-pip install -e .[dev]
+git clone git@github.com:ethereum/py-trie.git
+cd py-trie
+virtualenv -p python3 venv
+. venv/bin/activate
+python -m pip install -e ".[dev]"
 ```
 
-### Running the tests
-
-You can run the tests with:
-
-```sh
-pytest tests
-```
-
-Or you can install `tox` to run the full test suite.
-
-### Releasing
-
-Pandoc is required for transforming the markdown README to the proper format to
-render correctly on pypi.
-
-For Debian-like systems:
-
-```sh
-apt install pandoc
-```
-
-Or on OSX:
-
-```sh
-brew install pandoc
-```
+### Release setup
 
 To release a new version:
 
@@ -56,8 +50,10 @@ make release bump=$$VERSION_PART_TO_BUMP$$
 The version format for this repo is `{major}.{minor}.{patch}` for stable, and
 `{major}.{minor}.{patch}-{stage}.{devnum}` for unstable (`stage` can be alpha or beta).
 
-To issue the next version in line, use bumpversion and specify which part to bump,
-like `bumpversion minor` or `bumpversion devnum`.
+To issue the next version in line, specify which part to bump,
+like `make release bump=minor` or `make release bump=devnum`. This is typically done from the
+main branch, except when releasing a beta (in which case the beta is released from main,
+and the previous stable branch is released from said branch).
 
 If you are in a beta version, `bumpversion stage` will switch to a stable.
 
