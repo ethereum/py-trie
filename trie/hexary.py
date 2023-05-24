@@ -622,7 +622,7 @@ class HexaryTrie:
         else:
             return self._create_node_to_db_mapping(node)
 
-    @functools.lru_cache(4096)
+    @functools.lru_cache(4096)  # noqa: B019
     def _cached_create_node_to_db_mapping(self, node):
         if isinstance(node, tuple):
             node = listify(node)

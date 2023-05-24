@@ -66,7 +66,6 @@ class MissingTrieNode(Exception):
         prefix: Nibbles = None,
         *args,
     ):
-
         if not isinstance(missing_node_hash, bytes):
             raise TypeError(
                 "Missing node hash must be bytes, was: %r" % missing_node_hash
@@ -183,7 +182,6 @@ class TraversedPartialPath(Exception):
         untraversed_tail: NibblesInput,
         *args,
     ) -> None:
-
         super().__init__(
             Nibbles(nibbles_traversed),
             node,

@@ -1,0 +1,53 @@
+[tool.towncrier]
+# Read https://github.com/ethereum/py-trie/blob/master/newsfragments/README.md for instructions
+package = "trie"
+filename = "CHANGELOG"
+directory = "newsfragments"
+underlines = ["-", "~", "^"]
+title_format = "py-trie v{version} ({project_date})"
+issue_format = "`#{issue} <https://github.com/ethereum/py-trie/issues/{issue}>`__"
+
+[[tool.towncrier.type]]
+directory = "breaking"
+name = "Breaking Changes"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "bugfix"
+name = "Bugfixes"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "deprecation"
+name = "Deprecations"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "docs"
+name = "Improved Documentation"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "feature"
+name = "Features"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "internal"
+name = "Internal Changes - for py-trie Contributors"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "misc"
+name = "Miscellaneous Changes"
+showcontent = false
+
+[[tool.towncrier.type]]
+directory = "performance"
+name = "Performance Improvements"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "removal"
+name = "Removals"
+showcontent = true

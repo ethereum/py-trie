@@ -664,9 +664,9 @@ def test_squash_changes_reverts_trie_root_on_exception():
             try:
                 memory_trie[b"\x11"] = b"new val"
             except MissingTrieNode:
-                assert (
-                    False
-                ), "Only the squash_changes context exit should raise this exception"
+                raise AssertionError(
+                    "Only the squash_changes context exit should raise this exception"
+                )
 
             del memory_trie[b"\xff"]
 
@@ -727,7 +727,7 @@ def test_hexary_trie_missing_node():
     # Get exception when checking if key exists with missing data
     key1_shared_prefix2 = to_bytes(0x0345)
     with pytest.raises(MissingTrieNode) as existance_exc_info:
-        key1_shared_prefix2 in trie
+        assert key1_shared_prefix2 in trie
 
     existance_exc_message = str(existance_exc_info.value)
 
@@ -908,9 +908,9 @@ def test_hexary_trie_traverse(name, updates, expected, deleted, final_root):
             # Can't traverse_from to the root node
             node = traversal_trie.traverse(())
         elif not len(child_extension):
-            assert (
-                False
-            ), "For all but the root node, the child extension must not be empty"
+            raise AssertionError(
+                "For all but the root node, the child extension must not be empty"
+            )
         else:
             logging_db = KeyAccessLogger(db)
             single_access_trie = HexaryTrie(logging_db)
@@ -1056,7 +1056,6 @@ def test_traverse_into_partial_path(
 def test_traverse_from_partial_path(
     trie_items, traverse_key, path_to_node, sub_segments, node_val
 ):
-
     """
     What happens when you try to traverse_from() into an extension or leaf node
     """

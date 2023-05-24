@@ -80,7 +80,7 @@ def test_trie_walk_backfilling(trie_keys, minimum_value_length, index_nibbles):
             # to its longer prefixes
             fog = fog.explore(nearest_key, node.sub_segments)
     else:
-        assert False, "Must finish iterating the trie within ~100k runs"
+        raise AssertionError("Must finish iterating the trie within ~100k runs")
 
     # Make sure we removed all the dropped nodes to push them back to the trie db
     assert len(dropped_nodes) == 0
@@ -148,7 +148,7 @@ def test_trie_walk_backfilling_with_traverse_from(
             # to its longer prefixes
             fog = fog.explore(nearest_key, node.sub_segments)
     else:
-        assert False, "Must finish iterating the trie within ~100k runs"
+        raise AssertionError("Must finish iterating the trie within ~100k runs")
 
     # Make sure we removed all the dropped nodes to push them back to the trie db
     assert len(dropped_nodes) == 0
@@ -287,9 +287,9 @@ def test_trie_walk_root_change_with_traverse(
         try:
             nearest_key = fog.nearest_unknown(index_key)
         except PerfectVisibility:
-            assert (
-                False
-            ), "Number explorations should be lower than database size, shouldn't finish"  # noqa: E501
+            raise AssertionError(
+                "Number explorations should be lower than database size, shouldn't finish"  # noqa: E501
+            )
 
         # Try to navigate to the prefix, catching any errors about
         # nodes missing from the DB
@@ -364,7 +364,7 @@ def test_trie_walk_root_change_with_traverse(
         # or if you traversed a partial path
         fog = fog.explore(nearest_key, sub_segments)
     else:
-        assert False, "Must finish iterating the trie within ~100k runs"
+        raise AssertionError("Must finish iterating the trie within ~100k runs")
 
     # Final assertions
     assert fog.is_complete
@@ -457,9 +457,9 @@ def test_trie_walk_root_change_with_cached_traverse_from(
         try:
             nearest_prefix = fog.nearest_unknown(index_key)
         except PerfectVisibility:
-            assert (
-                False
-            ), "Number explorations should be lower than database size, shouldn't finish"  # noqa: E501
+            raise AssertionError(
+                "Number explorations should be lower than database size, shouldn't finish"  # noqa: E501
+            )
 
         try:
             # Use the cache, if possible, to look up the parent node of nearest_prefix
@@ -563,7 +563,7 @@ def test_trie_walk_root_change_with_cached_traverse_from(
         else:
             cache.delete(nearest_prefix)
     else:
-        assert False, "Must finish iterating the trie within ~100k runs"
+        raise AssertionError("Must finish iterating the trie within ~100k runs")
 
     # Final assertions
     assert fog.is_complete

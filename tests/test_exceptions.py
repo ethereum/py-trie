@@ -185,7 +185,6 @@ def test_TraversedPartialPath_keeps_node_value(key_encoding):
 def test_invalid_TraversedPartialPath_untraversed_nibbles(
     invalid_nibbles, node_key, exception, key_encoding
 ):
-
     if node_key == ():
         node = annotate_node(b"")
     else:
