@@ -38,7 +38,7 @@ RAW_NEXT_PREV_FIXTURES = [
     (os.path.basename(NEXT_PREV_FIXTURE_PATH), json.load(open(NEXT_PREV_FIXTURE_PATH)))
 ]
 NEXT_PREV_FIXTURES = [
-    ("{0}:{1}".format(fixture_filename, key), fixtures[key])
+    (f"{fixture_filename}:{key}", fixtures[key])
     for fixture_filename, fixtures in RAW_NEXT_PREV_FIXTURES
     for key in sorted(fixtures.keys())
 ]

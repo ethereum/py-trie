@@ -423,7 +423,7 @@ class HexaryTrie:
                 return proven_snapshot.get(key)
             except MissingTrieNode as e:
                 raise BadTrieProof(
-                    "Missing proof node with hash {}".format(e.missing_node_hash)
+                    f"Missing proof node with hash {e.missing_node_hash}"
                 )
 
     def get_proof(self, key):
