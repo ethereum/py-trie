@@ -95,7 +95,7 @@ RAW_FIXTURES = tuple(
 
 FIXTURES_NORMALIZED = tuple(
     (
-        "{0}:{1}".format(fixture_filename, key),
+        f"{fixture_filename}:{key}",
         normalize_fixture(fixtures[key]),
     )
     for fixture_filename, fixtures in RAW_FIXTURES

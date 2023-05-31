@@ -76,7 +76,7 @@ def test_bin_trie_different_order_insert(k, v, random):
             b"\x12\x34\x56\x78\x9a",
             False,
             True,
-        ),  # noqa: E501
+        ),
     ),
 )
 def test_bin_trie_delete_subtrie(

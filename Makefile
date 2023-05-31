@@ -5,10 +5,8 @@ CURRENT_SIGN_SETTING := $(shell git config commit.gpgSign)
 help:
 	@echo "clean-build - remove build artifacts"
 	@echo "clean-pyc - remove Python file artifacts"
-	@echo "dist - package"
 	@echo "lint - check style with black, flake8, and isort"
 	@echo "lint-roll - automatically fix problems with isort and black"
-	@echo "release - package and upload a release (does not run notes target)"
 	@echo "test - run tests quickly with the default Python"
 	@echo "docs - view draft of newsfragments to be added to CHANGELOG"
 	@echo "notes - consume towncrier newsfragments/ and update CHANGELOG"
