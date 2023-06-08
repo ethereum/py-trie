@@ -43,7 +43,7 @@ with open("README.md") as readme_file:
 setup(
     name="trie",
     # *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
-    version="2.1.0",
+    version="2.1.1",
     description="""Python implementation of the Ethereum Trie structure""",
     long_description_markdown_filename="README.md",
     long_description=long_description,
