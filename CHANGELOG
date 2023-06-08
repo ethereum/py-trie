@@ -1,3 +1,13 @@
+py-trie v2.1.1 (2023-06-08)
+---------------------------
+
+Internal Changes - for py-trie Contributors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- merged updates from the ethereum python project template (`#137 <https://github.com/ethereum/py-trie/issues/137>`__)
+- convert old-style `format` strings to f-strings, additional cleanup (`#138 <https://github.com/ethereum/py-trie/issues/138>`__)
+
+
 v2.1.0
 ------
 
