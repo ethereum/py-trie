@@ -168,7 +168,7 @@ b'V\xe8\x1f\x17\x1b\xccU\xa6\xff\x83E\xe6\x92\xc0\xf8n[H\xe0\x1b\x99l\xad\xc0\x0
 b'\xf8\xdd\xe4\x0f\xaa\xf4P7\xfa$\xfde>\xec\xb4i\x00N\xa3)\xcf\xef\x80\xc4YU\xe8\xe7\xbf\xa89\xd5'
 
 # Initialize a fog object to track unexplored prefixes in a trie walk
->>> from from trie.fog import HexaryTrieFog
+>>> from trie.fog import HexaryTrieFog
 >>> empty_fog = HexaryTrieFog()
 # At the beginning, the unexplored prefix is (), which means that none of the trie has been explored
 >>> prefix = empty_fog.nearest_unknown()
