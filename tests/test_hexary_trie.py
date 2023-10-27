@@ -114,10 +114,26 @@ def permute_fixtures(fixtures):
     for fixture_name, fixture in fixtures:
         final_mapping, deleted_keys = get_expected_results(fixture)
         final_root = fixture["root"]
-        for update_series in itertools.islice(
-            itertools.permutations(fixture["in"]), 100
-        ):
-            yield (fixture_name, update_series, final_mapping, deleted_keys, final_root)
+
+        # fixtures that have duplicate keys (consecutive updates on the same key value)
+        # that are not deleted in the final state cannot be permuted since the updates
+        # must be applied in order.
+        updates = fixture["in"]
+        all_keys = sorted(entry[0] for entry in updates)
+        duplicate_keys = sorted(set(key for key in all_keys if all_keys.count(key) > 1))
+        if duplicate_keys and not all(key in deleted_keys for key in duplicate_keys):
+            yield (fixture_name, updates, final_mapping, deleted_keys, final_root)
+        else:
+            for update_series in itertools.islice(
+                itertools.permutations(fixture["in"]), 100
+            ):
+                yield (
+                    fixture_name,
+                    update_series,
+                    final_mapping,
+                    deleted_keys,
+                    final_root,
+                )
 
 
 FIXTURES_PERMUTED = tuple(permute_fixtures(FIXTURES_NORMALIZED))
