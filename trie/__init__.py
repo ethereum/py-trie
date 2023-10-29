@@ -1,6 +1,8 @@
-import pkg_resources
+from importlib.metadata import (
+    version as __version,
+)
 
-from .binary import BinaryTrie  # noqa: F401
-from .hexary import HexaryTrie  # noqa: F401
+from .binary import BinaryTrie
+from .hexary import HexaryTrie
 
-__version__ = pkg_resources.get_distribution("trie").version
+__version__ = __version("trie")

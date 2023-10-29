@@ -60,7 +60,7 @@ setup(
     zip_safe=False,
     keywords="ethereum blockchain evm trie merkle",
     packages=find_packages(exclude=["tests", "tests.*"]),
-    package_data={"<MODULE_NAME>": ["py.typed"]},
+    package_data={"trie": ["py.typed"]},
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
