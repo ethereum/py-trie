@@ -33,11 +33,9 @@ lint:
 test:
 	pytest tests
 
-validate-docs:
+docs:
 	python ./newsfragments/validate_files.py
 	towncrier build --draft --version preview
-
-docs: validate-docs
 
 check-bump:
 ifndef bump
@@ -49,6 +47,8 @@ notes: check-bump
 	$(eval UPCOMING_VERSION=$(shell bumpversion $(bump) --dry-run --list | grep new_version= | sed 's/new_version=//g'))
 	# Now generate the release notes to have them included in the release commit
 	towncrier build --yes --version $(UPCOMING_VERSION)
+	# Before we bump the version, make sure that the towncrier-generated docs will build
+	make docs
 	git commit -m "Compile release notes"
 
 release: check-bump clean
@@ -56,6 +56,7 @@ release: check-bump clean
 	git remote -v | grep "upstream\tgit@github.com:ethereum/py-trie.git (push)\|upstream\thttps://github.com/ethereum/py-trie (push)"
 	# verify that docs build correctly
 	./newsfragments/validate_files.py is-empty
+	make docs
 	CURRENT_SIGN_SETTING=$(git config commit.gpgSign)
 	git config commit.gpgSign true
 	bumpversion $(bump)

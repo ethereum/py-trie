@@ -304,8 +304,6 @@ class PerfectVisibility(Exception):
     :meth:`~trie.fog.HexaryTrieFog.is_complete` as True.
     """
 
-    pass
-
 
 class FullDirectionalVisibility(Exception):
     """
@@ -314,5 +312,3 @@ class FullDirectionalVisibility(Exception):
     :meth:`~trie.fog.HexaryTrieFog.is_complete` as True, because more may be
     available to the left).
     """
-
-    pass

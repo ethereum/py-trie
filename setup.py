@@ -51,7 +51,6 @@ setup(
         "hexbytes>=0.2.0,<0.4.0",
         "rlp>=3",
         "sortedcontainers>=2.1.0",
-        "typing-extensions>=4.0.0,<5; python_version < '3.8'",
     ],
     python_requires=">=3.8, <4",
     extras_require=extras_require,

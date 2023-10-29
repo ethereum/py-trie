@@ -309,6 +309,7 @@ b"\xc5\xd2F\x01\x86\xf7#<\x92~}\xb2\xdc\xc7\x03\xc0\xe5\x00\xb6S\xca\x82';{\xfa\
 ```
 
 Now Trie looks like this:
+
 ```
     root --->  (kvnode, *common key prefix*)
                          |
