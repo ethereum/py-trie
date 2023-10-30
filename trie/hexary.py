@@ -79,8 +79,6 @@ class _PartialTraversal(Exception):
     An internal exception that should never escape the Trie.
     """
 
-    pass
-
 
 def prune_pending(fn: WrappedFunc) -> WrappedFunc:
     @functools.wraps(fn)

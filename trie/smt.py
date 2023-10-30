@@ -25,7 +25,7 @@ from trie.validation import (
 
 
 def calc_root(key: bytes, value: bytes, branch: Sequence[Hash32]) -> Hash32:
-    """
+    r"""
     Obtain the merkle root of a given key/value/branch set.
     Can be used to validate a merkle proof or compute it's value from data.
 
@@ -65,13 +65,14 @@ def calc_root(key: bytes, value: bytes, branch: Sequence[Hash32]) -> Hash32:
 
 
 class SparseMerkleProof:
-    """
+    r"""
     Track the current value and merkle proof branch for a given key.
     This will enable the tracked proof data to stay up to date with changes
     that may be streamed to the end user over external protocols without having
     to interactively query the full SMT to obtain the most up-to-date branch.
 
-    Attributes:
+    Attributes
+    ----------
         key: key we are tracking
         value: currently synchronized value
         branch: currently synchronized merkle proof branch

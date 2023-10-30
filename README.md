@@ -22,8 +22,12 @@ for information on how we do:
 
 - Testing
 - Pull Requests
-- Code Style
 - Documentation
+
+We use [pre-commit](https://pre-commit.com/) to maintain consistent code style. Once
+installed, it will run automatically with every commit. You can also run it manually
+with `make lint`. If you need to make a commit that skips the `pre-commit` checks, you
+can do so with `git commit --no-verify`.
 
 ### Development Environment Setup
 
@@ -35,6 +39,7 @@ cd py-trie
 virtualenv -p python3 venv
 . venv/bin/activate
 python -m pip install -e ".[dev]"
+pre-commit install
 ```
 
 ## Running the tests
@@ -304,6 +309,7 @@ b"\xc5\xd2F\x01\x86\xf7#<\x92~}\xb2\xdc\xc7\x03\xc0\xe5\x00\xb6S\xca\x82';{\xfa\
 ```
 
 Now Trie looks like this:
+
 ```
     root --->  (kvnode, *common key prefix*)
                          |

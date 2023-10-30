@@ -5,8 +5,7 @@ CURRENT_SIGN_SETTING := $(shell git config commit.gpgSign)
 help:
 	@echo "clean-build - remove build artifacts"
 	@echo "clean-pyc - remove Python file artifacts"
-	@echo "lint - check style with black, flake8, and isort"
-	@echo "lint-roll - automatically fix problems with isort and black"
+	@echo "lint - fix linting issues with pre-commit"
 	@echo "test - run tests quickly with the default Python"
 	@echo "docs - view draft of newsfragments to be added to CHANGELOG"
 	@echo "notes - consume towncrier newsfragments/ and update CHANGELOG"
@@ -18,7 +17,6 @@ clean: clean-build clean-pyc
 clean-build:
 	rm -fr build/
 	rm -fr dist/
-	rm -fr *.egg-info
 
 clean-pyc:
 	find . -name '*.pyc' -exec rm -f {} +
@@ -27,21 +25,17 @@ clean-pyc:
 	find . -name '__pycache__' -exec rm -rf {} +
 
 lint:
-	tox run -e lint
-
-lint-roll:
-	isort trie tests
-	black trie tests setup.py
-	$(MAKE) lint
+	@pre-commit run --all-files --show-diff-on-failure || ( \
+		echo "\n\n\n * pre-commit should have fixed the errors above. Running again to make sure everything is good..." \
+		&& pre-commit run --all-files --show-diff-on-failure \
+	)
 
 test:
 	pytest tests
 
-validate-docs:
+docs:
 	python ./newsfragments/validate_files.py
 	towncrier build --draft --version preview
-
-docs: validate-docs
 
 check-bump:
 ifndef bump
@@ -53,13 +47,16 @@ notes: check-bump
 	$(eval UPCOMING_VERSION=$(shell bumpversion $(bump) --dry-run --list | grep new_version= | sed 's/new_version=//g'))
 	# Now generate the release notes to have them included in the release commit
 	towncrier build --yes --version $(UPCOMING_VERSION)
+	# Before we bump the version, make sure that the towncrier-generated docs will build
+	make docs
 	git commit -m "Compile release notes"
 
 release: check-bump clean
-	# require that you be on a branch that's linked to upstream/master
-	git status -s -b | head -1 | grep "\.\.upstream/master"
+	# require that upstream is configured for ethereum/py-trie
+	git remote -v | grep "upstream\tgit@github.com:ethereum/py-trie.git (push)\|upstream\thttps://github.com/ethereum/py-trie (push)"
 	# verify that docs build correctly
 	./newsfragments/validate_files.py is-empty
+	make docs
 	CURRENT_SIGN_SETTING=$(git config commit.gpgSign)
 	git config commit.gpgSign true
 	bumpversion $(bump)
