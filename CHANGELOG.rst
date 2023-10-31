@@ -1,3 +1,20 @@
+py-trie v2.2.0 (2023-10-31)
+---------------------------
+
+Improved Documentation
+~~~~~~~~~~~~~~~~~~~~~~
+
+- Remove typo in README (`#139 <https://github.com/ethereum/py-trie/issues/139>`__)
+
+
+Internal Changes - for py-trie Contributors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Add upper pin to ``hexbytes`` dependency to due incoming breaking change (`#141 <https://github.com/ethereum/py-trie/issues/141>`__)
+- Update `ethereum/tests` fixture to ``v12.4``. (`#143 <https://github.com/ethereum/py-trie/issues/143>`__)
+- Merge python project template updates, including move to pre-commit for linting (`#144 <https://github.com/ethereum/py-trie/issues/144>`__)
+
+
 py-trie v2.1.1 (2023-06-08)
 ---------------------------
 
