@@ -11,7 +11,7 @@ extras_require = {
         "bumpversion>=0.5.3",
         "eth-hash>=0.1.0,<1.0.0",
         "ipython",
-        "pre-commit>=3.4.0",
+        "pre-commit>=3.4.0; python_version > '3.7'",
         "tox>=4.0.0",
         "twine",
         "wheel",
