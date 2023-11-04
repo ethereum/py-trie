@@ -1,0 +1,1 @@
+Import types ``Literal`` and ``Protocol`` directly from ``typing`` since now >py38

@@ -2,7 +2,9 @@ import enum
 from typing import (
     Iterable,
     List,
+    Literal,
     NamedTuple,
+    Protocol,
     Sequence,
     Tuple,
     TypeVar,
@@ -18,10 +20,6 @@ from trie.constants import (
     NODE_TYPE_BRANCH,
     NODE_TYPE_EXTENSION,
     NODE_TYPE_LEAF,
-)
-from trie.utils.compat import (
-    Literal,
-    Protocol,
 )
 
 # The RLP-decoded node is either blank, or a list, full of bytes or recursive nodes
