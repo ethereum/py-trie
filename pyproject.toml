@@ -68,7 +68,7 @@ log_format = "%(levelname)8s  %(asctime)s  %(filename)20s  %(message)s"
 log_date_format = "%m-%d %H:%M:%S"
 
 [tool.towncrier]
-# Read https://github.com/ethereum/py-trie/blob/master/newsfragments/README.md for instructions
+# Read https://github.com/ethereum/py-trie/blob/main/newsfragments/README.md for instructions
 package = "trie"
 filename = "CHANGELOG.rst"
 directory = "newsfragments"
