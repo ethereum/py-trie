@@ -53,7 +53,7 @@ notes: check-bump
 
 release: check-bump clean
 	# require that upstream is configured for ethereum/py-trie
-	git remote -v | grep "upstream\tgit@github.com:ethereum/py-trie.git (push)\|upstream\thttps://github.com/ethereum/py-trie (push)"
+	@git remote -v | grep -E "upstream\tgit@github.com:ethereum/py-trie.git \(push\)|upstream\thttps://(www.)?github.com/ethereum/py-trie\(push\)"
 	# verify that docs build correctly
 	./newsfragments/validate_files.py is-empty
 	make docs
