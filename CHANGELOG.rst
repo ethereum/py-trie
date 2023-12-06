@@ -1,3 +1,28 @@
+py-trie v3.0.0 (2023-12-06)
+---------------------------
+
+Breaking Changes
+~~~~~~~~~~~~~~~~
+
+- Drop support for python 3.7 (`#144 <https://github.com/ethereum/py-trie/issues/144>`__)
+
+
+Improved Documentation
+~~~~~~~~~~~~~~~~~~~~~~
+
+- Remove typo in README (`#139 <https://github.com/ethereum/py-trie/issues/139>`__)
+
+
+Internal Changes - for py-trie Contributors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Add upper pin to ``hexbytes`` dependency to due incoming breaking change (`#141 <https://github.com/ethereum/py-trie/issues/141>`__)
+- Update `ethereum/tests` fixture to ``v12.4``. (`#143 <https://github.com/ethereum/py-trie/issues/143>`__)
+- Merge python project template updates, including move to pre-commit for linting (`#144 <https://github.com/ethereum/py-trie/issues/144>`__)
+- Import types ``Literal`` and ``Protocol`` directly from ``typing`` since now >py38 (`#146 <https://github.com/ethereum/py-trie/issues/146>`__)
+- Change the name of ``master`` branch to ``main`` (`#147 <https://github.com/ethereum/py-trie/issues/147>`__)
+
+
 py-trie v2.1.1 (2023-06-08)
 ---------------------------
 

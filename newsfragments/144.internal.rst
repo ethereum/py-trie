@@ -1,1 +1,0 @@
-Merge python project template updates, including move to pre-commit for linting
