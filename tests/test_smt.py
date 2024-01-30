@@ -1,5 +1,5 @@
 from hypothesis import (
-
+    assume,
     given,
     strategies as st,
 )
@@ -17,6 +17,10 @@ def binary_tuples(draw):
     size = draw(st.integers(min_value=1, max_value=32))
     v = draw(st.binary(min_size=size, max_size=size))
     default = draw(st.binary(min_size=size, max_size=size))
+
+    # Ensure v and default are not equal
+    assume(v != default)
+
     return (v, default)
 
 
@@ -25,9 +29,7 @@ def binary_tuples(draw):
     values=binary_tuples(),
 )
 def test_simple_kv(k, values):
-    # default must be different than v
     v, default = values
-    default = BLANK_NODE if default == v else default
     smt = SparseMerkleTree(key_size=len(k), default=default)
     empty_root = smt.root_hash
 
