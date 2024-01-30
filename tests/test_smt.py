@@ -1,4 +1,5 @@
 from hypothesis import (
+
     given,
     strategies as st,
 )
@@ -11,13 +12,21 @@ from trie.smt import (
 )
 
 
+@st.composite
+def binary_tuples(draw):
+    size = draw(st.integers(min_value=1, max_value=32))
+    v = draw(st.binary(min_size=size, max_size=size))
+    default = draw(st.binary(min_size=size, max_size=size))
+    return (v, default)
+
+
 @given(
     k=st.binary(min_size=1, max_size=32),
-    v=st.binary(min_size=1, max_size=32),
-    default=st.binary(min_size=1, max_size=32),
+    values=binary_tuples(),
 )
-def test_simple_kv(k, v, default):
+def test_simple_kv(k, values):
     # default must be different than v
+    v, default = values
     default = BLANK_NODE if default == v else default
     smt = SparseMerkleTree(key_size=len(k), default=default)
     empty_root = smt.root_hash
