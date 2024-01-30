@@ -252,7 +252,7 @@ class SparseMerkleTree:
         value, _ = self._get(key)
 
         # Ensure that it isn't blank!
-        if value == BLANK_NODE:
+        if value == self._default:
             raise KeyError("Key does not exist")
 
         return value
@@ -261,7 +261,7 @@ class SparseMerkleTree:
         value, branch = self._get(key)
 
         # Ensure that it isn't blank!
-        if value == BLANK_NODE:
+        if value == self._default:
             raise KeyError("Key does not exist")
 
         return branch

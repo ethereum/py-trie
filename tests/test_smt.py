@@ -14,9 +14,12 @@ from trie.smt import (
 @given(
     k=st.binary(min_size=1, max_size=32),
     v=st.binary(min_size=1, max_size=32),
+    default=st.binary(min_size=1, max_size=32),
 )
-def test_simple_kv(k, v):
-    smt = SparseMerkleTree(key_size=len(k))
+def test_simple_kv(k, v, default):
+    # default must be different than v
+    default = BLANK_NODE if default == v else default
+    smt = SparseMerkleTree(key_size=len(k), default=default)
     empty_root = smt.root_hash
 
     # Nothing has been added yet
