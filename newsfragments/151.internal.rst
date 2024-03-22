@@ -1,0 +1,1 @@
+Open ``hexbytes`` dep to ``>=0.2.3``
