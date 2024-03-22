@@ -48,7 +48,7 @@ setup(
     install_requires=[
         "eth-hash>=0.1.0",
         "eth-utils>=2.0.0",
-        "hexbytes>=0.2.0,<0.4.0",
+        "hexbytes>=0.2.3",
         "rlp>=3",
         "sortedcontainers>=2.1.0",
     ],
