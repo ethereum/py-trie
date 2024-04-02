@@ -20,7 +20,7 @@ class ScratchDB:
     The method batch_commit() can be used as a context manager.
     Upon exiting the context, it writes all of the key value pairs from the cache into
     the underlying database. It optionally pushes deletes to the underlying databes.
-    If any exception occurrs before committing phase, no changes are applied.
+    If any exception occurs before committing phase, no changes are applied.
     """
 
     def __init__(self, wrapped_db):

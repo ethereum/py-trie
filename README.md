@@ -198,7 +198,7 @@ HexaryTrieFog<SortedSet([(0x6,), (0x7,)])>
 >>> node7 = node.traverse(prefix)
 HexaryTrieNode(sub_segments=((0x9, 0x6, 0xf, 0x7, 0x5, 0x7, 0x2, 0x2, 0xd, 0x6),), value=b'', suffix=(), raw=[b'\x00\x96\xf7W"\xd6', b"\xe2\xe2oN\xe1\xf8\xda\xc1\x8c\x03\x92'\x93\x805\xad-\xef\x07_\x0ePV\x1f\xb5/lVZ\xc6\xc1\xf9"])
 # We found an extension node, and mark it in the fog
-# For simpliticy, we'll start clobbering the `fog` variable
+# For simplicity, we'll start clobbering the `fog` variable
 >>> fog = level1fog.explore(prefix, node7.sub_segments)
 HexaryTrieFog<SortedSet([(0x6,), (0x7, 0x9, 0x6, 0xf, 0x7, 0x5, 0x7, 0x2, 0x2, 0xd, 0x6)])>
 
