@@ -31,7 +31,7 @@ lint:
 	)
 
 test:
-	pytest tests
+	python -m pytest tests
 
 docs:
 	python ./newsfragments/validate_files.py
@@ -49,11 +49,11 @@ notes: check-bump
 	towncrier build --yes --version $(UPCOMING_VERSION)
 	# Before we bump the version, make sure that the towncrier-generated docs will build
 	make docs
-	git commit -m "Compile release notes"
+	git commit -m "Compile release notes for v$(UPCOMING_VERSION)"
 
 release: check-bump clean
 	# require that upstream is configured for ethereum/py-trie
-	@git remote -v | grep -E "upstream\tgit@github.com:ethereum/py-trie.git \(push\)|upstream\thttps://(www.)?github.com/ethereum/py-trie\(push\)"
+	@git remote -v | grep "upstream[[:space:]]git@github.com:ethereum/py-trie.git (push)\|upstream[[:space:]]https://github.com/ethereum/py-trie (push)"
 	# verify that docs build correctly
 	./newsfragments/validate_files.py is-empty
 	make docs

@@ -29,7 +29,7 @@ from trie.validation import (
 )
 
 
-class BinaryTrie(object):
+class BinaryTrie:
     def __init__(self, db, root_hash=BLANK_HASH):
         self.db = db
         validate_is_bytes(root_hash)

@@ -60,9 +60,7 @@ def test_branch_updates(key_size, keys, vals):
     EMPTY_NODE_HASHES = list(smt._get(keys[0])[1])
 
     # Objects to track proof data
-    proofs = dict(
-        [(k, SparseMerkleProof(k, BLANK_NODE, EMPTY_NODE_HASHES)) for k in keys]
-    )
+    proofs = {k: SparseMerkleProof(k, BLANK_NODE, EMPTY_NODE_HASHES) for k in keys}
 
     # Track the big list of all updates
     proof_updates = []

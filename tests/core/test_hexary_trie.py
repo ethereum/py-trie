@@ -5,6 +5,7 @@ import fnmatch
 import itertools
 import json
 import os
+import pytest
 
 from eth_utils import (
     decode_hex,
@@ -19,7 +20,6 @@ from hypothesis import (
     settings,
     strategies as st,
 )
-import pytest
 import rlp
 
 from trie import (
@@ -63,7 +63,8 @@ def normalize_fixture(fixture):
     return normalized_fixture
 
 
-ROOT_PROJECT_DIR = os.path.dirname(os.path.dirname(__file__))
+TESTS_DIR = os.path.dirname(os.path.dirname(__file__))
+ROOT_PROJECT_DIR = os.path.dirname(TESTS_DIR)
 
 
 def recursive_find_files(base_dir, pattern):
@@ -120,7 +121,7 @@ def permute_fixtures(fixtures):
         # must be applied in order.
         updates = fixture["in"]
         all_keys = sorted(entry[0] for entry in updates)
-        duplicate_keys = sorted(set(key for key in all_keys if all_keys.count(key) > 1))
+        duplicate_keys = sorted({key for key in all_keys if all_keys.count(key) > 1})
         if duplicate_keys and not all(key in deleted_keys for key in duplicate_keys):
             yield (fixture_name, updates, final_mapping, deleted_keys, final_root)
         else:
