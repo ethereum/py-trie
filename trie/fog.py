@@ -98,7 +98,7 @@ class HexaryTrieFog:
             )
 
         # Further validation that no segment is a prefix of another
-        all_lengths = set(len(segment) for segment in sub_segments)
+        all_lengths = {len(segment) for segment in sub_segments}
         if len(all_lengths) > 1:
             # The known use case of exploring nodes one at a time will never arrive in
             # this validation check which might be slow. Leaf nodes have no sub

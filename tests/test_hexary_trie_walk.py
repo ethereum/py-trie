@@ -1,10 +1,11 @@
+import pytest
+
 from hypothesis import (
     example,
     given,
     settings,
     strategies as st,
 )
-import pytest
 
 from trie.exceptions import (
     MissingTraversalNode,

@@ -1,7 +1,8 @@
+import pytest
+
 from eth_hash.auto import (
     keccak,
 )
-import pytest
 
 from trie.exceptions import (
     BadTrieProof,

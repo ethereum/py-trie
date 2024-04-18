@@ -1,12 +1,12 @@
 import json
 import os
+import pytest
 
 from hypothesis import (
     example,
     given,
     strategies as st,
 )
-import pytest
 import rlp
 
 from trie import (
