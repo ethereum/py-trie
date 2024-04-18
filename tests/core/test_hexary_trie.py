@@ -63,7 +63,8 @@ def normalize_fixture(fixture):
     return normalized_fixture
 
 
-ROOT_PROJECT_DIR = os.path.dirname(os.path.dirname(__file__))
+TESTS_DIR = os.path.dirname(os.path.dirname(__file__))
+ROOT_PROJECT_DIR = os.path.dirname(TESTS_DIR)
 
 
 def recursive_find_files(base_dir, pattern):

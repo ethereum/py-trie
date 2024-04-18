@@ -30,7 +30,8 @@ from trie.utils.nodes import (
     is_extension_node,
 )
 
-ROOT_PROJECT_DIR = os.path.dirname(os.path.dirname(__file__))
+TESTS_DIR = os.path.dirname(os.path.dirname(__file__))
+ROOT_PROJECT_DIR = os.path.dirname(TESTS_DIR)
 NEXT_PREV_FIXTURE_PATH = os.path.join(
     ROOT_PROJECT_DIR, "fixtures", "TrieTests", "trietestnextprev.json"
 )
