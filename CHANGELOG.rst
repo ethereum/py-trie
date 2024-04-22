@@ -1,3 +1,19 @@
+py-trie v3.0.1 (2024-04-22)
+---------------------------
+
+Internal Changes - for py-trie Contributors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Open ``hexbytes`` dep to ``>=0.2.3`` (`#151 <https://github.com/ethereum/py-trie/issues/151>`__)
+- Merge template updates, notably adding python 3.12 support (`#154 <https://github.com/ethereum/py-trie/issues/154>`__)
+
+
+Miscellaneous Changes
+~~~~~~~~~~~~~~~~~~~~~
+
+- `#155 <https://github.com/ethereum/py-trie/issues/155>`__
+
+
 py-trie v3.0.0 (2023-12-06)
 ---------------------------
 
