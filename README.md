@@ -8,6 +8,10 @@
 > This library and repository was previously located at [pipermerriam/py-trie](https://github.com/pipermerriam/py-trie). It was transferred to the Ethereum foundation GitHub in
 > November 2017 and renamed to `py-trie`.
 
+Read more in the documentation below.
+
+View the [change log](https://github.com/ethereum/py-trie/blob/main/CHANGELOG.rst).
+
 ## Installation
 
 ```sh
@@ -69,10 +73,10 @@ like `make release bump=minor` or `make release bump=devnum`. This is typically 
 main branch, except when releasing a beta (in which case the beta is released from main,
 and the previous stable branch is released from said branch).
 
-If you are in a beta version, `bumpversion stage` will switch to a stable.
+If you are in a beta version, `make release bump=stage` will switch to a stable.
 
 To issue an unstable version when the current version is stable, specify the
-new version explicitly, like `bumpversion --new-version 4.0.0-alpha.1 devnum`
+new version explicitly, like `make release bump="--new-version 4.0.0-alpha.1 devnum"`
 
 ## Usage
 
