@@ -1,3 +1,4 @@
+import pytest
 from collections import (
     defaultdict,
 )
@@ -5,7 +6,6 @@ import fnmatch
 import itertools
 import json
 import os
-import pytest
 
 from eth_utils import (
     decode_hex,

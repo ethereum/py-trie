@@ -1,6 +1,6 @@
+import pytest
 import json
 import os
-import pytest
 
 from hypothesis import (
     example,

@@ -7,7 +7,7 @@ from setuptools import (
 extras_require = {
     "dev": [
         "build>=0.9.0",
-        "bumpversion>=0.5.3",
+        "bump_my_version>=0.19.0",
         "eth-hash>=0.1.0,<1.0.0",
         "ipython",
         "pre-commit>=3.4.0",
@@ -16,7 +16,7 @@ extras_require = {
         "wheel",
     ],
     "docs": [
-        "towncrier>=21,<22",
+        "towncrier>=24,<25",
     ],
     "test": [
         "hypothesis>=6.56.4,<7",
@@ -35,7 +35,7 @@ with open("README.md") as readme_file:
 
 setup(
     name="trie",
-    # *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
+    # *IMPORTANT*: Don't manually change the version here. Use the 'bump-my-version' utility.
     version="3.0.1",
     description="""Python implementation of the Ethereum Trie structure""",
     long_description=long_description,
@@ -70,5 +70,6 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
     ],
 )
