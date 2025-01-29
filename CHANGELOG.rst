@@ -1,3 +1,12 @@
+py-trie v3.1.0 (2025-01-29)
+---------------------------
+
+Features
+~~~~~~~~
+
+- Merge template, adding py313 to CI and replacing ``bumpversion`` with ``bump-my-version``. (`#156 <https://github.com/ethereum/py-trie/issues/156>`__)
+
+
 py-trie v3.0.1 (2024-04-22)
 ---------------------------
 
